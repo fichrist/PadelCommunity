@@ -61,6 +61,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				sage: {
+					DEFAULT: 'hsl(var(--sage))',
+					foreground: 'hsl(var(--sage-foreground))'
+				},
+				earth: {
+					DEFAULT: 'hsl(var(--earth))',
+					foreground: 'hsl(var(--earth-foreground))'
+				},
+				celestial: {
+					DEFAULT: 'hsl(var(--celestial))',
+					foreground: 'hsl(var(--celestial-foreground))'
+				},
+				lotus: {
+					DEFAULT: 'hsl(var(--lotus))',
+					foreground: 'hsl(var(--lotus-foreground))'
 				}
 			},
 			borderRadius: {
