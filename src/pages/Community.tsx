@@ -32,7 +32,7 @@ const Community = () => {
       tags: ["Sacred Geometry", "Mindfulness", "Nature Wisdom"],
       timeAgo: "4 hours ago",
       comments: 12,
-      image: "/placeholder.svg"
+      youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
     },
     {
       type: "event",
@@ -57,7 +57,7 @@ const Community = () => {
       tags: ["Movement Meditation", "Ecstatic Dance", "Body Wisdom"],
       timeAgo: "8 hours ago",
       comments: 9,
-      image: "/placeholder.svg"
+      youtubeUrl: "https://www.youtube.com/embed/abc123xyz"
     }
   ];
 
@@ -70,9 +70,15 @@ const Community = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-background to-purple-100/20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-purple-600/10 py-12">
+    <div className="min-h-screen relative">
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+        style={{ backgroundImage: `url('/src/assets/spiritual-background.jpg')` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background/80 to-primary/30" />
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -119,13 +125,13 @@ const Community = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {filteredPosts.map((post, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300 border-border/50 bg-card/90 backdrop-blur-sm">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="cursor-pointer hover:scale-105 transition-transform">
+                      <Avatar className="h-10 w-10 cursor-pointer hover:scale-105 transition-transform">
                         <AvatarImage src={post.author.avatar} />
                         <AvatarFallback className="bg-primary/10">
                           {post.author.name.split(' ').map(n => n[0]).join('')}
@@ -133,8 +139,9 @@ const Community = () => {
                       </Avatar>
                       <div>
                         <p className="font-medium cursor-pointer hover:text-primary transition-colors">{post.author.name}</p>
-                        <p className="text-xs text-muted-foreground">{post.author.role}</p>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                          <span>{post.author.role}</span>
+                          <span>•</span>
                           <Clock className="h-3 w-3" />
                           <span>{post.timeAgo}</span>
                         </div>
@@ -150,34 +157,50 @@ const Community = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="mb-4">
-                    <Badge variant="secondary" className={`${post.type === 'event' ? 'bg-purple-100 text-purple-700' : 'bg-sage/20 text-sage-foreground'} mr-2`}>
-                      {post.type === 'event' ? 'Event' : 'Share'}
-                    </Badge>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {post.tags.map((tag, tagIndex) => (
-                        <Badge key={tagIndex} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                <CardContent className="pt-0 space-y-3">
+                  <div className="flex flex-wrap gap-1">
+                    {post.tags.map((tag, tagIndex) => (
+                      <Badge key={tagIndex} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
                   
-                  <CardTitle className="text-xl mb-3 hover:text-primary transition-colors cursor-pointer">
+                  <CardTitle className="text-lg hover:text-primary transition-colors cursor-pointer">
                     {post.title}
                   </CardTitle>
                   
-                  <div className="mb-4 p-3 bg-purple-50/50 rounded-lg border-l-4 border-purple-200">
+                  <div className="p-3 bg-primary/5 rounded-lg border-l-4 border-primary/20">
                     <p className="text-sm italic text-foreground/80">"{post.thought}"</p>
                   </div>
                   
-                  <CardDescription className="text-base mb-4">
+                  {post.type === 'event' && post.image && (
+                    <div className="relative h-48 rounded-lg overflow-hidden">
+                      <img 
+                        src={post.image} 
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  {post.type === 'share' && post.youtubeUrl && (
+                    <div className="relative h-48 rounded-lg overflow-hidden">
+                      <iframe
+                        src={post.youtubeUrl}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                  
+                  <CardDescription className="text-sm">
                     {post.description}
                   </CardDescription>
                   
                   {post.type === 'event' && (
-                    <div className="mb-4 space-y-2">
+                    <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span>{post.location}</span>
@@ -199,7 +222,7 @@ const Community = () => {
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-border/50">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border/50">
                     <div className="flex items-center space-x-4">
                       <button className="flex items-center space-x-1 hover:text-primary transition-colors">
                         <MessageCircle className="h-4 w-4" />
@@ -294,6 +317,7 @@ const Community = () => {
             </Card>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
