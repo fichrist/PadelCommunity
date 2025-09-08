@@ -2,51 +2,66 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, BookOpen, Users, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Bookmark, Filter, Clock, UserCheck } from "lucide-react";
+import { useState } from "react";
 
 const Community = () => {
+  const [filter, setFilter] = useState("all");
+
   const posts = [
     {
-      author: { name: "Elena Moonchild", avatar: "", followers: 234 },
-      title: "The Power of Morning Gratitude",
-      excerpt: "How starting each day with gratitude transformed my spiritual practice and opened my heart to abundance...",
-      category: "Gratitude",
-      readTime: "3 min read",
-      likes: 42,
+      type: "event",
+      author: { name: "Elena Moonchild", avatar: "", followers: 234, role: "Sound Healer" },
+      title: "Full Moon Sound Healing Ceremony",
+      thought: "Join us under the powerful energy of the full moon for a transformative sound healing experience that will align your chakras and restore inner peace.",
+      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony.",
+      location: "Sacred Grove Sanctuary, Sedona AZ",
+      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
+      attendees: 24,
+      connectionsGoing: ["Sarah Light", "David Peace"],
+      timeAgo: "2 hours ago",
       comments: 8,
-      timeAgo: "2 hours ago"
+      image: "/placeholder.svg"
     },
     {
-      author: { name: "David Lightwalker", avatar: "", followers: 189 },
+      type: "share",
+      author: { name: "David Lightwalker", avatar: "", followers: 189, role: "Sacred Geometry Teacher" },
       title: "Sacred Geometry in Daily Life",
-      excerpt: "Discovering the divine patterns that surround us and how they can guide our spiritual journey...",
-      category: "Sacred Geometry",
-      readTime: "5 min read",
-      likes: 67,
+      thought: "I've been contemplating how the golden ratio appears everywhere in nature and how we can use this wisdom in our daily spiritual practice.",
+      description: "Discovering the divine patterns that surround us and how they can guide our spiritual journey through conscious observation and application.",
+      tags: ["Sacred Geometry", "Mindfulness", "Nature Wisdom"],
+      timeAgo: "4 hours ago",
       comments: 12,
-      timeAgo: "4 hours ago"
+      image: "/placeholder.svg"
     },
     {
-      author: { name: "Aria Starseed", avatar: "", followers: 156 },
-      title: "Crystal Healing for Beginners",
-      excerpt: "A gentle introduction to working with crystals for healing, protection, and spiritual growth...",
-      category: "Crystal Healing",
-      readTime: "4 min read",
-      likes: 38,
+      type: "event",
+      author: { name: "Aria Starseed", avatar: "", followers: 156, role: "Crystal Healer" },
+      title: "Crystal Healing Workshop for Beginners",
+      thought: "Crystals have been my guides for over a decade. I'm excited to share this gentle introduction to help you start your own healing journey.",
+      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth in this hands-on workshop.",
+      location: "Crystal Cave Studio, Asheville NC",
+      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
+      attendees: 12,
+      connectionsGoing: ["Luna Sage"],
+      timeAgo: "6 hours ago",
       comments: 15,
-      timeAgo: "6 hours ago"
+      image: "/placeholder.svg"
     },
     {
-      author: { name: "Phoenix Rising", avatar: "", followers: 298 },
+      type: "share",
+      author: { name: "Phoenix Rising", avatar: "", followers: 298, role: "Movement Therapist" },
       title: "Meditation Through Movement",
-      excerpt: "Exploring how dance and movement can become powerful forms of moving meditation...",
-      category: "Meditation",
-      readTime: "6 min read",
-      likes: 73,
+      thought: "Today's ecstatic dance session reminded me how our bodies hold infinite wisdom. Movement is prayer, dance is meditation.",
+      description: "Exploring how dance and movement can become powerful forms of moving meditation that connect us to our inner truth and divine expression.",
+      tags: ["Movement Meditation", "Ecstatic Dance", "Body Wisdom"],
+      timeAgo: "8 hours ago",
       comments: 9,
-      timeAgo: "8 hours ago"
+      image: "/placeholder.svg"
     }
   ];
+
+  const filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
 
   const featuredMembers = [
     { name: "Luna Sage", role: "Meditation Teacher", followers: 1200, avatar: "" },
@@ -55,17 +70,48 @@ const Community = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-background to-purple-100/20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-16">
+      <div className="bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-purple-600/10 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Spiritual Community
+            <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Your Spiritual Community
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Share wisdom, stories, and insights with fellow souls on their spiritual journey
+              Discover events and wisdom from the souls you follow
             </p>
+          </div>
+          
+          {/* Filters */}
+          <div className="flex justify-center mt-8 space-x-2">
+            <Button
+              variant={filter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("all")}
+              className="flex items-center space-x-2"
+            >
+              <Filter className="h-4 w-4" />
+              <span>All</span>
+            </Button>
+            <Button
+              variant={filter === "event" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("event")}
+              className="flex items-center space-x-2"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Events</span>
+            </Button>
+            <Button
+              variant={filter === "share" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("share")}
+              className="flex items-center space-x-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span>Shares</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -74,52 +120,94 @@ const Community = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {posts.map((post, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 border-border/50">
+            {filteredPosts.map((post, index) => (
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 border-border/50 bg-card/90 backdrop-blur-sm">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <Avatar>
+                      <Avatar className="cursor-pointer hover:scale-105 transition-transform">
                         <AvatarImage src={post.author.avatar} />
                         <AvatarFallback className="bg-primary/10">
                           {post.author.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{post.author.name}</p>
-                        <p className="text-sm text-muted-foreground">{post.timeAgo}</p>
+                        <p className="font-medium cursor-pointer hover:text-primary transition-colors">{post.author.name}</p>
+                        <p className="text-xs text-muted-foreground">{post.author.role}</p>
+                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{post.timeAgo}</span>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      Follow
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Bookmark className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Follow
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="mb-3">
-                    <Badge variant="secondary" className="bg-sage/20 text-sage-foreground">
-                      {post.category}
+                  <div className="mb-4">
+                    <Badge variant="secondary" className={`${post.type === 'event' ? 'bg-purple-100 text-purple-700' : 'bg-sage/20 text-sage-foreground'} mr-2`}>
+                      {post.type === 'event' ? 'Event' : 'Share'}
                     </Badge>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {post.tags.map((tag, tagIndex) => (
+                        <Badge key={tagIndex} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <CardTitle className="text-xl mb-2 hover:text-primary transition-colors cursor-pointer">
+                  
+                  <CardTitle className="text-xl mb-3 hover:text-primary transition-colors cursor-pointer">
                     {post.title}
                   </CardTitle>
+                  
+                  <div className="mb-4 p-3 bg-purple-50/50 rounded-lg border-l-4 border-purple-200">
+                    <p className="text-sm italic text-foreground/80">"{post.thought}"</p>
+                  </div>
+                  
                   <CardDescription className="text-base mb-4">
-                    {post.excerpt}
+                    {post.description}
                   </CardDescription>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{post.readTime}</span>
+                  
+                  {post.type === 'event' && (
+                    <div className="mb-4 space-y-2">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{post.location}</span>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm">
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{post.attendees} going</span>
+                        </div>
+                        {post.connectionsGoing && post.connectionsGoing.length > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <UserCheck className="h-4 w-4 text-primary" />
+                            <span className="text-primary font-medium">
+                              {post.connectionsGoing.join(", ")} going
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-border/50">
                     <div className="flex items-center space-x-4">
-                      <button className="flex items-center space-x-1 hover:text-primary transition-colors">
-                        <Heart className="h-4 w-4" />
-                        <span>{post.likes}</span>
-                      </button>
                       <button className="flex items-center space-x-1 hover:text-primary transition-colors">
                         <MessageCircle className="h-4 w-4" />
                         <span>{post.comments}</span>
                       </button>
                       <button className="flex items-center space-x-1 hover:text-primary transition-colors">
                         <Share2 className="h-4 w-4" />
+                        <span>Reshare</span>
                       </button>
                     </div>
                   </div>

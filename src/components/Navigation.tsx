@@ -6,9 +6,9 @@ const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Home", icon: Home },
+    { path: "/", label: "Community", icon: BookOpen },
     { path: "/events", label: "Events", icon: Calendar },
-    { path: "/community", label: "Community", icon: BookOpen },
+    { path: "/home", label: "Home", icon: Home },
     { path: "/chat", label: "Chat", icon: MessageCircle },
     { path: "/profile", label: "Profile", icon: User },
   ];
@@ -21,7 +21,7 @@ const Navigation = () => {
             <div className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-primary" />
               <span className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                SpiritualHub
+                Spirit
               </span>
             </div>
           </div>
