@@ -128,62 +128,49 @@ const Community = () => {
           <div className="lg:col-span-2 space-y-4">
             {filteredPosts.map((post, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300 border-border/50 bg-card/90 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10 cursor-pointer hover:scale-105 transition-transform">
-                        <AvatarImage src={post.author.avatar} />
-                        <AvatarFallback className="bg-primary/10">
-                          {post.author.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium cursor-pointer hover:text-primary transition-colors">{post.author.name}</p>
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <span>{post.author.role}</span>
-                          <span>•</span>
-                          <Clock className="h-3 w-3" />
-                          <span>{post.timeAgo}</span>
-                        </div>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex gap-4">
+                    {/* Event Image - Small, Top Left */}
+                    {post.type === 'event' && post.image && (
+                      <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
+                        <img 
+                          src={post.image} 
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 space-y-2">
+                      {/* Title - Most Prominent */}
+                      <CardTitle className="text-xl font-bold hover:text-primary transition-colors cursor-pointer leading-tight">
+                        {post.title}
+                      </CardTitle>
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1">
+                        {post.tags.map((tag, tagIndex) => (
+                          <Badge key={tagIndex} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-start space-x-2">
                       <Button variant="ghost" size="sm">
                         <Bookmark className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Follow
-                      </Button>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-3">
-                  <div className="flex flex-wrap gap-1">
-                    {post.tags.map((tag, tagIndex) => (
-                      <Badge key={tagIndex} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
                   
-                  <CardTitle className="text-lg hover:text-primary transition-colors cursor-pointer">
-                    {post.title}
-                  </CardTitle>
-                  
+                  {/* Thought/Description */}
                   <div className="p-3 bg-primary/5 rounded-lg border-l-4 border-primary/20">
                     <p className="text-sm italic text-foreground/80">"{post.thought}"</p>
                   </div>
                   
-                  {post.type === 'event' && post.image && (
-                    <div className="relative h-48 rounded-lg overflow-hidden">
-                      <img 
-                        src={post.image} 
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  
+                  {/* YouTube Video for Shares */}
                   {post.type === 'share' && post.youtubeUrl && (
                     <div className="relative h-48 rounded-lg overflow-hidden">
                       <iframe
@@ -194,6 +181,28 @@ const Community = () => {
                       />
                     </div>
                   )}
+                  
+                  {/* Author Info - Less Prominent */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={post.author.avatar} />
+                        <AvatarFallback className="bg-primary/10 text-xs">
+                          {post.author.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="cursor-pointer hover:text-primary transition-colors">{post.author.name}</span>
+                        <span className="mx-1">•</span>
+                        <span>{post.author.role}</span>
+                        <span className="mx-1">•</span>
+                        <span>{post.timeAgo}</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-xs h-6 px-2">
+                      Follow
+                    </Button>
+                  </div>
                   
                   <CardDescription className="text-sm">
                     {post.description}
