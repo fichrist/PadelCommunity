@@ -70,265 +70,249 @@ const Community = () => {
   ];
 
   return (
-    <div className="min-h-screen relative">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-        style={{ backgroundImage: `url('/src/assets/spiritual-background.jpg')` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background/80 to-primary/30" />
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Your Spiritual Community
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover events and wisdom from the souls you follow
-            </p>
-          </div>
-          
-          {/* Filters */}
-          <div className="flex justify-center mt-8 space-x-2">
-            <Button
-              variant={filter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("all")}
-              className="flex items-center space-x-2"
-            >
-              <Filter className="h-4 w-4" />
-              <span>All</span>
-            </Button>
-            <Button
-              variant={filter === "event" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("event")}
-              className="flex items-center space-x-2"
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Events</span>
-            </Button>
-            <Button
-              variant={filter === "share" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("share")}
-              className="flex items-center space-x-2"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span>Shares</span>
-            </Button>
+      <div className="min-h-screen bg-background">
+        {/* LinkedIn-style Header */}
+        <div className="bg-card border-b border-border">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-foreground mb-2">
+                Your Spiritual Community
+              </h1>
+              <p className="text-muted-foreground">
+                Stay connected with the spiritual community you follow
+              </p>
+            </div>
+            
+            {/* LinkedIn-style Filters */}
+            <div className="flex justify-center mt-6 space-x-1">
+              <Button
+                variant={filter === "all" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setFilter("all")}
+                className="px-4 py-2 rounded-full"
+              >
+                All
+              </Button>
+              <Button
+                variant={filter === "event" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setFilter("event")}
+                className="px-4 py-2 rounded-full"
+              >
+                Events
+              </Button>
+              <Button
+                variant={filter === "share" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setFilter("share")}
+                className="px-4 py-2 rounded-full"
+              >
+                Posts
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-4">
-            {filteredPosts.map((post, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 border-border/50 bg-card/90 backdrop-blur-sm">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex gap-4">
-                    {/* Event Image - Small, Top Left */}
-                    {post.type === 'event' && post.image && (
-                      <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
-                        <img 
-                          src={post.image} 
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-3">
+              {filteredPosts.map((post, index) => (
+                <Card key={index} className="bg-card border border-border hover:shadow-md transition-shadow duration-200">
+                  <CardContent className="p-0">
+                    {/* LinkedIn-style Author Header */}
+                    <div className="p-4 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={post.author.avatar} />
+                            <AvatarFallback className="bg-primary/10">
+                              {post.author.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-sm cursor-pointer hover:text-primary transition-colors">
+                                {post.author.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                Follow
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {post.author.role} • {post.timeAgo}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Bookmark className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    
-                    <div className="flex-1 space-y-2">
-                      {/* Title - Most Prominent */}
-                      <CardTitle className="text-xl font-bold hover:text-primary transition-colors cursor-pointer leading-tight">
-                        {post.title}
-                      </CardTitle>
-                      
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="px-4">
+                      <div className="mb-3">
+                        <h3 className="font-semibold text-lg mb-2 leading-tight">
+                          {post.title}
+                        </h3>
+                        <p className="text-sm text-foreground/90 leading-relaxed">
+                          {post.thought}
+                        </p>
+                      </div>
+
                       {/* Tags */}
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 mb-3">
                         {post.tags.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="outline" className="text-xs">
-                            {tag}
+                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-muted hover:bg-muted/80 cursor-pointer">
+                            #{tag.toLowerCase().replace(/\s+/g, '')}
                           </Badge>
                         ))}
                       </div>
+
+                      {/* Event Details */}
+                      {post.type === 'event' && (
+                        <div className="mb-3 p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-start space-x-3">
+                            {post.image && (
+                              <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden">
+                                <img 
+                                  src={post.image} 
+                                  alt={post.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 space-y-2">
+                              <p className="text-sm text-foreground/80">
+                                {post.description}
+                              </p>
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4" />
+                                <span>{post.location}</span>
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm">
+                                <div className="flex items-center space-x-1">
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">{post.attendees} attending</span>
+                                </div>
+                                {post.connectionsGoing && post.connectionsGoing.length > 0 && (
+                                  <div className="flex items-center space-x-1">
+                                    <UserCheck className="h-4 w-4 text-primary" />
+                                    <span className="text-primary font-medium">
+                                      {post.connectionsGoing.join(", ")} going
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* YouTube Video for Shares */}
+                      {post.type === 'share' && post.youtubeUrl && (
+                        <div className="mb-3">
+                          <div className="relative h-64 rounded-lg overflow-hidden bg-muted">
+                            <iframe
+                              src={post.youtubeUrl}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Share description for non-events */}
+                      {post.type === 'share' && (
+                        <p className="text-sm text-foreground/80 mb-3 leading-relaxed">
+                          {post.description}
+                        </p>
+                      )}
                     </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex items-start space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Bookmark className="h-4 w-4" />
+
+                    {/* LinkedIn-style Action Bar */}
+                    <div className="px-4 py-3 border-t border-border">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-6">
+                          <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                            <MessageCircle className="h-4 w-4" />
+                            <span>{post.comments} comments</span>
+                          </button>
+                          <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                            <Share2 className="h-4 w-4" />
+                            <span>Share</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+            {/* LinkedIn-style Sidebar */}
+            <div className="space-y-4">
+              {/* Suggested Connections */}
+              <Card className="bg-card border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span>People you may know</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  {featuredMembers.map((member, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className="bg-primary/10 text-xs">
+                            {member.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm leading-tight">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">{member.role}</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                        Connect
                       </Button>
                     </div>
-                  </div>
-                  
-                  {/* Thought/Description */}
-                  <div className="p-3 bg-primary/5 rounded-lg border-l-4 border-primary/20">
-                    <p className="text-sm italic text-foreground/80">"{post.thought}"</p>
-                  </div>
-                  
-                  {/* YouTube Video for Shares */}
-                  {post.type === 'share' && post.youtubeUrl && (
-                    <div className="relative h-48 rounded-lg overflow-hidden">
-                      <iframe
-                        src={post.youtubeUrl}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Author Info - Less Prominent */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={post.author.avatar} />
-                        <AvatarFallback className="bg-primary/10 text-xs">
-                          {post.author.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-xs text-muted-foreground">
-                        <span className="cursor-pointer hover:text-primary transition-colors">{post.author.name}</span>
-                        <span className="mx-1">•</span>
-                        <span>{post.author.role}</span>
-                        <span className="mx-1">•</span>
-                        <span>{post.timeAgo}</span>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Trending Topics */}
+              <Card className="bg-card border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                    <span>Trending</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {['#meditation', '#healing', '#crystals', '#yoga', '#chakras'].map((topic, index) => (
+                      <div key={topic} className="py-1">
+                        <p className="text-sm font-medium text-primary cursor-pointer hover:underline">
+                          {topic}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {Math.floor(Math.random() * 50) + 10} posts today
+                        </p>
                       </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-xs h-6 px-2">
-                      Follow
-                    </Button>
-                  </div>
-                  
-                  <CardDescription className="text-sm">
-                    {post.description}
-                  </CardDescription>
-                  
-                  {post.type === 'event' && (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>{post.location}</span>
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm">
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{post.attendees} going</span>
-                        </div>
-                        {post.connectionsGoing && post.connectionsGoing.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <UserCheck className="h-4 w-4 text-primary" />
-                            <span className="text-primary font-medium">
-                              {post.connectionsGoing.join(", ")} going
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border/50">
-                    <div className="flex items-center space-x-4">
-                      <button className="flex items-center space-x-1 hover:text-primary transition-colors">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{post.comments}</span>
-                      </button>
-                      <button className="flex items-center space-x-1 hover:text-primary transition-colors">
-                        <Share2 className="h-4 w-4" />
-                        <span>Reshare</span>
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Featured Members */}
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span>Featured Members</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {featuredMembers.map((member, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback className="bg-primary/10">
-                          {member.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">{member.role}</p>
-                        <p className="text-xs text-muted-foreground">{member.followers} followers</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Follow
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Categories */}
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  <span>Popular Topics</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {['Meditation', 'Healing', 'Astrology', 'Crystals', 'Yoga', 'Chakras', 'Mindfulness', 'Sacred Geometry'].map((topic) => (
-                    <Badge key={topic} variant="secondary" className="bg-celestial/20 text-celestial-foreground cursor-pointer hover:bg-celestial/30 transition-colors">
-                      {topic}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Community Stats */}
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <span>Community</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm">Active Members</span>
-                  <span className="font-medium">2,847</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Posts This Week</span>
-                  <span className="font-medium">156</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Events Created</span>
-                  <span className="font-medium">43</span>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
-      </div>
-    </div>
   );
 };
 
