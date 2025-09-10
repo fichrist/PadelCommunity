@@ -88,6 +88,10 @@ const Community = () => {
     { name: "Luna Sage", role: "Meditation Teacher", followers: 1200, avatar: elenaProfile },
     { name: "River Flow", role: "Energy Healer", followers: 890, avatar: davidProfile },
     { name: "Star Dreamer", role: "Astrologer", followers: 756, avatar: ariaProfile },
+    { name: "Ocean Mystic", role: "Reiki Master", followers: 534, avatar: phoenixProfile },
+    { name: "Forest Walker", role: "Shaman", followers: 423, avatar: elenaProfile },
+    { name: "Crystal Dawn", role: "Crystal Therapist", followers: 398, avatar: davidProfile },
+    { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile },
   ];
 
   return (
@@ -107,7 +111,7 @@ const Community = () => {
                   <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
                     <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
                   </div>
-                  <span className="text-xl font-bold text-primary">Spirit</span>
+                  <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
                 </div>
                 
                 {/* Search Bar */}
@@ -167,17 +171,63 @@ const Community = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Page Title */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Community</h1>
+          {/* Page Title and Filters Row */}
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
+            
+            {/* Compact Filters */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={filter === "all" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setFilter("all")}
+                className="px-3 py-1 rounded-full h-7 text-xs"
+              >
+                All
+              </Button>
+              <Button
+                variant={filter === "event" ? "default" : "ghost"}
+                size="sm"  
+                onClick={() => setFilter("event")}
+                className="px-3 py-1 rounded-full h-7 text-xs"
+              >
+                Events
+              </Button>
+              <Button
+                variant={filter === "share" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setFilter("share")}
+                className="px-3 py-1 rounded-full h-7 text-xs"
+              >
+                Shares
+              </Button>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Chat Sidebar */}
+            {/* Left Sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-4">
-                {/* Souls to Follow - Moved above trending */}
+                {/* Talk Sidebar */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                      <span>Talk</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {/* Placeholder talk content */}
+                      <div className="text-sm text-muted-foreground">
+                        Connect with spiritual souls
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Souls to Follow */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
@@ -206,8 +256,6 @@ const Community = () => {
                     ))}
                   </CardContent>
                 </Card>
-                
-                <ChatSidebar />
               </div>
             </div>
 
@@ -392,24 +440,6 @@ const Community = () => {
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               <div className="sticky top-24 space-y-4">
-                {/* Talk Sidebar */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <MessageCircle className="h-4 w-4 text-primary" />
-                      <span>Talk</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {/* Placeholder talk content */}
-                      <div className="text-sm text-muted-foreground">
-                        Connect with spiritual souls
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
                 {/* Trending Topics */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
