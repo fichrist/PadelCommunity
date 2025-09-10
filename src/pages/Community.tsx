@@ -221,42 +221,55 @@ const Community = () => {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
-                      {/* Placeholder talk content */}
-                      <div className="text-sm text-muted-foreground">
-                        Connect with spiritual souls
+                      {/* Individual Talks */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Conversations</h4>
+                        {[
+                          { name: "Meditation Circle", participants: 12, topic: "Morning mindfulness practice", isActive: true },
+                          { name: "Crystal Healing", participants: 8, topic: "Choosing your first crystal", isActive: true },
+                          { name: "Tarot Reading", participants: 15, topic: "Daily card pulls and insights", isActive: false },
+                          { name: "Sacred Geometry", participants: 6, topic: "Patterns in nature discussion", isActive: true },
+                        ].map((talk, index) => (
+                          <button 
+                            key={index}
+                            className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                          >
+                            <div className="flex items-center space-x-2 mb-1">
+                              <div className={`h-2 w-2 rounded-full ${talk.isActive ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                              <span className="text-sm font-medium group-hover:text-primary">{talk.name}</span>
+                              <span className="text-xs text-muted-foreground">({talk.participants})</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-1 ml-4">{talk.topic}</p>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Group Talks */}
+                      <div className="space-y-2 pt-3 border-t border-border">
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Group Discussions</h4>
+                        {[
+                          { name: "Spiritual Awakening Support", members: 234, topic: "Share your awakening journey", hasNewMessages: true },
+                          { name: "Energy Healing Circle", members: 187, topic: "Weekly healing exchange", hasNewMessages: false },
+                          { name: "Astrology & Moon Cycles", members: 156, topic: "March equinox energies", hasNewMessages: true },
+                          { name: "Plant Medicine Integration", members: 98, topic: "Integration experiences", hasNewMessages: false },
+                        ].map((group, index) => (
+                          <button 
+                            key={index}
+                            className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors group relative"
+                          >
+                            <div className="flex items-center space-x-2 mb-1">
+                              <Users className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm font-medium group-hover:text-primary">{group.name}</span>
+                              {group.hasNewMessages && (
+                                <div className="h-2 w-2 bg-primary rounded-full" />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-1 ml-5">{group.topic}</p>
+                            <p className="text-xs text-muted-foreground ml-5">{group.members} members</p>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Souls to Follow */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span>Souls to Follow</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
-                    {featuredMembers.map((member, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback className="bg-primary/10 text-xs">
-                              {member.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm leading-tight">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.role}</p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                          Follow
-                        </Button>
-                      </div>
-                    ))}
                   </CardContent>
                 </Card>
               </div>
@@ -415,6 +428,37 @@ const Community = () => {
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               <div className="space-y-4">
+                {/* Souls to Follow */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span>Souls to Follow</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {featuredMembers.map((member, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback className="bg-primary/10 text-xs">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm leading-tight">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                          Follow
+                        </Button>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
                 {/* Trending Topics */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
