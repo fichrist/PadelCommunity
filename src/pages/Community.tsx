@@ -303,12 +303,9 @@ const Community = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <div className="text-white">
-                            <div className="text-sm font-bold">Mar 15</div>
-                            <div className="flex items-center space-x-1 text-xs">
-                              <MapPin className="h-3 w-3" />
-                              <span>{post.location}</span>
-                            </div>
+                          <div className="text-white text-center">
+                            <div className="text-sm font-bold">Mar</div>
+                            <div className="text-lg font-bold">15</div>
                           </div>
                         </div>
                         <div className="absolute bottom-3 left-3 right-3">
