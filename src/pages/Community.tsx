@@ -315,6 +315,10 @@ const Community = () => {
                           <h2 className="text-lg font-bold text-white mb-1 leading-tight">
                             {post.title}
                           </h2>
+                          <div className="flex items-center space-x-2 text-white/90 text-xs">
+                            <MapPin className="h-3 w-3" />
+                            <span>{post.location}</span>
+                          </div>
                         </div>
                       </div>
                     )}
