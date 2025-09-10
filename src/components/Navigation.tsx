@@ -36,7 +36,7 @@ const Navigation = () => {
                 className="transition-all duration-200"
               >
                 <Link to={path} className="flex items-center space-x-2">
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-6 w-6" />
                   <span className="hidden sm:inline">{label}</span>
                 </Link>
               </Button>
