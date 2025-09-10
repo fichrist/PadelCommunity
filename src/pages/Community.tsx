@@ -171,40 +171,9 @@ const Community = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Page Title and Centered Filters Row */}
-          <div className="mb-6 flex items-center justify-between">
+          {/* Page Title */}
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
-            
-            {/* Centered Filters */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-              <Button
-                variant={filter === "all" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("all")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                All
-              </Button>
-              <Button
-                variant={filter === "event" ? "default" : "ghost"}
-                size="sm"  
-                onClick={() => setFilter("event")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Events
-              </Button>
-              <Button
-                variant={filter === "share" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("share")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Shares
-              </Button>
-            </div>
-            
-            {/* Empty div for balance */}
-            <div></div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
