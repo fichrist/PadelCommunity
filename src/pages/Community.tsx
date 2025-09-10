@@ -264,34 +264,6 @@ const Community = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Compact Filters - moved to bottom */}
-              <div className="flex justify-center items-center space-x-2 mb-2">
-                <Button
-                  variant={filter === "all" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("all")}
-                  className="px-3 py-1 rounded-full h-6 text-xs"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={filter === "share" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("share")}
-                  className="px-3 py-1 rounded-full h-6 text-xs"
-                >
-                  Shares
-                </Button>
-                <Button
-                  variant={filter === "event" ? "default" : "ghost"}
-                  size="sm"  
-                  onClick={() => setFilter("event")}
-                  className="px-3 py-1 rounded-full h-6 text-xs"
-                >
-                  Events
-                </Button>
-              </div>
-              
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
                   <CardContent className="p-0">
