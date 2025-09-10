@@ -8,7 +8,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 
 // Import images
-import sereneBackground from "@/assets/serene-background.jpg";
+import natureBackground from "@/assets/nature-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
 import davidProfile from "@/assets/david-profile.jpg";
@@ -93,7 +93,7 @@ const Community = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${sereneBackground})` }}
+      style={{ backgroundImage: `url(${natureBackground})` }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
@@ -122,26 +122,29 @@ const Community = () => {
               </div>
               
               {/* Center: Navigation Icons Only */}
-              <div className="hidden md:flex items-center space-x-8">
-                <div className="relative">
-                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted relative border-b-2 border-primary">
-                    <Users className="h-6 w-6 text-primary" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                    <Calendar className="h-6 w-6 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                    <User className="h-6 w-6 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                    <MessageCircle className="h-6 w-6 text-muted-foreground hover:text-primary" />
-                  </Button>
+              <div className="flex items-center justify-center flex-1">
+                <div className="flex items-center space-x-8">
+                  <div className="relative">
+                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted relative">
+                      <Users className="h-7 w-7 text-primary" />
+                      <div className="absolute -bottom-3 left-0 right-0 h-1 bg-primary rounded-full"></div>
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                      <Calendar className="h-7 w-7 text-muted-foreground hover:text-primary" />
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                      <User className="h-7 w-7 text-muted-foreground hover:text-primary" />
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                      <MessageCircle className="h-7 w-7 text-muted-foreground hover:text-primary" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               
@@ -164,14 +167,17 @@ const Community = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Page Title */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground">Community</h1>
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Chat Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-6 space-y-4">
-                <ChatSidebar />
-                
-                {/* Souls to Follow - Moved under chat */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+              <div className="sticky top-24 space-y-4">
+                {/* Souls to Follow - Moved above trending */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
@@ -200,41 +206,38 @@ const Community = () => {
                     ))}
                   </CardContent>
                 </Card>
+                
+                <ChatSidebar />
               </div>
             </div>
 
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Compact Filters */}
-              <div className="flex justify-center items-center space-x-4 mb-4">
+              {/* Compact Filters - moved to bottom */}
+              <div className="flex justify-center items-center space-x-2 mb-2">
                 <Button
                   variant={filter === "all" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setFilter("all")}
-                  className="px-4 py-1 rounded-full h-7 text-xs"
+                  className="px-3 py-1 rounded-full h-6 text-xs"
                 >
                   All
                 </Button>
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant={filter === "event" ? "default" : "ghost"}
-                    size="sm"  
-                    onClick={() => setFilter("event")}
-                    className="px-4 py-1 rounded-full h-7 text-xs"
-                  >
-                    Events
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                    <Filter className="h-3 w-3" />
-                  </Button>
-                </div>
                 <Button
                   variant={filter === "share" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setFilter("share")}
-                  className="px-4 py-1 rounded-full h-7 text-xs"
+                  className="px-3 py-1 rounded-full h-6 text-xs"
                 >
                   Shares
+                </Button>
+                <Button
+                  variant={filter === "event" ? "default" : "ghost"}
+                  size="sm"  
+                  onClick={() => setFilter("event")}
+                  className="px-3 py-1 rounded-full h-6 text-xs"
+                >
+                  Events
                 </Button>
               </div>
               
@@ -314,7 +317,7 @@ const Community = () => {
                       {/* Tags - Without hashtags and different color */}
                       <div className="flex flex-wrap gap-1 mb-3">
                         {post.tags.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer border border-primary/20">
+                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
                             {tag}
                           </Badge>
                         ))}
@@ -388,7 +391,25 @@ const Community = () => {
 
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="sticky top-6 space-y-4">
+              <div className="sticky top-24 space-y-4">
+                {/* Talk Sidebar */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                      <span>Talk</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {/* Placeholder talk content */}
+                      <div className="text-sm text-muted-foreground">
+                        Connect with spiritual souls
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
                 {/* Trending Topics */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
