@@ -358,22 +358,35 @@ const Community = () => {
 
                     {/* Content */}
                     <div className="px-3">
+                      {/* Tags first for events */}
+                      {post.type === 'event' && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {post.tags.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
                       <p className="text-sm text-foreground/90 leading-relaxed mb-3">
                         {post.thought}
                       </p>
 
-                      {/* Tags - Without hashtags and different color */}
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {post.tags.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      {/* Tags for shares - Without hashtags and different color */}
+                      {post.type === 'share' && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {post.tags.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Event Details */}
                       {post.type === 'event' && (
-                        <div className="mb-3 p-3 bg-muted/30 rounded-lg">
+                        <div className="mb-3">
                           <div className="flex items-center space-x-4 text-sm">
                             <div className="flex items-center space-x-1">
                               <Users className="h-4 w-4 text-muted-foreground" />
