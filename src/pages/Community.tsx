@@ -2,13 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Bookmark, Plus, User, Heart, Repeat2 } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home } from "lucide-react";
 import { useState } from "react";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 
 // Import images
-import peacefulBackground from "@/assets/peaceful-background.jpg";
+import sereneBackground from "@/assets/serene-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
 import davidProfile from "@/assets/david-profile.jpg";
@@ -93,25 +93,49 @@ const Community = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${peacefulBackground})` }}
+      style={{ backgroundImage: `url(${sereneBackground})` }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
         {/* Header */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center space-x-3">
                 <img src={spiritualLogo} alt="Spiritual Calendar" className="h-10 w-10" />
                 <div>
                   <h1 className="text-xl font-semibold text-foreground">
-                    Your Spiritual Community
+                    Spiritual Community
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Connect with like-minded souls on your spiritual journey
+                    Connect • Share • Grow Together
                   </p>
                 </div>
+              </div>
+              
+              {/* Navigation - Facebook style */}
+              <div className="hidden md:flex items-center space-x-6">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
+                  <Home className="h-5 w-5" />
+                  <span>Home</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
+                  <MessageCircle className="h-5 w-5" />
+                  <span>Talk</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
+                  <Calendar className="h-5 w-5" />
+                  <span>Events</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-primary font-medium">
+                  <Users className="h-5 w-5" />
+                  <span>Community</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
+                  <User className="h-5 w-5" />
+                  <span>People</span>
+                </Button>
               </div>
               
               {/* Top Right Actions */}
@@ -129,34 +153,6 @@ const Community = () => {
                 </Button>
               </div>
             </div>
-            
-            {/* Filters */}
-            <div className="flex justify-center mt-4 space-x-1">
-              <Button
-                variant={filter === "all" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("all")}
-                className="px-4 py-2 rounded-full"
-              >
-                All
-              </Button>
-              <Button
-                variant={filter === "event" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("event")}
-                className="px-4 py-2 rounded-full"
-              >
-                Events
-              </Button>
-              <Button
-                variant={filter === "share" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("share")}
-                className="px-4 py-2 rounded-full"
-              >
-                Shares
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -164,17 +160,80 @@ const Community = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Chat Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-6">
+              <div className="sticky top-6 space-y-4">
                 <ChatSidebar />
+                
+                {/* Souls to Follow - Moved under chat */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span>Souls to Follow</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {featuredMembers.map((member, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback className="bg-primary/10 text-xs">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm leading-tight">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                          Follow
+                        </Button>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               </div>
             </div>
 
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
+              {/* Filters - Moved to bottom and flatter */}
+              <div className="flex justify-center items-center space-x-6 mb-6">
+                <Button
+                  variant={filter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                  className="px-6 py-1 rounded-full h-8 text-sm"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filter === "event" ? "default" : "ghost"}
+                  size="sm"  
+                  onClick={() => setFilter("event")}
+                  className="px-6 py-1 rounded-full h-8 text-sm flex items-center space-x-1"
+                >
+                  <Calendar className="h-3 w-3" />
+                  <span>Events</span>
+                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1">
+                    <Filter className="h-3 w-3" />
+                  </Button>
+                </Button>
+                <Button
+                  variant={filter === "share" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setFilter("share")}
+                  className="px-6 py-1 rounded-full h-8 text-sm"
+                >
+                  Shares
+                </Button>
+              </div>
+              
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
                   <CardContent className="p-0">
-                    {/* Event Image Header for Events */}
+                    {/* Event Image Header for Events with date overlay */}
                     {post.type === 'event' && post.image && (
                       <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
                         <img 
@@ -183,6 +242,12 @@ const Community = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
+                          <div className="text-white text-center">
+                            <div className="text-lg font-bold">Mar</div>
+                            <div className="text-xl font-bold">15</div>
+                          </div>
+                        </div>
                         <div className="absolute bottom-4 left-4 right-4">
                           <h2 className="text-xl font-bold text-white mb-2 leading-tight">
                             {post.title}
@@ -208,7 +273,7 @@ const Community = () => {
                     <div className="px-4 py-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Avatar className="h-8 w-8">
+                          <Avatar className="h-6 w-6">
                             <AvatarImage src={post.author.avatar} />
                             <AvatarFallback className="bg-primary/10 text-xs">
                               {post.author.name.split(' ').map(n => n[0]).join('')}
@@ -216,7 +281,7 @@ const Community = () => {
                           </Avatar>
                           <div>
                             <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium text-foreground/80">
+                              <span className="text-xs font-medium text-muted-foreground">
                                 {post.author.name}
                               </span>
                               <span className="text-xs text-muted-foreground">•</span>
@@ -229,9 +294,6 @@ const Community = () => {
                             </p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Bookmark className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
 
@@ -241,16 +303,16 @@ const Community = () => {
                         {post.thought}
                       </p>
 
-                      {/* Tags */}
+                      {/* Tags - Without hashtags and different color */}
                       <div className="flex flex-wrap gap-1 mb-3">
                         {post.tags.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-muted hover:bg-muted/80 cursor-pointer">
-                            #{tag.toLowerCase().replace(/\s+/g, '')}
+                          <Badge key={tagIndex} variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer border border-primary/20">
+                            {tag}
                           </Badge>
                         ))}
                       </div>
 
-                      {/* Event Details (without image since it's in header) */}
+                      {/* Event Details */}
                       {post.type === 'event' && (
                         <div className="mb-3 p-3 bg-muted/30 rounded-lg">
                           <p className="text-sm text-foreground/80 mb-2">
@@ -294,24 +356,20 @@ const Community = () => {
                       )}
                     </div>
 
-                    {/* Action Bar - Evenly Spread */}
+                    {/* Action Bar - Updated labels */}
                     <div className="px-4 py-3 border-t border-border">
                       <div className="flex items-center justify-between">
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                          <Heart className="h-4 w-4" />
-                          <span>{post.likes}</span>
-                        </button>
-                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <MessageCircle className="h-4 w-4" />
-                          <span>{post.comments}</span>
+                          <span>{post.comments} Thoughts</span>
                         </button>
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <Repeat2 className="h-4 w-4" />
-                          <span>{post.shares}</span>
+                          <span>{post.shares} Reshare</span>
                         </button>
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                          <Bookmark className="h-4 w-4" />
-                          <span>Save</span>
+                          <Share2 className="h-4 w-4" />
+                          <span>Share</span>
                         </button>
                       </div>
                     </div>
@@ -323,59 +381,28 @@ const Community = () => {
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               <div className="sticky top-6 space-y-4">
-                {/* Suggested Connections */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span>People you may know</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-0">
-                  {featuredMembers.map((member, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.avatar} />
-                          <AvatarFallback className="bg-primary/10 text-xs">
-                            {member.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm leading-tight">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.role}</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                        Follow
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
                 {/* Trending Topics */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    <span>Trending</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    {['#meditation', '#healing', '#crystals', '#yoga', '#chakras'].map((topic, index) => (
-                      <div key={topic} className="py-1">
-                        <p className="text-sm font-medium text-primary cursor-pointer hover:underline">
-                          {topic}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {Math.floor(Math.random() * 50) + 10} posts today
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <span>Trending</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      {['meditation', 'healing', 'crystals', 'yoga', 'chakras'].map((topic, index) => (
+                        <div key={topic} className="py-1">
+                          <p className="text-sm font-medium text-primary cursor-pointer hover:underline">
+                            {topic}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {Math.floor(Math.random() * 50) + 10} posts today
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
                 </Card>
               </div>
             </div>
