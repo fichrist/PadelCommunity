@@ -31,12 +31,22 @@ const EventCard = ({
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden">
       {image && (
-        <div className="h-48 bg-gradient-to-br from-sage/20 to-celestial/20 overflow-hidden">
+        <div className="relative h-48 bg-gradient-to-br from-sage/20 to-celestial/20 overflow-hidden">
           <img 
             src={image} 
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
+          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg p-2 space-y-1">
+            <div className="flex items-center space-x-1 text-white text-xs">
+              <Calendar className="h-3 w-3" />
+              <span>{date}</span>
+            </div>
+            <div className="flex items-center space-x-1 text-white text-xs">
+              <MapPin className="h-3 w-3" />
+              <span>{location}</span>
+            </div>
+          </div>
         </div>
       )}
       

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Calendar, MessageCircle, User, Home, BookOpen } from "lucide-react";
+import { Sparkles, Calendar, MessageCircle, User, Home, BookOpen } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
@@ -19,7 +19,7 @@ const Navigation = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-primary" />
+              <Sparkles className="h-8 w-8 text-primary" />
               <span className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Spirit
               </span>
@@ -36,7 +36,7 @@ const Navigation = () => {
                 className="transition-all duration-200"
               >
                 <Link to={path} className="flex items-center space-x-2">
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-8 w-8" />
                   <span className="hidden sm:inline">{label}</span>
                 </Link>
               </Button>

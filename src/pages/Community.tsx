@@ -8,7 +8,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 
 // Import images
-import spiritualBackground from "@/assets/spiritual-background.jpg";
+import cloudyBackground from "@/assets/cloudy-spiritual-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
 import davidProfile from "@/assets/david-profile.jpg";
@@ -97,7 +97,7 @@ const Community = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${spiritualBackground})` }}
+      style={{ backgroundImage: `url(${cloudyBackground})` }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
