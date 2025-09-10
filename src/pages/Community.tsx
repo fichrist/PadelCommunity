@@ -36,7 +36,8 @@ const Community = () => {
       comments: 8,
       likes: 42,
       shares: 5,
-      image: soundHealingEvent
+      image: soundHealingEvent,
+      dateRange: { start: "Mar 15", end: null }
     },
     {
       type: "share",
@@ -65,7 +66,8 @@ const Community = () => {
       comments: 15,
       likes: 23,
       shares: 3,
-      image: crystalWorkshopEvent
+      image: crystalWorkshopEvent,
+      dateRange: { start: "Apr 2", end: "Apr 4" }
     },
     {
       type: "share",
@@ -302,10 +304,19 @@ const Community = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
+                        <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm rounded-lg w-12 h-12 flex items-center justify-center">
                           <div className="text-white text-center">
-                            <div className="text-sm font-bold">Mar</div>
-                            <div className="text-lg font-bold">15</div>
+                            {post.dateRange?.end ? (
+                              <div className="text-xs font-bold leading-tight">
+                                <div>{post.dateRange.start.split(' ')[0]}</div>
+                                <div>{post.dateRange.start.split(' ')[1]}-{post.dateRange.end.split(' ')[1]}</div>
+                              </div>
+                            ) : (
+                              <div className="text-xs font-bold leading-tight">
+                                <div>{post.dateRange?.start.split(' ')[0]}</div>
+                                <div>{post.dateRange?.start.split(' ')[1]}</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="absolute bottom-3 left-3 right-3">
