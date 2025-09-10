@@ -8,7 +8,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 
 // Import images
-import natureBackground from "@/assets/nature-background.jpg";
+import spiritualBackground from "@/assets/spiritual-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
 import davidProfile from "@/assets/david-profile.jpg";
@@ -97,7 +97,7 @@ const Community = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${natureBackground})` }}
+      style={{ backgroundImage: `url(${spiritualBackground})` }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
@@ -105,15 +105,41 @@ const Community = () => {
         <div className="bg-card/80 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name + Search */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                    <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                  </div>
-                  <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
+              {/* Left: Logo + App Name */}
+              <div className="flex items-center space-x-2">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
                 </div>
-                
+                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
+              </div>
+              
+              {/* Center: Navigation Icons */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
+                <div className="relative">
+                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110">
+                    <Users className="h-9 w-9 text-primary" />
+                    <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Right: Search Bar + Create Button + Profile */}
+              <div className="flex items-center space-x-3">
                 {/* Search Bar */}
                 <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
@@ -123,37 +149,6 @@ const Community = () => {
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
-              </div>
-              
-              {/* Center: Navigation Icons Only */}
-              <div className="flex items-center justify-center flex-1">
-                <div className="flex items-center space-x-8">
-                  <div className="relative">
-                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted relative">
-                      <Users className="h-7 w-7 text-primary" />
-                      <div className="absolute -bottom-3 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                    </Button>
-                  </div>
-                  <div className="relative">
-                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                      <Calendar className="h-7 w-7 text-muted-foreground hover:text-primary" />
-                    </Button>
-                  </div>
-                  <div className="relative">
-                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                      <User className="h-7 w-7 text-muted-foreground hover:text-primary" />
-                    </Button>
-                  </div>
-                  <div className="relative">
-                    <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
-                      <MessageCircle className="h-7 w-7 text-muted-foreground hover:text-primary" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Right: Create Button + Profile */}
-              <div className="flex items-center space-x-3">
                 <Button
                   onClick={() => setCreateModalOpen(true)}
                   size="sm"
