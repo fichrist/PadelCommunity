@@ -85,13 +85,13 @@ const Community = () => {
   const filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
 
   const featuredMembers = [
-    { name: "Luna Sage", role: "Meditation Teacher", followers: 1200, avatar: elenaProfile },
-    { name: "River Flow", role: "Energy Healer", followers: 890, avatar: davidProfile },
-    { name: "Star Dreamer", role: "Astrologer", followers: 756, avatar: ariaProfile },
-    { name: "Ocean Mystic", role: "Reiki Master", followers: 534, avatar: phoenixProfile },
-    { name: "Forest Walker", role: "Shaman", followers: 423, avatar: elenaProfile },
-    { name: "Crystal Dawn", role: "Crystal Therapist", followers: 398, avatar: davidProfile },
-    { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile },
+    { name: "Luna Sage", role: "Meditation Teacher", followers: 1200, avatar: elenaProfile, location: "Sedona, AZ" },
+    { name: "River Flow", role: "Energy Healer", followers: 890, avatar: davidProfile, location: "Asheville, NC" },
+    { name: "Star Dreamer", role: "Astrologer", followers: 756, avatar: ariaProfile, location: "Boulder, CO" },
+    { name: "Ocean Mystic", role: "Reiki Master", followers: 534, avatar: phoenixProfile, location: "Big Sur, CA" },
+    { name: "Forest Walker", role: "Shaman", followers: 423, avatar: elenaProfile, location: "Tulum, Mexico" },
+    { name: "Crystal Dawn", role: "Crystal Therapist", followers: 398, avatar: davidProfile, location: "Mount Shasta, CA" },
+    { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile, location: "Byron Bay, AU" },
   ];
 
   return (
@@ -220,55 +220,73 @@ const Community = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {/* Individual Talks */}
-                      <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Conversations</h4>
-                        {[
-                          { name: "Meditation Circle", participants: 12, topic: "Morning mindfulness practice", isActive: true },
-                          { name: "Crystal Healing", participants: 8, topic: "Choosing your first crystal", isActive: true },
-                          { name: "Tarot Reading", participants: 15, topic: "Daily card pulls and insights", isActive: false },
-                          { name: "Sacred Geometry", participants: 6, topic: "Patterns in nature discussion", isActive: true },
-                        ].map((talk, index) => (
-                          <button 
-                            key={index}
-                            className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors group"
-                          >
-                            <div className="flex items-center space-x-2 mb-1">
-                              <div className={`h-2 w-2 rounded-full ${talk.isActive ? 'bg-green-500' : 'bg-muted-foreground'}`} />
-                              <span className="text-sm font-medium group-hover:text-primary">{talk.name}</span>
-                              <span className="text-xs text-muted-foreground">({talk.participants})</span>
+                    <div className="space-y-2">
+                      {[
+                        {
+                          name: "Elena Moonchild",
+                          lastMessage: "Looking forward to the sound healing session tonight! 🌙",
+                          timestamp: "2 min ago",
+                          avatar: elenaProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Sacred Geometry Group",
+                          lastMessage: "David: Just shared some sacred geometry insights",
+                          timestamp: "5 min ago",
+                          avatar: davidProfile,
+                          isGroup: true
+                        },
+                        {
+                          name: "Aria Starseed",
+                          lastMessage: "Crystal workshop was amazing! Thank you all ✨",
+                          timestamp: "10 min ago",
+                          avatar: ariaProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Meditation Circle",
+                          lastMessage: "Phoenix: Movement meditation session starts now",
+                          timestamp: "15 min ago",
+                          avatar: phoenixProfile,
+                          isGroup: true
+                        },
+                        {
+                          name: "Luna Sage",
+                          lastMessage: "Sending healing light to everyone today 💫",
+                          timestamp: "30 min ago",
+                          avatar: elenaProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Astrology & Moon Cycles",
+                          lastMessage: "River: Full moon energy is intense tonight",
+                          timestamp: "45 min ago",
+                          avatar: davidProfile,
+                          isGroup: true
+                        }
+                      ].map((conversation, index) => (
+                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={conversation.avatar} />
+                            <AvatarFallback className="bg-primary/10 text-xs">
+                              {conversation.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-foreground truncate">
+                                {conversation.name} {conversation.isGroup && '👥'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {conversation.timestamp}
+                              </span>
                             </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1 ml-4">{talk.topic}</p>
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {/* Group Talks */}
-                      <div className="space-y-2 pt-3 border-t border-border">
-                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Group Discussions</h4>
-                        {[
-                          { name: "Spiritual Awakening Support", members: 234, topic: "Share your awakening journey", hasNewMessages: true },
-                          { name: "Energy Healing Circle", members: 187, topic: "Weekly healing exchange", hasNewMessages: false },
-                          { name: "Astrology & Moon Cycles", members: 156, topic: "March equinox energies", hasNewMessages: true },
-                          { name: "Plant Medicine Integration", members: 98, topic: "Integration experiences", hasNewMessages: false },
-                        ].map((group, index) => (
-                          <button 
-                            key={index}
-                            className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors group relative"
-                          >
-                            <div className="flex items-center space-x-2 mb-1">
-                              <Users className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm font-medium group-hover:text-primary">{group.name}</span>
-                              {group.hasNewMessages && (
-                                <div className="h-2 w-2 bg-primary rounded-full" />
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1 ml-5">{group.topic}</p>
-                            <p className="text-xs text-muted-foreground ml-5">{group.members} members</p>
-                          </button>
-                        ))}
-                      </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {conversation.lastMessage}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -428,12 +446,12 @@ const Community = () => {
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               <div className="space-y-4">
-                {/* Souls to Follow */}
+                {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
-                      <span>Souls to Follow</span>
+                      <span>Healers to Follow</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-0">
@@ -449,6 +467,10 @@ const Community = () => {
                           <div>
                             <p className="font-medium text-sm leading-tight">{member.name}</p>
                             <p className="text-xs text-muted-foreground">{member.role}</p>
+                            <p className="text-xs text-muted-foreground flex items-center">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {member.location}
+                            </p>
                           </div>
                         </div>
                         <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
