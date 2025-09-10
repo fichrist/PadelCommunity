@@ -171,43 +171,15 @@ const Community = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Page Title and Filters Row */}
-          <div className="mb-6 flex items-center justify-between">
+          {/* Page Title */}
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
-            
-            {/* Compact Filters */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={filter === "all" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("all")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                All
-              </Button>
-              <Button
-                variant={filter === "event" ? "default" : "ghost"}
-                size="sm"  
-                onClick={() => setFilter("event")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Events
-              </Button>
-              <Button
-                variant={filter === "share" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("share")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Shares
-              </Button>
-            </div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-4">
+              <div className="space-y-4">
                 {/* Talk Sidebar */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
                   <CardHeader className="pb-3">
@@ -439,7 +411,7 @@ const Community = () => {
 
             {/* Right Sidebar */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="sticky top-24 space-y-4">
+              <div className="space-y-4">
                 {/* Trending Topics */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
