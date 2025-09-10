@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search } from "lucide-react";
 import { useState } from "react";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
@@ -97,60 +97,67 @@ const Community = () => {
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
-        {/* Header */}
+        {/* Facebook-style Header */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
-              {/* Logo */}
-              <div className="flex items-center space-x-3">
-                <img src={spiritualLogo} alt="Spiritual Calendar" className="h-10 w-10" />
-                <div>
-                  <h1 className="text-xl font-semibold text-foreground">
-                    Spiritual Community
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Connect • Share • Grow Together
-                  </p>
+              {/* Left: Logo + App Name + Search */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                    <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
+                  </div>
+                  <span className="text-xl font-bold text-primary">Spirit</span>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                  <input 
+                    type="text" 
+                    placeholder="Search..." 
+                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
+                  />
                 </div>
               </div>
               
-              {/* Navigation - Facebook style */}
-              <div className="hidden md:flex items-center space-x-6">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
-                  <Home className="h-5 w-5" />
-                  <span>Home</span>
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
-                  <MessageCircle className="h-5 w-5" />
-                  <span>Talk</span>
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
-                  <Calendar className="h-5 w-5" />
-                  <span>Events</span>
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-primary font-medium">
-                  <Users className="h-5 w-5" />
-                  <span>Community</span>
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 text-muted-foreground hover:text-primary">
-                  <User className="h-5 w-5" />
-                  <span>People</span>
-                </Button>
+              {/* Center: Navigation Icons Only */}
+              <div className="hidden md:flex items-center space-x-8">
+                <div className="relative">
+                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted relative border-b-2 border-primary">
+                    <Users className="h-6 w-6 text-primary" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                    <Calendar className="h-6 w-6 text-muted-foreground hover:text-primary" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                    <User className="h-6 w-6 text-muted-foreground hover:text-primary" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button variant="ghost" size="sm" className="p-3 rounded-lg hover:bg-muted">
+                    <MessageCircle className="h-6 w-6 text-muted-foreground hover:text-primary" />
+                  </Button>
+                </div>
               </div>
               
-              {/* Top Right Actions */}
+              {/* Right: Create Button + Profile */}
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={() => setCreateModalOpen(true)}
-                  className="flex items-center space-x-2"
+                  size="sm"
+                  className="rounded-full h-10 w-10 p-0"
                 >
-                  <Plus className="h-4 w-4" />
-                  <span>Create</span>
+                  <Plus className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </Button>
+                <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                  <AvatarImage src={elenaProfile} />
+                  <AvatarFallback className="text-sm">ME</AvatarFallback>
+                </Avatar>
               </div>
             </div>
           </div>
@@ -198,33 +205,34 @@ const Community = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Filters - Moved to bottom and flatter */}
-              <div className="flex justify-center items-center space-x-6 mb-6">
+              {/* Compact Filters */}
+              <div className="flex justify-center items-center space-x-4 mb-4">
                 <Button
                   variant={filter === "all" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setFilter("all")}
-                  className="px-6 py-1 rounded-full h-8 text-sm"
+                  className="px-4 py-1 rounded-full h-7 text-xs"
                 >
                   All
                 </Button>
-                <Button
-                  variant={filter === "event" ? "default" : "ghost"}
-                  size="sm"  
-                  onClick={() => setFilter("event")}
-                  className="px-6 py-1 rounded-full h-8 text-sm flex items-center space-x-1"
-                >
-                  <Calendar className="h-3 w-3" />
-                  <span>Events</span>
-                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1">
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant={filter === "event" ? "default" : "ghost"}
+                    size="sm"  
+                    onClick={() => setFilter("event")}
+                    className="px-4 py-1 rounded-full h-7 text-xs"
+                  >
+                    Events
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
                     <Filter className="h-3 w-3" />
                   </Button>
-                </Button>
+                </div>
                 <Button
                   variant={filter === "share" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setFilter("share")}
-                  className="px-6 py-1 rounded-full h-8 text-sm"
+                  className="px-4 py-1 rounded-full h-7 text-xs"
                 >
                   Shares
                 </Button>
@@ -235,25 +243,25 @@ const Community = () => {
                   <CardContent className="p-0">
                     {/* Event Image Header for Events with date overlay */}
                     {post.type === 'event' && post.image && (
-                      <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+                      <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
                         <img 
                           src={post.image} 
                           alt={post.title}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
+                        <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
                           <div className="text-white text-center">
-                            <div className="text-lg font-bold">Mar</div>
-                            <div className="text-xl font-bold">15</div>
+                            <div className="text-sm font-bold">Mar</div>
+                            <div className="text-lg font-bold">15</div>
                           </div>
                         </div>
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <h2 className="text-xl font-bold text-white mb-2 leading-tight">
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <h2 className="text-lg font-bold text-white mb-1 leading-tight">
                             {post.title}
                           </h2>
-                          <div className="flex items-center space-x-2 text-white/90 text-sm">
-                            <MapPin className="h-4 w-4" />
+                          <div className="flex items-center space-x-2 text-white/90 text-xs">
+                            <MapPin className="h-3 w-3" />
                             <span>{post.location}</span>
                           </div>
                         </div>
@@ -262,15 +270,15 @@ const Community = () => {
 
                     {/* Share Title Header for Shares */}
                     {post.type === 'share' && (
-                      <div className="p-4 pb-2">
-                        <h2 className="text-xl font-bold text-foreground mb-2 leading-tight">
+                      <div className="p-3 pb-2">
+                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight">
                           {post.title}
                         </h2>
                       </div>
                     )}
 
                     {/* Author Info - Less Prominent */}
-                    <div className="px-4 py-2">
+                    <div className="px-3 py-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-6 w-6">
@@ -298,7 +306,7 @@ const Community = () => {
                     </div>
 
                     {/* Content */}
-                    <div className="px-4">
+                    <div className="px-3">
                       <p className="text-sm text-foreground/90 leading-relaxed mb-3">
                         {post.thought}
                       </p>
@@ -357,7 +365,7 @@ const Community = () => {
                     </div>
 
                     {/* Action Bar - Updated labels */}
-                    <div className="px-4 py-3 border-t border-border">
+                    <div className="px-3 py-2 border-t border-border">
                       <div className="flex items-center justify-between">
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <MessageCircle className="h-4 w-4" />
