@@ -322,8 +322,9 @@ const Community = () => {
                             </h2>
                             
                             <div className="space-y-1 text-sm">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-primary font-semibold">
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>
                                   {post.dateRange?.end ? 
                                     `${post.dateRange.start} - ${post.dateRange.end}` : 
                                     post.dateRange?.start
