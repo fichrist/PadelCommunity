@@ -322,9 +322,8 @@ const Community = () => {
                             </h2>
                             
                             <div className="space-y-1 text-sm">
-                              <div className="flex items-center space-x-2 text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                <span>
+                              <div className="mb-2">
+                                <span className="text-accent font-semibold">
                                   {post.dateRange?.end ? 
                                     `${post.dateRange.start} - ${post.dateRange.end}` : 
                                     post.dateRange?.start
@@ -332,14 +331,27 @@ const Community = () => {
                                 </span>
                               </div>
                               
-                              <div className="flex items-center space-x-2 text-muted-foreground">
-                                <Avatar className="h-4 w-4">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-6 w-6">
                                   <AvatarImage src={post.author.avatar} />
                                   <AvatarFallback className="bg-primary/10 text-xs">
                                     {post.author.name.split(' ').map(n => n[0]).join('')}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span>by {post.author.name}</span>
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {post.author.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">•</span>
+                                    <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                      Follow
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {post.author.role}
+                                  </p>
+                                </div>
                               </div>
                               
                               <div className="flex items-center space-x-2 text-muted-foreground">
