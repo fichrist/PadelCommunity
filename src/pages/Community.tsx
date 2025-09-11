@@ -295,7 +295,7 @@ const Community = () => {
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
                   <CardContent className="p-0">
-                    {/* Event Image Header for Events with date overlay */}
+                    {/* Event Image Header for Events */}
                     {post.type === 'event' && post.image && (
                       <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
                         <img 
@@ -304,28 +304,31 @@ const Community = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm rounded-lg w-12 h-12 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            {post.dateRange?.end ? (
-                              <div className="text-xs font-bold leading-tight">
-                                <div>{post.dateRange.start.split(' ')[0]}</div>
-                                <div>{post.dateRange.start.split(' ')[1]}-{post.dateRange.end.split(' ')[1]}</div>
-                              </div>
-                            ) : (
-                              <div className="text-xs font-bold leading-tight">
-                                <div>{post.dateRange?.start.split(' ')[0]}</div>
-                                <div>{post.dateRange?.start.split(' ')[1]}</div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
                         <div className="absolute bottom-3 left-3 right-3">
                           <h2 className="text-lg font-bold text-white mb-1 leading-tight">
                             {post.title}
                           </h2>
-                          <div className="flex items-center space-x-2 text-white/90 text-xs">
+                          <div className="flex items-center space-x-2 text-white/90 text-xs mb-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {post.dateRange?.end ? 
+                                `${post.dateRange.start} - ${post.dateRange.end}` : 
+                                post.dateRange?.start
+                              }
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-white/90 text-xs mb-2">
                             <MapPin className="h-3 w-3" />
                             <span>{post.location}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={post.author.avatar} />
+                              <AvatarFallback className="bg-white/20 text-white text-xs">
+                                {post.author.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-white/90 text-xs">by {post.author.name}</span>
                           </div>
                         </div>
                       </div>
@@ -340,44 +343,49 @@ const Community = () => {
                       </div>
                     )}
 
-                    {/* Author Info - Less Prominent */}
-                    <div className="px-3 py-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={post.author.avatar} />
-                            <AvatarFallback className="bg-primary/10 text-xs">
-                              {post.author.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {post.author.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
-                                Follow
-                              </Button>
+                    {/* Author Info for Shares only */}
+                    {post.type === 'share' && (
+                      <div className="px-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={post.author.avatar} />
+                              <AvatarFallback className="bg-primary/10 text-xs">
+                                {post.author.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {post.author.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                  Follow
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {post.author.role}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {post.author.role} • {post.timeAgo}
-                            </p>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Content */}
                     <div className="px-3">
                       {/* Tags first for events */}
                       {post.type === 'event' && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {post.tags.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
-                              {tag}
-                            </Badge>
-                          ))}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {post.tags.map((tag, tagIndex) => (
+                              <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{post.timeAgo}</span>
                         </div>
                       )}
 
@@ -387,12 +395,15 @@ const Community = () => {
 
                       {/* Tags for shares - Without hashtags and different color */}
                       {post.type === 'share' && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {post.tags.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
-                              {tag}
-                            </Badge>
-                          ))}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {post.tags.map((tag, tagIndex) => (
+                              <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{post.timeAgo}</span>
                         </div>
                       )}
 
