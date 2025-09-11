@@ -1,16 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles, Calendar, MessageCircle, User, Home, BookOpen } from "lucide-react";
+import { Sparkles, CalendarDays, MessageSquare, UserCircle, House, Users } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Community", icon: BookOpen },
-    { path: "/events", label: "Events", icon: Calendar },
-    { path: "/home", label: "Home", icon: Home },
-    { path: "/chat", label: "Chat", icon: MessageCircle },
-    { path: "/profile", label: "Profile", icon: User },
+    { path: "/", label: "Community", icon: Users },
+    { path: "/events", label: "Events", icon: CalendarDays },
+    { path: "/home", label: "Home", icon: House },
+    { path: "/chat", label: "Chat", icon: MessageSquare },
+    { path: "/profile", label: "Profile", icon: UserCircle },
   ];
 
   return (
