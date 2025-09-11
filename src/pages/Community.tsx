@@ -293,7 +293,14 @@ const Community = () => {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
               {filteredPosts.map((post, index) => (
-                <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
+                <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
+                  {/* Post Timing - Top Right Corner */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                      {post.timeAgo}
+                    </span>
+                  </div>
+                  
                   <CardContent className="p-0">
                     {/* Event Image Header for Events */}
                     {post.type === 'event' && post.image && (
@@ -388,15 +395,12 @@ const Community = () => {
                     <div className="px-3">
                       {/* Tags first for events */}
                       {post.type === 'event' && (
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex flex-wrap gap-1">
-                            {post.tags.map((tag, tagIndex) => (
-                              <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                          <span className="text-xs text-muted-foreground">{post.timeAgo}</span>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {post.tags.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                              {tag}
+                            </Badge>
+                          ))}
                         </div>
                       )}
 
@@ -406,15 +410,12 @@ const Community = () => {
 
                       {/* Tags for shares - Without hashtags and different color */}
                       {post.type === 'share' && (
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex flex-wrap gap-1">
-                            {post.tags.map((tag, tagIndex) => (
-                              <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                          <span className="text-xs text-muted-foreground">{post.timeAgo}</span>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {post.tags.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                              {tag}
+                            </Badge>
+                          ))}
                         </div>
                       )}
 
