@@ -297,40 +297,49 @@ const Community = () => {
                   <CardContent className="p-0">
                     {/* Event Image Header for Events */}
                     {post.type === 'event' && post.image && (
-                      <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
-                        <img 
-                          src={post.image} 
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <div className="flex items-center space-x-1 text-white text-xs">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              {post.dateRange?.end ? 
-                                `${post.dateRange.start} - ${post.dateRange.end}` : 
-                                post.dateRange?.start
-                              }
-                            </span>
+                      <div className="p-4">
+                        <div className="flex space-x-3">
+                          {/* Small Event Image - 3cm x 3cm (approximately 112px x 112px) */}
+                          <div className="w-28 h-28 flex-shrink-0">
+                            <img 
+                              src={post.image} 
+                              alt={post.title}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
                           </div>
-                        </div>
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <h2 className="text-lg font-bold text-white mb-1 leading-tight">
-                            {post.title}
-                          </h2>
-                          <div className="flex items-center space-x-2 text-white/90 text-xs mb-2">
-                            <MapPin className="h-3 w-3" />
-                            <span>{post.location}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src={post.author.avatar} />
-                              <AvatarFallback className="bg-white/20 text-white text-xs">
-                                {post.author.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-white/90 text-xs">by {post.author.name}</span>
+                          
+                          {/* Event Details */}
+                          <div className="flex-1 min-w-0">
+                            <h2 className="text-lg font-bold text-foreground mb-2 leading-tight">
+                              {post.title}
+                            </h2>
+                            
+                            <div className="space-y-1 text-sm">
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  {post.dateRange?.end ? 
+                                    `${post.dateRange.start} - ${post.dateRange.end}` : 
+                                    post.dateRange?.start
+                                  }
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Avatar className="h-4 w-4">
+                                  <AvatarImage src={post.author.avatar} />
+                                  <AvatarFallback className="bg-primary/10 text-xs">
+                                    {post.author.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>by {post.author.name}</span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <MapPin className="h-4 w-4" />
+                                <span>{post.location}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
