@@ -304,11 +304,8 @@ const Community = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <h2 className="text-lg font-bold text-white mb-1 leading-tight">
-                            {post.title}
-                          </h2>
-                          <div className="flex items-center space-x-2 text-white/90 text-xs mb-2">
+                        <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
+                          <div className="flex items-center space-x-1 text-white text-xs">
                             <Calendar className="h-3 w-3" />
                             <span>
                               {post.dateRange?.end ? 
@@ -317,6 +314,11 @@ const Community = () => {
                               }
                             </span>
                           </div>
+                        </div>
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <h2 className="text-lg font-bold text-white mb-1 leading-tight">
+                            {post.title}
+                          </h2>
                           <div className="flex items-center space-x-2 text-white/90 text-xs mb-2">
                             <MapPin className="h-3 w-3" />
                             <span>{post.location}</span>
