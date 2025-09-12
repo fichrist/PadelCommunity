@@ -113,7 +113,7 @@ const Chat = () => {
     <div className="min-h-screen bg-background">
       {/* Top Navigation Bar */}
       <div className="bg-background/80 backdrop-blur-sm border-b border-border/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 relative">
             {/* Left: Logo */}
             <div className="flex items-center space-x-3">
@@ -200,12 +200,12 @@ const Chat = () => {
 
       {/* Chat Section Title - Sticky */}
       <div className="bg-transparent sticky top-[73px] z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6">
           <h1 className="text-2xl font-bold text-foreground font-comfortaa">Chat</h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
           {/* Conversations List */}
           <div className="lg:col-span-1">

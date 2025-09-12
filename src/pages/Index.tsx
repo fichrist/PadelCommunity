@@ -66,7 +66,7 @@ const Index = () => {
       
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-b from-background to-sage/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Nurture Your Spiritual Journey
@@ -98,7 +98,7 @@ const Index = () => {
 
       {/* Featured Events */}
       <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-12">
             <div>
               <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -131,7 +131,7 @@ const Index = () => {
 
       {/* Community Stats */}
       <section className="py-20 bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="flex justify-center mb-6">
               <div className="p-3 bg-primary/10 rounded-full">

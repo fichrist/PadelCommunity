@@ -133,7 +133,7 @@ const Community = () => {
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
         {/* Facebook-style Header */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               {/* Left: Logo + App Name */}
               <div className="flex items-center space-x-2">
@@ -212,7 +212,7 @@ const Community = () => {
 
         {/* Community Filters - Sticky */}
         <div className="bg-transparent sticky top-[73px] z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
+          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
               
@@ -251,7 +251,7 @@ const Community = () => {
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
+        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 h-full">
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
