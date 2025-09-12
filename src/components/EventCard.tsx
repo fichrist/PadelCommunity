@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Users, Heart } from "lucide-react";
+import { Calendar, MapPin, Users, Heart, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import ReviewModal from "@/components/ReviewModal";
 
 interface EventCardProps {
   eventId: string;
@@ -19,6 +21,16 @@ interface EventCardProps {
   attendees: number;
   category: string;
   image?: string;
+  isPastEvent?: boolean;
+  averageRating?: number;
+  totalReviews?: number;
+  reviews?: Array<{
+    id: string;
+    author: { name: string; avatar?: string };
+    rating: number;
+    content: string;
+    timeAgo: string;
+  }>;
 }
 
 const EventCard = ({ 
@@ -30,9 +42,14 @@ const EventCard = ({
   organizer, 
   attendees, 
   category,
-  image 
+  image,
+  isPastEvent = false,
+  averageRating = 0,
+  totalReviews = 0,
+  reviews = []
 }: EventCardProps) => {
   const navigate = useNavigate();
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer" onClick={() => navigate(`/event/${eventId}`)}>
       {image && (
@@ -86,6 +103,34 @@ const EventCard = ({
             <Users className="h-4 w-4" />
             <span>{attendees} attending</span>
           </div>
+          
+          {/* Reviews for past events */}
+          {isPastEvent && averageRating > 0 && (
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${
+                      i < Math.round(averageRating) 
+                        ? "text-yellow-400 fill-current" 
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewModalOpen(true);
+                }}
+                className="text-sm text-primary hover:underline"
+              >
+                ({totalReviews} reviews)
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center justify-between pt-2">
@@ -115,6 +160,18 @@ const EventCard = ({
           </Button>
         </div>
       </CardContent>
+
+      {/* Review Modal */}
+      {isPastEvent && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onOpenChange={setReviewModalOpen}
+          eventTitle={title}
+          reviews={reviews}
+          averageRating={averageRating}
+          totalReviews={totalReviews}
+        />
+      )}
     </Card>
   );
 };

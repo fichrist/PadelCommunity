@@ -23,7 +23,6 @@ const People = () => {
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedType, setSelectedType] = useState("");
   const [followedUsers, setFollowedUsers] = useState<number[]>([0, 2]); // Example: following first and third healers
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
   const [userToUnfollow, setUserToUnfollow] = useState<number | null>(null);
@@ -348,7 +347,6 @@ const People = () => {
                           setSelectedRadius("");
                           setSelectedSpecialty("");
                           setSelectedTags([]);
-                          setSelectedType("");
                         }}
                       >
                         Clear
@@ -502,24 +500,6 @@ const People = () => {
                       </div>
                     </div>
 
-                    {/* Who Section - Type */}
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Who</span>
-                      </div>
-                      <Select value={selectedType} onValueChange={setSelectedType}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Healers</SelectItem>
-                          <SelectItem value="certified">Certified Only</SelectItem>
-                          <SelectItem value="teachers">Teachers</SelectItem>
-                          <SelectItem value="practitioners">Practitioners</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
               </div>

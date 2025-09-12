@@ -22,7 +22,6 @@ const Events = () => {
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedOrganizer, setSelectedOrganizer] = useState("");
   const navigate = useNavigate();
 
   const events = [
@@ -63,6 +62,13 @@ const Events = () => {
       category: "Yoga",
       image: soundHealingEvent,
       isPastEvent: true,
+      averageRating: 4.8,
+      totalReviews: 12,
+      reviews: [
+        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, rating: 5, content: "Amazing session! The sound bath was deeply relaxing and transformative.", timeAgo: "2 days ago" },
+        { id: "2", author: { name: "David Peace", avatar: elenaProfile }, rating: 4, content: "Perfect combination of yoga and sound healing. Luna is very skilled.", timeAgo: "1 day ago" },
+        { id: "3", author: { name: "River Flow", avatar: elenaProfile }, rating: 5, content: "Best sound bath I've experienced. The space was beautiful too.", timeAgo: "3 days ago" }
+      ],
       tags: ["Yoga", "Sound Bath", "Meditation"]
     },
     {
@@ -89,6 +95,13 @@ const Events = () => {
       category: "Workshop",
       image: soundHealingEvent,
       isPastEvent: true,
+      averageRating: 4.9,
+      totalReviews: 18,
+      reviews: [
+        { id: "1", author: { name: "Star Seeker", avatar: elenaProfile }, rating: 5, content: "Mind-blowing insights into sacred geometry! Dr. Amara's knowledge is incredible.", timeAgo: "1 week ago" },
+        { id: "2", author: { name: "Cosmic Mind", avatar: elenaProfile }, rating: 5, content: "This workshop changed my perspective on everything. Highly recommended!", timeAgo: "5 days ago" },
+        { id: "3", author: { name: "Sacred Soul", avatar: elenaProfile }, rating: 4, content: "Fascinating content and great presentation. Worth every minute.", timeAgo: "1 week ago" }
+      ],
       tags: ["Sacred Geometry", "Workshop", "Education"]
     },
     {
@@ -260,7 +273,6 @@ const Events = () => {
                           setSelectedRadius("");
                           setSelectedDate("");
                           setSelectedTags([]);
-                          setSelectedOrganizer("");
                         }}
                       >
                         Clear
@@ -414,23 +426,6 @@ const Events = () => {
                       </div>
                     </div>
 
-                    {/* Who Section */}
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Who</span>
-                      </div>
-                      <Select value={selectedOrganizer} onValueChange={setSelectedOrganizer}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Organizer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Organizers</SelectItem>
-                          <SelectItem value="following">Following Only</SelectItem>
-                          <SelectItem value="friends">Friends Only</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
               </div>
