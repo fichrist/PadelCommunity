@@ -2,12 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
+import ImageModal from "@/components/ImageModal";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -24,7 +25,9 @@ const Community = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
 
   const posts = [
     {
@@ -326,13 +329,25 @@ const Community = () => {
                     {post.type === 'event' && post.image && (
                       <div className="p-4">
                         <div className="flex space-x-3">
-                          {/* Event Image - 4:3 Aspect Ratio */}
-                          <div className="w-48 h-36 flex-shrink-0">
+                          {/* Event Image - 4:3 Aspect Ratio - Clickable */}
+                          <div className="w-48 h-36 flex-shrink-0 cursor-pointer group relative">
                             <img 
                               src={post.image} 
                               alt={post.title}
-                              className="w-full h-full object-cover rounded-lg"
+                              className="w-full h-full object-cover rounded-lg group-hover:brightness-75 transition-all duration-200"
+                              onClick={() => {
+                                setSelectedImage({
+                                  src: post.image,
+                                  alt: post.title,
+                                  title: post.title
+                                });
+                                setImageModalOpen(true);
+                              }}
                             />
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <ExternalLink className="h-6 w-6 text-white" />
+                            </div>
                           </div>
                           
                           {/* Event Details */}
@@ -639,6 +654,17 @@ const Community = () => {
           reviews={selectedPost.reviews || []}
           averageRating={selectedPost.averageRating || 0}
           totalReviews={selectedPost.totalReviews || 0}
+        />
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          open={imageModalOpen}
+          onOpenChange={setImageModalOpen}
+          imageSrc={selectedImage.src}
+          imageAlt={selectedImage.alt}
+          title={selectedImage.title}
         />
       )}
     </div>
