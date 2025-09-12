@@ -9,7 +9,7 @@ const Navigation = () => {
   const navItems = [
     { path: "/", label: "Community", icon: Users },
     { path: "/events", label: "Events", icon: CalendarDays },
-    { path: "/people", label: "People", icon: UserCircle },
+    { path: "/people", label: "Souls", icon: UserCircle },
     { path: "/home", label: "Home", icon: House },
     { path: "/chat", label: "Chat", icon: MessageSquare },
     { path: "/profile", label: "Profile", icon: UserCircle },
