@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play } from "lucide-react";
 
 // Import images
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
@@ -77,7 +77,7 @@ const EventDetails = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.back()}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -148,14 +148,20 @@ const EventDetails = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
+                  <Avatar 
+                    className="h-12 w-12 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
+                    onClick={() => navigate(`/healer/${event.organizer.name.toLowerCase().replace(' ', '-')}`)}
+                  >
                     <AvatarImage src={event.organizer.avatar} />
                     <AvatarFallback className="bg-primary/10">
                       {event.organizer.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{event.organizer.name}</h3>
+                  <div 
+                    className="cursor-pointer" 
+                    onClick={() => navigate(`/healer/${event.organizer.name.toLowerCase().replace(' ', '-')}`)}
+                  >
+                    <h3 className="font-semibold hover:text-primary transition-colors">{event.organizer.name}</h3>
                     <p className="text-sm text-muted-foreground">{event.organizer.role}</p>
                   </div>
                   <Button variant="outline" className="ml-auto">
@@ -171,9 +177,20 @@ const EventDetails = () => {
                 <CardTitle>About this Event</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-foreground/90 leading-relaxed">
+                <p className="text-foreground/90 leading-relaxed mb-6">
                   {event.fullDescription}
                 </p>
+                
+                {/* Event Video */}
+                <div className="relative aspect-video bg-muted rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="bg-primary/10 p-4 rounded-full mb-4 inline-block">
+                      <Play className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-muted-foreground">Event Preview Video</p>
+                    <p className="text-sm text-muted-foreground mt-1">Click to watch introduction</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -191,18 +208,30 @@ const EventDetails = () => {
               <CardContent>
                 <div className="space-y-3">
                   {event.attendees.map((attendee, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        {!attendee.isAnonymous ? (
-                          <AvatarImage src={attendee.avatar} />
-                        ) : null}
-                        <AvatarFallback className="bg-muted text-muted-foreground">
-                          {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium">
-                        {attendee.isAnonymous ? "Anonymous User" : attendee.name}
-                      </span>
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          {!attendee.isAnonymous ? (
+                            <AvatarImage src={attendee.avatar} />
+                          ) : null}
+                          <AvatarFallback className="bg-muted text-muted-foreground">
+                            {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">
+                          {attendee.isAnonymous ? "Anonymous User" : attendee.name}
+                        </span>
+                      </div>
+                      {!attendee.isAnonymous && (
+                        <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <UserPlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -220,6 +249,137 @@ const EventDetails = () => {
                   <Button variant="outline" className="w-full">
                     View on Map
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        
+        {/* Healer Reviews Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reviews for {event.organizer.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-1 mb-4">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-5 w-5 fill-primary text-primary" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground ml-2">4.9 (23 reviews)</span>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="border-b pb-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={davidProfile} />
+                        <AvatarFallback>DP</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">David Peace</p>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className="h-3 w-3 fill-primary text-primary" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      "Transformative experience! Elena's sound healing session was exactly what I needed for my spiritual journey."
+                    </p>
+                  </div>
+                  
+                  <div className="border-b pb-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={ariaProfile} />
+                        <AvatarFallback>AS</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">Luna Sage</p>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className="h-3 w-3 fill-primary text-primary" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      "Beautiful healing space and incredible energy. Elena creates such a safe and sacred environment."
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Previous Events Section */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Previous Events by {event.organizer.name}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300">
+              <div className="relative overflow-hidden">
+                <img
+                  src={soundHealingEvent}
+                  alt="Past Sound Healing"
+                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <CardContent className="p-4">
+                <div className="flex items-center text-sm text-primary font-semibold mb-2">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  February 18, 2024
+                </div>
+                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                  New Moon Sound Journey
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Deep healing with crystal bowls and sacred chanting under the new moon energy.
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                    <span className="text-sm text-muted-foreground ml-1">(18)</span>
+                  </div>
+                  <Badge variant="secondary">Completed</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300">
+              <div className="relative overflow-hidden">
+                <img
+                  src={crystalWorkshopEvent}
+                  alt="Past Crystal Workshop"
+                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <CardContent className="p-4">
+                <div className="flex items-center text-sm text-primary font-semibold mb-2">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  January 25, 2024
+                </div>
+                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                  Winter Solstice Ceremony
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Celebrating the return of light with meditation and sound healing.
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                    <span className="text-sm text-muted-foreground ml-1">(25)</span>
+                  </div>
+                  <Badge variant="secondary">Completed</Badge>
                 </div>
               </CardContent>
             </Card>
