@@ -238,14 +238,14 @@ const Community = () => {
             <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Talk Sidebar */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
                   <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <MessageCircle className="h-4 w-4 text-primary" />
                       <span>Talk</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 max-h-[450px] overflow-y-hidden">
                     <div className="space-y-2">
                       {[
                         {
@@ -563,17 +563,17 @@ const Community = () => {
             </div>
 
             {/* Right Sidebar - Fixed */}
-            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
               <div className="space-y-4">
                 {/* Healers to Follow */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
                   <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <span>Healers to Follow</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
+                  <CardContent className="space-y-3 pt-0 max-h-[400px] overflow-y-hidden">
                     {featuredMembers.map((member, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
