@@ -192,9 +192,93 @@ const People = () => {
     }
   ];
 
+  // Simple users for following/followers sections
+  const simpleUsers = [
+    {
+      name: "Luna Harmony",
+      avatar: elenaProfile,
+      role: "Soul Seeker",
+      location: "Portland, OR",
+      followers: 89,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "",
+      isOnline: false,
+      price: "",
+      tags: [],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "River Stone",
+      avatar: davidProfile,
+      role: "Spiritual Explorer",
+      location: "Austin, TX", 
+      followers: 156,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "",
+      isOnline: true,
+      price: "",
+      tags: [],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Sky Walker",
+      avatar: ariaProfile,
+      role: "Conscious Soul",
+      location: "Denver, CO",
+      followers: 234,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "",
+      isOnline: false,
+      price: "",
+      tags: [],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Ocean Breeze",
+      avatar: phoenixProfile,
+      role: "Mindful Being",
+      location: "Miami, FL",
+      followers: 78,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "",
+      isOnline: true,
+      price: "",
+      tags: [],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Mountain Spirit",
+      avatar: elenaProfile,
+      role: "Nature Lover",
+      location: "Salt Lake City, UT",
+      followers: 123,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "",
+      isOnline: false,
+      price: "",
+      tags: [],
+      verified: false,
+      isHealer: false
+    }
+  ];
+
   const filteredHealers = filter === "healers" ? healers.filter(person => person.isHealer) : 
-    filter === "following" ? healers.filter((_, index) => followedUsers.includes(index)) :
-    filter === "followers" ? healers.filter(healer => healer.followers > 1000) :
+    filter === "following" ? [...healers.filter((_, index) => followedUsers.includes(index)), ...simpleUsers.slice(0, 3)] :
+    filter === "followers" ? [...healers.filter(healer => healer.followers > 1000), ...simpleUsers] :
     healers;
 
   const allTags = [...new Set(healers.flatMap(healer => healer.tags))];
@@ -598,29 +682,35 @@ const People = () => {
                     </CardHeader>
                     
                     <CardContent className="flex flex-col h-full space-y-3">
-                      <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
-                      
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {healer.specialties.slice(0, 3).map((specialty, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs bg-sage/20 text-sage-foreground">
-                            {specialty}
-                          </Badge>
-                        ))}
-                      </div>
+                      {/* Only show bio and specialties for healers */}
+                      {healer.isHealer !== false && (
+                        <>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
+                          
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {healer.specialties.slice(0, 3).map((specialty, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs bg-sage/20 text-sage-foreground">
+                                {specialty}
+                              </Badge>
+                            ))}
+                          </div>
+                        </>
+                      )}
                       
                       {/* Bottom section with reviews and followers */}
                       <div className="mt-auto space-y-2">
-                        {/* Reviews */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors">
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs text-muted-foreground">{healer.rating}</span>
-                              <span className="text-xs text-muted-foreground">({healer.reviews} reviews)</span>
+                        {/* Reviews - only show for healers */}
+                        {healer.isHealer !== false && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors">
+                              <div className="flex items-center space-x-1">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs text-muted-foreground">{healer.rating}</span>
+                                <span className="text-xs text-muted-foreground">({healer.reviews} reviews)</span>
+                              </div>
                             </div>
                           </div>
-                          <span className="text-xs text-primary hover:underline cursor-pointer">See reviews</span>
-                        </div>
+                        )}
                         
                         {/* Followers */}
                         <div className="flex items-center space-x-2">
