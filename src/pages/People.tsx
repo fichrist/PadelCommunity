@@ -368,7 +368,7 @@ const People = () => {
             <div className="lg:col-span-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredHealers.map((healer, index) => (
-                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer"
+                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
                     onClick={() => navigate(`/healer/${index + 1}`)}
                   >
                     <CardHeader className="pb-3">
@@ -398,11 +398,6 @@ const People = () => {
                           <p className="text-sm text-muted-foreground truncate">{healer.role}</p>
                           <div className="flex items-center space-x-2 mt-1">
                             <div className="flex items-center space-x-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs text-muted-foreground">{healer.rating}</span>
-                              <span className="text-xs text-muted-foreground">({healer.reviews})</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
                               <MapPin className="h-3 w-3 text-muted-foreground" />
                               <span className="text-xs text-muted-foreground truncate">{healer.location}</span>
                             </div>
@@ -415,7 +410,7 @@ const People = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                                  className="p-2 h-auto hover:bg-red-50"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setUserToUnfollow(index);
@@ -451,7 +446,7 @@ const People = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-50"
+                              className="p-2 h-auto hover:bg-green-50"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setFollowedUsers(prev => [...prev, index]);
@@ -464,10 +459,10 @@ const People = () => {
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="space-y-3">
+                    <CardContent className="flex flex-col h-full space-y-3">
                       <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
                       
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 mb-3">
                         {healer.specialties.slice(0, 3).map((specialty, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs bg-sage/20 text-sage-foreground">
                             {specialty}
@@ -475,7 +470,21 @@ const People = () => {
                         ))}
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2">
+                      {/* Bottom section with reviews and followers */}
+                      <div className="mt-auto space-y-2">
+                        {/* Reviews */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors">
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs text-muted-foreground">{healer.rating}</span>
+                              <span className="text-xs text-muted-foreground">({healer.reviews} reviews)</span>
+                            </div>
+                          </div>
+                          <span className="text-xs text-primary hover:underline cursor-pointer">See reviews</span>
+                        </div>
+                        
+                        {/* Followers */}
                         <div className="flex items-center space-x-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
