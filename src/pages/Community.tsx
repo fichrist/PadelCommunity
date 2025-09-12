@@ -104,7 +104,7 @@ const Community = () => {
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
         {/* Facebook-style Header */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border">
+        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               {/* Left: Logo + App Name */}
@@ -167,43 +167,48 @@ const Community = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          {/* Page Title and Centered Filters Row */}
-          <div className="mb-3 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
-            
-            {/* Centered Filters */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-              <Button
-                variant={filter === "all" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("all")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                All
-              </Button>
-              <Button
-                variant={filter === "event" ? "default" : "ghost"}
-                size="sm"  
-                onClick={() => setFilter("event")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Events
-              </Button>
-              <Button
-                variant={filter === "share" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setFilter("share")}
-                className="px-3 py-1 rounded-full h-7 text-xs"
-              >
-                Shares
-              </Button>
+        {/* Community Filters - Sticky */}
+        <div className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-[73px] z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
+              
+              {/* Centered Filters */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
+                <Button
+                  variant={filter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                  className="px-3 py-1 rounded-full h-7 text-xs"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filter === "event" ? "default" : "ghost"}
+                  size="sm"  
+                  onClick={() => setFilter("event")}
+                  className="px-3 py-1 rounded-full h-7 text-xs"
+                >
+                  Events
+                </Button>
+                <Button
+                  variant={filter === "share" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setFilter("share")}
+                  className="px-3 py-1 rounded-full h-7 text-xs"
+                >
+                  Shares
+                </Button>
+              </div>
+              
+              {/* Empty div for balance */}
+              <div></div>
             </div>
-            
-            {/* Empty div for balance */}
-            <div></div>
           </div>
-          
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-146px)] overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar */}
             <div className="lg:col-span-1">
