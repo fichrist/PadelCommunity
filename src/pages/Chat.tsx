@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User } from "lucide-react";
+import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Import images
@@ -114,15 +114,17 @@ const Chat = () => {
       {/* Top Navigation Bar */}
       <div className="bg-background/80 backdrop-blur-sm border-b border-border/40 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 relative">
             {/* Left: Logo */}
-            <div className="flex items-center space-x-2">
-              <img src={spiritualLogo} alt="Spiritual Community" className="h-8 w-8" />
-              <span className="text-lg font-semibold text-foreground font-comfortaa">Sacred Space</span>
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
+              </div>
+              <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
             </div>
             
             {/* Center: Navigation Icons */}
-            <div className="flex items-center space-x-1">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
               <div className="relative">
                 <Button 
                   variant="ghost" 
@@ -130,7 +132,12 @@ const Chat = () => {
                   className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
                   onClick={() => navigate('/')}
                 >
-                  <Home className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                </Button>
+              </div>
+              <div className="relative">
+                <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                  <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
                 </Button>
               </div>
               <div className="relative">
@@ -142,9 +149,10 @@ const Chat = () => {
                 <Button 
                   variant="ghost" 
                   size="lg" 
-                  className="p-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all hover:scale-110"
+                  className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
                 >
                   <MessageCircle className="h-9 w-9 text-primary" />
+                  <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
                 </Button>
               </div>
             </div>
@@ -175,17 +183,10 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Spiritual Chat
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Connect with your spiritual community through meaningful conversations
-            </p>
-          </div>
+      {/* Chat Section Title - Sticky */}
+      <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6">
+          <h1 className="text-2xl font-bold text-foreground font-comfortaa">Chat</h1>
         </div>
       </div>
 
