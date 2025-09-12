@@ -169,7 +169,7 @@ const Community = () => {
 
         {/* Community Filters - Sticky */}
         <div className="bg-transparent sticky top-[73px] z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 pb-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
               
@@ -208,10 +208,10 @@ const Community = () => {
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-146px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left Sidebar */}
-            <div className="lg:col-span-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+            {/* Left Sidebar - Fixed */}
+            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Talk Sidebar */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
@@ -499,8 +499,8 @@ const Community = () => {
               ))}
             </div>
 
-            {/* Right Sidebar */}
-            <div className="lg:col-span-1 space-y-4">
+            {/* Right Sidebar - Fixed */}
+            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
