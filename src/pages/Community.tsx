@@ -249,7 +249,7 @@ const Community = () => {
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-8 gap-16 h-full">
             {/* Left Sidebar - Fixed */}
-            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)]">
               <div className="space-y-4">
                 {/* Talk Sidebar - Clickable */}
                 <Card 
@@ -262,7 +262,7 @@ const Community = () => {
                       <span>Talk</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 max-h-[675px] overflow-y-hidden">
+                  <CardContent className="pt-0 h-[675px] overflow-hidden">
                     <div className="space-y-2">
                       {[
                         {
