@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, UserPlus, UserMinus } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -383,13 +383,6 @@ const People = () => {
                           {healer.isOnline && (
                             <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
                           )}
-                          {healer.verified && (
-                            <div className="absolute -top-1 -right-1 h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center">
-                              <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-semibold group-hover:text-primary transition-colors truncate">
@@ -417,7 +410,7 @@ const People = () => {
                                     setUnfollowDialogOpen(true);
                                   }}
                                 >
-                                  <UserMinus className="h-4 w-4 text-red-500" />
+                                  <Heart className="h-4 w-4 text-red-500 fill-red-500" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -446,13 +439,13 @@ const People = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="p-2 h-auto hover:bg-green-50"
+                              className="p-2 h-auto hover:bg-red-50"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setFollowedUsers(prev => [...prev, index]);
                               }}
                             >
-                              <UserPlus className="h-4 w-4 text-green-500" />
+                              <Heart className="h-4 w-4 text-red-500" />
                             </Button>
                           )}
                         </div>
