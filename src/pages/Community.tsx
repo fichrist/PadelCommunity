@@ -189,7 +189,7 @@ const Community = () => {
               {/* Right: Search Bar + Create Button + Profile */}
               <div className="flex items-center space-x-3">
                 {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-4 w-64">
+                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
                   <input 
                     type="text" 
