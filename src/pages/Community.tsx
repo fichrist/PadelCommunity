@@ -252,9 +252,9 @@ const Community = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 h-full">
             {/* Left Sidebar - Fixed */}
-            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Talk Sidebar - Clickable */}
                 <Card 
@@ -579,7 +579,7 @@ const Community = () => {
             </div>
 
             {/* Right Sidebar - Fixed */}
-            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
+            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
               <div className="space-y-4">
                 {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
@@ -613,30 +613,6 @@ const Community = () => {
                         </Button>
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
-
-                {/* Trending Topics */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4 text-primary" />
-                      <span>Trending</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      {['meditation', 'healing', 'crystals', 'yoga', 'chakras'].map((topic, index) => (
-                        <div key={topic} className="py-1">
-                          <p className="text-sm font-medium text-primary cursor-pointer hover:underline">
-                            {topic}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {Math.floor(Math.random() * 50) + 10} posts today
-                          </p>
-                        </div>
-                      ))}
-                    </div>
                   </CardContent>
                 </Card>
               </div>
