@@ -26,6 +26,8 @@ const People = () => {
   const [followedUsers, setFollowedUsers] = useState<number[]>([0, 2]); // Example: following first and third healers
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
   const [userToUnfollow, setUserToUnfollow] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const navigate = useNavigate();
 
   const healers = [
@@ -276,10 +278,20 @@ const People = () => {
     }
   ];
 
+  const allUsers = [...healers, ...simpleUsers];
+
   const filteredHealers = filter === "healers" ? healers.filter(person => person.isHealer) : 
     filter === "following" ? [...healers.filter((_, index) => followedUsers.includes(index)), ...simpleUsers.slice(0, 3)] :
     filter === "followers" ? [...healers.filter(healer => healer.followers > 1000), ...simpleUsers] :
     healers;
+
+  const searchResults = searchQuery.length >= 3 
+    ? allUsers.filter(user => 
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.location.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   const allTags = [...new Set(healers.flatMap(healer => healer.tags))];
 
@@ -342,17 +354,76 @@ const People = () => {
                 </div>
               </div>
               
-              {/* Right: Search Bar + Create Button + Profile */}
-              <div className="flex items-center space-x-3">
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                  <input 
-                    type="text" 
-                    placeholder="search souls..." 
-                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                  />
-                </div>
+               {/* Right: Search Bar + Create Button + Profile */}
+               <div className="flex items-center space-x-3">
+                 {/* Search Bar with Dropdown */}
+                 <div className="hidden md:block relative w-64">
+                   <div className="flex items-center bg-muted rounded-full px-3 py-2">
+                     <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                     <input 
+                       type="text" 
+                       placeholder="search souls..." 
+                       value={searchQuery}
+                       onChange={(e) => {
+                         setSearchQuery(e.target.value);
+                         setShowSearchDropdown(e.target.value.length >= 3);
+                       }}
+                       onFocus={() => setShowSearchDropdown(searchQuery.length >= 3)}
+                       onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+                       className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
+                     />
+                   </div>
+                   
+                   {/* Search Dropdown */}
+                   {showSearchDropdown && searchResults.length > 0 && (
+                     <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                       {searchResults.map((user, index) => {
+                         const originalIndex = allUsers.findIndex(u => u.name === user.name);
+                         const isFollowed = followedUsers.includes(originalIndex);
+                         
+                         return (
+                           <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/50 border-b border-border last:border-b-0">
+                             <div 
+                               className="flex items-center space-x-3 flex-1 cursor-pointer"
+                               onClick={() => {
+                                 navigate(`/${user.isHealer ? 'healer' : 'profile'}/${originalIndex + 1}`);
+                                 setShowSearchDropdown(false);
+                               }}
+                             >
+                               <Avatar className="h-8 w-8">
+                                 <AvatarImage src={user.avatar} />
+                                 <AvatarFallback className="text-xs">
+                                   {user.name.split(' ').map(n => n[0]).join('')}
+                                 </AvatarFallback>
+                               </Avatar>
+                               <div className="flex-1 min-w-0">
+                                 <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                                 <p className="text-xs text-muted-foreground truncate">{user.role}</p>
+                                 <p className="text-xs text-muted-foreground truncate">{user.location}</p>
+                               </div>
+                             </div>
+                             
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="p-2 h-auto ml-2"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (isFollowed) {
+                                   setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
+                                 } else {
+                                   setFollowedUsers(prev => [...prev, originalIndex]);
+                                 }
+                               }}
+                             >
+                               <Heart className={`h-4 w-4 ${isFollowed ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                             </Button>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   )}
+                 </div>
                 <Button
                   size="sm"
                   className="rounded-full h-10 w-10 p-0"
