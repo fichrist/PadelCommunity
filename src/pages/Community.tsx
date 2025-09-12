@@ -2,10 +2,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star } from "lucide-react";
 import { useState } from "react";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
+import ThoughtsModal from "@/components/ThoughtsModal";
+import ReviewModal from "@/components/ReviewModal";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -20,6 +22,9 @@ import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
 const Community = () => {
   const [filter, setFilter] = useState("all");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
 
   const posts = [
     {
@@ -37,7 +42,12 @@ const Community = () => {
       likes: 42,
       shares: 5,
       image: soundHealingEvent,
-      dateRange: { start: "Mar 15", end: null }
+      dateRange: { start: "Mar 15", end: null },
+      isPastEvent: false,
+      thoughts: [
+        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Can't wait for this healing session! The full moon energy is perfect timing.", likes: 5, timeAgo: "1 hour ago" },
+        { id: "2", author: { name: "David Peace", avatar: davidProfile }, content: "Elena's sound healing sessions are transformative. Highly recommend!", likes: 8, timeAgo: "45 min ago" }
+      ]
     },
     {
       type: "share",
@@ -67,7 +77,18 @@ const Community = () => {
       likes: 23,
       shares: 3,
       image: crystalWorkshopEvent,
-      dateRange: { start: "Apr 2", end: "Apr 4" }
+      dateRange: { start: "Apr 2", end: "Apr 4" },
+      isPastEvent: true,
+      averageRating: 4.8,
+      totalReviews: 12,
+      reviews: [
+        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, rating: 5, content: "Amazing workshop! Aria's knowledge is incredible and I learned so much about crystal healing.", timeAgo: "2 days ago" },
+        { id: "2", author: { name: "River Flow", avatar: davidProfile }, rating: 5, content: "Transformative experience. The hands-on approach made all the difference.", timeAgo: "1 day ago" },
+        { id: "3", author: { name: "Star Dreamer", avatar: ariaProfile }, rating: 4, content: "Great introduction to crystals. Perfect for beginners!", timeAgo: "3 days ago" }
+      ],
+      thoughts: [
+        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, content: "This workshop exceeded my expectations. Aria's energy is so pure and healing.", likes: 12, timeAgo: "2 days ago" }
+      ]
     },
     {
       type: "share",
@@ -209,13 +230,13 @@ const Community = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 h-full">
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Talk Sidebar */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <MessageCircle className="h-4 w-4 text-primary" />
                       <span>Talk</span>
@@ -296,23 +317,17 @@ const Community = () => {
             </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="lg:col-span-4 space-y-4">
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
-                  {/* Post Timing - Top Right Corner */}
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
-                      {post.timeAgo}
-                    </span>
-                  </div>
                   
                   <CardContent className="p-0">
                     {/* Event Image Header for Events */}
                     {post.type === 'event' && post.image && (
                       <div className="p-4">
                         <div className="flex space-x-3">
-                          {/* Event Image - Larger Size */}
-                          <div className="w-40 h-40 flex-shrink-0">
+                          {/* Event Image - 4:3 Aspect Ratio */}
+                          <div className="w-48 h-36 flex-shrink-0">
                             <img 
                               src={post.image} 
                               alt={post.title}
@@ -452,6 +467,33 @@ const Community = () => {
                               </div>
                             )}
                           </div>
+                          {/* Reviews for past events */}
+                          {post.isPastEvent && post.averageRating && (
+                            <div className="flex items-center space-x-2 mt-2">
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.round(post.averageRating) 
+                                        ? "text-yellow-400 fill-current" 
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm font-medium">{post.averageRating.toFixed(1)}</span>
+                              <button
+                                onClick={() => {
+                                  setSelectedPost(post);
+                                  setReviewModalOpen(true);
+                                }}
+                                className="text-sm text-primary hover:underline"
+                              >
+                                ({post.totalReviews} reviews)
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -480,13 +522,19 @@ const Community = () => {
                     {/* Action Bar - Updated labels */}
                     <div className="px-3 py-2 border-t border-border">
                       <div className="flex items-center justify-between">
-                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                        <button 
+                          onClick={() => {
+                            setSelectedPost(post);
+                            setThoughtsModalOpen(true);
+                          }}
+                          className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                        >
                           <MessageCircle className="h-4 w-4" />
                           <span>{post.comments} Thoughts</span>
                         </button>
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <Repeat2 className="h-4 w-4" />
-                          <span>{post.shares} Reshare</span>
+                          <span>Reshare</span>
                         </button>
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <Share2 className="h-4 w-4" />
@@ -504,7 +552,7 @@ const Community = () => {
               <div className="space-y-4">
                 {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <span>Healers to Follow</span>
@@ -571,6 +619,28 @@ const Community = () => {
         open={createModalOpen} 
         onOpenChange={setCreateModalOpen} 
       />
+
+      {/* Thoughts Modal */}
+      {selectedPost && (
+        <ThoughtsModal
+          open={thoughtsModalOpen}
+          onOpenChange={setThoughtsModalOpen}
+          postTitle={selectedPost.title}
+          thoughts={selectedPost.thoughts || []}
+        />
+      )}
+
+      {/* Review Modal */}
+      {selectedPost && selectedPost.isPastEvent && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onOpenChange={setReviewModalOpen}
+          eventTitle={selectedPost.title}
+          reviews={selectedPost.reviews || []}
+          averageRating={selectedPost.averageRating || 0}
+          totalReviews={selectedPost.totalReviews || 0}
+        />
+      )}
     </div>
   );
 };
