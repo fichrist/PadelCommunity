@@ -460,7 +460,7 @@ const Community = () => {
                       {post.type === 'event' && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {post.tags.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                            <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
                               {tag}
                             </Badge>
                           ))}
@@ -475,7 +475,7 @@ const Community = () => {
                       {post.type === 'share' && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {post.tags.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground hover:bg-accent/80 cursor-pointer border border-accent/40">
+                            <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
                               {tag}
                             </Badge>
                           ))}
