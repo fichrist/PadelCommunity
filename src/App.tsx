@@ -9,8 +9,10 @@ import People from "./pages/People";
 import Community from "./pages/Community";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import CreateEvent from "./pages/CreateEvent";
 import EventDetails from "./pages/EventDetails";
 import HealerProfile from "./pages/HealerProfile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,11 +27,13 @@ const App = () => (
           <Route path="/" element={<Community />} />
           <Route path="/events" element={<Events />} />
           <Route path="/people" element={<People />} />
+          <Route path="/create-event" element={<CreateEvent />} />
           <Route path="/event/:eventId" element={<EventDetails />} />
           <Route path="/healer/:healerId" element={<HealerProfile />} />
           <Route path="/home" element={<Index />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

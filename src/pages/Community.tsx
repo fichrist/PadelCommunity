@@ -6,7 +6,9 @@ import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plu
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
-import CreatePostModal from "@/components/CreatePostModal";
+import CreateDropdown from "@/components/CreateDropdown";
+import CreateShareModal from "@/components/CreateShareModal";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 import ImageModal from "@/components/ImageModal";
@@ -23,7 +25,7 @@ import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
 
 const Community = () => {
   const [filter, setFilter] = useState("all");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createShareModalOpen, setCreateShareModalOpen] = useState(false);
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -194,17 +196,8 @@ const Community = () => {
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
-                <Button
-                  onClick={() => setCreateModalOpen(true)}
-                  size="sm"
-                  className="rounded-full h-10 w-10 p-0"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-                <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                  <AvatarImage src={elenaProfile} />
-                  <AvatarFallback className="text-sm">ME</AvatarFallback>
-                </Avatar>
+                <CreateDropdown onCreateShare={() => setCreateShareModalOpen(true)} />
+                <ProfileDropdown userImage={elenaProfile} />
               </div>
             </div>
           </div>
@@ -621,10 +614,10 @@ const Community = () => {
         </div>
       </div>
 
-      {/* Create Post Modal */}
-      <CreatePostModal 
-        open={createModalOpen} 
-        onOpenChange={setCreateModalOpen} 
+      {/* Create Share Modal */}
+      <CreateShareModal 
+        open={createShareModalOpen} 
+        onOpenChange={setCreateShareModalOpen} 
       />
 
       {/* Thoughts Modal */}
