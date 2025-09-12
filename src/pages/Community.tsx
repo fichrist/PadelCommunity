@@ -9,6 +9,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import NotificationDropdown from "@/components/NotificationDropdown";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 import ImageModal from "@/components/ImageModal";
@@ -197,6 +198,7 @@ const Community = () => {
                   />
                 </div>
                 <CreateDropdown onCreateShare={() => setCreateShareModalOpen(true)} />
+                <NotificationDropdown />
                 <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
               </div>
             </div>
@@ -384,9 +386,12 @@ const Community = () => {
                                  </Avatar>
                                  <div>
                                    <div className="flex items-center space-x-2">
-                                     <span className="text-xs font-medium text-muted-foreground">
-                                       {post.author.name}
-                                     </span>
+                                      <span 
+                                        className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                        onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                      >
+                                        {post.author.name}
+                                      </span>
                                      <span className="text-xs text-muted-foreground">•</span>
                                      <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
                                        Follow
@@ -430,9 +435,12 @@ const Community = () => {
                             </Avatar>
                             <div>
                               <div className="flex items-center space-x-2">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {post.author.name}
-                                </span>
+                                 <span 
+                                   className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                   onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                 >
+                                   {post.author.name}
+                                 </span>
                                 <span className="text-xs text-muted-foreground">•</span>
                                 <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
                                   Follow
@@ -585,22 +593,30 @@ const Community = () => {
                   <CardContent className="space-y-3 pt-0 max-h-[400px] overflow-y-hidden">
                     {featuredMembers.map((member, index) => (
                       <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback className="bg-primary/10 text-xs">
-                              {member.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm leading-tight">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.role}</p>
-                            <p className="text-xs text-muted-foreground flex items-center">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {member.location}
-                            </p>
-                          </div>
-                        </div>
+                         <div className="flex items-center space-x-3">
+                           <Avatar 
+                             className="h-8 w-8 cursor-pointer"
+                             onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                           >
+                             <AvatarImage src={member.avatar} />
+                             <AvatarFallback className="bg-primary/10 text-xs">
+                               {member.name.split(' ').map(n => n[0]).join('')}
+                             </AvatarFallback>
+                           </Avatar>
+                           <div>
+                             <p 
+                               className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
+                               onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                             >
+                               {member.name}
+                             </p>
+                             <p className="text-xs text-muted-foreground">{member.role}</p>
+                             <p className="text-xs text-muted-foreground flex items-center">
+                               <MapPin className="h-3 w-3 mr-1" />
+                               {member.location}
+                             </p>
+                           </div>
+                         </div>
                         <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
                           Follow
                         </Button>
