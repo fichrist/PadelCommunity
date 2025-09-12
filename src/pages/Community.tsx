@@ -169,7 +169,7 @@ const Community = () => {
 
         {/* Community Filters - Sticky */}
         <div className="bg-transparent sticky top-[73px] z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 pb-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
               
