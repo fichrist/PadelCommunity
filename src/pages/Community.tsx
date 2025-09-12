@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 import ImageModal from "@/components/ImageModal";
@@ -196,10 +197,7 @@ const Community = () => {
                   />
                 </div>
                 <CreateDropdown onCreateShare={() => setCreateShareModalOpen(true)} />
-                <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                  <AvatarImage src={elenaProfile} />
-                  <AvatarFallback className="text-sm">ME</AvatarFallback>
-                </Avatar>
+                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
               </div>
             </div>
           </div>
