@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 import ThoughtsModal from "@/components/ThoughtsModal";
@@ -28,6 +29,7 @@ const Community = () => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
+  const navigate = useNavigate();
 
   const posts = [
     {
@@ -158,7 +160,12 @@ const Community = () => {
                   </Button>
                 </div>
                 <div className="relative">
-                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/chat')}
+                  >
                     <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
                   </Button>
                 </div>
@@ -237,8 +244,11 @@ const Community = () => {
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
-                {/* Talk Sidebar */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
+                {/* Talk Sidebar - Clickable */}
+                <Card 
+                  className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px] cursor-pointer hover:shadow-lg transition-all duration-200"
+                  onClick={() => navigate('/chat')}
+                >
                   <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <MessageCircle className="h-4 w-4 text-primary" />
