@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, Users, Heart, MessageCircle, Settings, Edit } from "lucide-react";
+import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 
 const Profile = () => {
   const userStats = {
@@ -63,7 +64,11 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
+    >
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -293,6 +298,7 @@ const Profile = () => {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </div>
   );

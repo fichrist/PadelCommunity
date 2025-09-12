@@ -320,23 +320,97 @@ const Events = () => {
                         <Tag className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">What</span>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {allTags.map((tag) => (
-                          <Badge 
-                            key={tag}
-                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => {
-                              setSelectedTags(prev => 
-                                prev.includes(tag) 
-                                  ? prev.filter(t => t !== tag)
-                                  : [...prev, tag]
-                              );
-                            }}
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                      
+                      {/* Dance Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Dance</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Movement", "Dance", "Yoga"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Exhibition/Festival Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Exhibition/Festival</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Exhibition", "Festival", "Garden"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Workshop Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Workshop</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Workshop", "Education", "Sacred Geometry", "Sound Bath", "Chakras", "Energy Work", "Healing"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Ceremony Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Ceremony</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Ceremony", "Full Moon", "Meditation", "Morning Practice", "Nature", "Walking", "Mindfulness"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
 

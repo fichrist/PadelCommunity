@@ -4,6 +4,7 @@ import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, Heart, MessageCircle, ArrowRight, Sparkles } from "lucide-react";
+import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 
 const Index = () => {
   const featuredEvents = [
@@ -63,9 +64,13 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <HeroSection />
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
+    >
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+        <Navigation />
+        <HeroSection />
       
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-b from-background to-sage/5">
@@ -190,6 +195,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 };

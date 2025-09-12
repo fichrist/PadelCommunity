@@ -408,23 +408,97 @@ const People = () => {
                         <Tag className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">What</span>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {allTags.map((tag) => (
-                          <Badge 
-                            key={tag}
-                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => {
-                              setSelectedTags(prev => 
-                                prev.includes(tag) 
-                                  ? prev.filter(t => t !== tag)
-                                  : [...prev, tag]
-                              );
-                            }}
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                      
+                      {/* Dance Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Dance</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Movement Therapy", "Ecstatic Dance", "Dance Therapy", "Movement Meditation", "Sacred Dance"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Exhibition/Festival Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Exhibition/Festival</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Art", "Exhibition", "Festival", "Spirituality", "Cosmic"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Workshop Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Workshop</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Sound Healing", "Crystal Healing", "Energy Healing", "Reiki", "Chakra Balancing", "Astrology", "Sacred Geometry", "Theta Healing", "Life Coaching", "Breathwork"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Ceremony Category */}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Ceremony</p>
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.filter(tag => ["Meditation", "Mindfulness", "Shamanic Healing", "Ancient Wisdom", "Emotional Healing", "Inner Peace", "Nature", "Forest", "Earth Connection", "Ocean", "Self-Discovery", "Astronomy"].includes(tag)).map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                setSelectedTags(prev => 
+                                  prev.includes(tag) 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -508,12 +582,16 @@ const People = () => {
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => setUnfollowDialogOpen(false)}>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel onClick={() => {
+                                    setUnfollowDialogOpen(false);
+                                    navigate('/people');
+                                  }}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction 
                                     onClick={() => {
                                       setFollowedUsers(prev => prev.filter(id => id !== index));
                                       setUnfollowDialogOpen(false);
                                       setUserToUnfollow(null);
+                                      navigate('/people');
                                     }}
                                     className="bg-red-500 hover:bg-red-600"
                                   >
