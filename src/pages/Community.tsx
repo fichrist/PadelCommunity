@@ -253,7 +253,7 @@ const Community = () => {
               <div className="space-y-4">
                 {/* Talk Sidebar - Clickable */}
                 <Card 
-                  className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px] cursor-pointer hover:shadow-lg transition-all duration-200"
+                  className="bg-card/90 backdrop-blur-sm border border-border min-h-[750px] cursor-pointer hover:shadow-lg transition-all duration-200"
                   onClick={() => navigate('/chat')}
                 >
                   <CardHeader className="pb-1">
@@ -262,7 +262,7 @@ const Community = () => {
                       <span>Talk</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 max-h-[450px] overflow-y-hidden">
+                  <CardContent className="pt-0 max-h-[675px] overflow-y-hidden">
                     <div className="space-y-2">
                       {[
                         {
@@ -583,14 +583,14 @@ const Community = () => {
             <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
               <div className="space-y-4">
                 {/* Healers to Follow */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[500px]">
+                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[750px]">
                   <CardHeader className="pb-1">
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <span>Healers to Follow</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0 max-h-[400px] overflow-y-hidden">
+                  <CardContent className="space-y-3 pt-0 max-h-[600px] overflow-y-hidden">
                     {featuredMembers.map((member, index) => (
                       <div key={index} className="flex items-center justify-between">
                          <div className="flex items-center space-x-3">
