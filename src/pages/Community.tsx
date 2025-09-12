@@ -133,7 +133,7 @@ const Community = () => {
       style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
         {/* Facebook-style Header */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
@@ -193,7 +193,7 @@ const Community = () => {
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
                   <input 
                     type="text" 
-                    placeholder="Search..." 
+                    placeholder="search..." 
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>

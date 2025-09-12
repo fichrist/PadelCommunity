@@ -116,7 +116,7 @@ const Chat = () => {
       style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
         {/* Top Navigation Bar */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
@@ -176,7 +176,7 @@ const Chat = () => {
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
                   <input 
                     type="text" 
-                    placeholder="Search conversations..." 
+                    placeholder="search talk..." 
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
@@ -198,7 +198,7 @@ const Chat = () => {
         {/* Chat Section Title - Sticky */}
         <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <h1 className="text-2xl font-bold text-foreground font-comfortaa">Chat</h1>
+            <h1 className="text-2xl font-bold text-foreground font-comfortaa">Talk</h1>
           </div>
         </div>
 

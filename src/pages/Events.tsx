@@ -118,7 +118,7 @@ const Events = () => {
       style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
         {/* Top Navigation Bar - Same as Community */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
@@ -178,7 +178,7 @@ const Events = () => {
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
                   <input 
                     type="text" 
-                    placeholder="Search events..." 
+                    placeholder="search events..." 
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
@@ -246,9 +246,25 @@ const Events = () => {
                 {/* Filter Card */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Filter className="h-4 w-4 text-primary" />
-                      <span>Filters</span>
+                    <CardTitle className="text-base font-semibold flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Filter className="h-4 w-4 text-primary" />
+                        <span>Filters</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                          setSelectedLocation("");
+                          setSelectedRadius("");
+                          setSelectedDate("");
+                          setSelectedTags([]);
+                          setSelectedOrganizer("");
+                        }}
+                      >
+                        Clear
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">

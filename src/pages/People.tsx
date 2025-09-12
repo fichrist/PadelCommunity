@@ -43,7 +43,8 @@ const People = () => {
       isOnline: true,
       price: "$120/session",
       tags: ["Sound Healing", "Energy Work", "Crystal Therapy"],
-      verified: true
+      verified: true,
+      isHealer: true
     },
     {
       name: "David Lightwalker",
@@ -58,7 +59,8 @@ const People = () => {
       isOnline: false,
       price: "$150/session",
       tags: ["Sacred Geometry", "Shamanic Healing", "Ancient Wisdom"],
-      verified: true
+      verified: true,
+      isHealer: true
     },
     {
       name: "Aria Starseed",
@@ -73,7 +75,8 @@ const People = () => {
       isOnline: true,
       price: "$90/session",
       tags: ["Crystal Healing", "Astrology", "Intuitive Reading"],
-      verified: true
+      verified: true,
+      isHealer: true
     },
     {
       name: "Phoenix Rising",
@@ -88,7 +91,8 @@ const People = () => {
       isOnline: true,
       price: "$100/session",
       tags: ["Movement Therapy", "Life Coaching", "Breathwork"],
-      verified: true
+      verified: true,
+      isHealer: true
     },
     {
       name: "Luna Sage",
@@ -103,7 +107,8 @@ const People = () => {
       isOnline: false,
       price: "$80/session",
       tags: ["Meditation", "Mindfulness", "Inner Peace"],
-      verified: true
+      verified: true,
+      isHealer: true
     },
     {
       name: "River Flow",
@@ -118,11 +123,77 @@ const People = () => {
       isOnline: true,
       price: "$110/session",
       tags: ["Energy Healing", "Theta Healing", "Emotional Healing"],
-      verified: false
+      verified: false,
+      isHealer: true
+    },
+    // Non-healer users
+    {
+      name: "Maya Spirit",
+      avatar: ariaProfile,
+      role: "Spiritual Seeker & Artist",
+      location: "Portland, OR",
+      followers: 234,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "Artist and spiritual seeker exploring consciousness through creative expression and meditation.",
+      isOnline: true,
+      price: "",
+      tags: ["Art", "Spirituality", "Meditation"],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Ocean Dreams",
+      avatar: phoenixProfile,
+      role: "Student of Life",
+      location: "San Diego, CA",
+      followers: 156,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "On a journey of self-discovery, learning from the ocean's wisdom and connecting with like-minded souls.",
+      isOnline: false,
+      price: "",
+      tags: ["Nature", "Self-Discovery", "Ocean"],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Forest Walker",
+      avatar: elenaProfile,
+      role: "Nature Enthusiast",
+      location: "Vancouver, BC",
+      followers: 89,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "Finding peace and wisdom in the forest, sharing my journey of connection with Mother Earth.",
+      isOnline: true,
+      price: "",
+      tags: ["Nature", "Forest", "Earth Connection"],
+      verified: false,
+      isHealer: false
+    },
+    {
+      name: "Star Dancer",
+      avatar: davidProfile,
+      role: "Cosmic Explorer",
+      location: "Santa Fe, NM",
+      followers: 312,
+      rating: 0,
+      reviews: 0,
+      specialties: [],
+      bio: "Dancing with the stars and exploring the mysteries of the universe through meditation and stargazing.",
+      isOnline: true,
+      price: "",
+      tags: ["Astronomy", "Meditation", "Cosmic"],
+      verified: false,
+      isHealer: false
     }
   ];
 
-  const filteredHealers = filter === "healers" ? healers : 
+  const filteredHealers = filter === "healers" ? healers.filter(person => person.isHealer) : 
     filter === "following" ? healers.filter((_, index) => followedUsers.includes(index)) :
     filter === "followers" ? healers.filter(healer => healer.followers > 1000) :
     healers;
@@ -135,7 +206,7 @@ const People = () => {
       style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
         {/* Top Navigation Bar - Same as Community */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
@@ -195,7 +266,7 @@ const People = () => {
                   <Search className="h-4 w-4 text-muted-foreground mr-2" />
                   <input 
                     type="text" 
-                    placeholder="Search healers..." 
+                    placeholder="search souls..." 
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
@@ -263,9 +334,25 @@ const People = () => {
                 {/* Filter Card */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Filter className="h-4 w-4 text-primary" />
-                      <span>Filters</span>
+                    <CardTitle className="text-base font-semibold flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Filter className="h-4 w-4 text-primary" />
+                        <span>Filters</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                          setSelectedLocation("");
+                          setSelectedRadius("");
+                          setSelectedSpecialty("");
+                          setSelectedTags([]);
+                          setSelectedType("");
+                        }}
+                      >
+                        Clear
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
