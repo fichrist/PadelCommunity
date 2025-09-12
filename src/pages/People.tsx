@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, UserPlus, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,12 +18,15 @@ import ariaProfile from "@/assets/aria-profile.jpg";
 import phoenixProfile from "@/assets/phoenix-profile.jpg";
 
 const People = () => {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("healers");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState("");
+  const [followedUsers, setFollowedUsers] = useState<number[]>([0, 2]); // Example: following first and third healers
+  const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
+  const [userToUnfollow, setUserToUnfollow] = useState<number | null>(null);
   const navigate = useNavigate();
 
   const healers = [
@@ -118,9 +122,9 @@ const People = () => {
     }
   ];
 
-  const filteredHealers = filter === "all" ? healers : 
-    filter === "online" ? healers.filter(healer => healer.isOnline) :
-    filter === "verified" ? healers.filter(healer => healer.verified) :
+  const filteredHealers = filter === "healers" ? healers : 
+    filter === "following" ? healers.filter((_, index) => followedUsers.includes(index)) :
+    filter === "followers" ? healers.filter(healer => healer.followers > 1000) :
     healers;
 
   const allTags = [...new Set(healers.flatMap(healer => healer.tags))];
@@ -214,33 +218,33 @@ const People = () => {
         <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Souls</h1>
+              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
               
               {/* Centered Filters */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
                 <Button
-                  variant={filter === "all" ? "default" : "ghost"}
+                  variant={filter === "healers" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setFilter("all")}
+                  onClick={() => setFilter("healers")}
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
-                  All
+                  Healers
                 </Button>
                 <Button
-                  variant={filter === "online" ? "default" : "ghost"}
+                  variant={filter === "following" ? "default" : "ghost"}
                   size="sm"  
-                  onClick={() => setFilter("online")}
+                  onClick={() => setFilter("following")}
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
-                  Online
+                  Following
                 </Button>
                 <Button
-                  variant={filter === "verified" ? "default" : "ghost"}
+                  variant={filter === "followers" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setFilter("verified")}
+                  onClick={() => setFilter("followers")}
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
-                  Verified
+                  Followers
                 </Button>
               </div>
               
@@ -404,9 +408,59 @@ const People = () => {
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Heart className="h-4 w-4" />
-                        </Button>
+                        <div className="relative">
+                          {followedUsers.includes(index) ? (
+                            <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUserToUnfollow(index);
+                                    setUnfollowDialogOpen(true);
+                                  }}
+                                >
+                                  <UserMinus className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Unfollow {healer.name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to unfollow {healer.name}? You will no longer see their updates in your feed.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setUnfollowDialogOpen(false)}>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => {
+                                      setFollowedUsers(prev => prev.filter(id => id !== index));
+                                      setUnfollowDialogOpen(false);
+                                      setUserToUnfollow(null);
+                                    }}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    Unfollow
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFollowedUsers(prev => [...prev, index]);
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4 text-green-500" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     
@@ -426,7 +480,6 @@ const People = () => {
                           <Users className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
                         </div>
-                        <div className="text-sm font-medium text-primary">{healer.price}</div>
                       </div>
                       
                     </CardContent>
