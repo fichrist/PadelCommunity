@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, MoreVertical, Circle } from "lucide-react";
+import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+// Import images
+import spiritualLogo from "@/assets/spiritual-logo.png";
+import elenaProfile from "@/assets/elena-profile.jpg";
 
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(0);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const conversations = [
     {
@@ -105,6 +111,70 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Navigation Bar */}
+      <div className="bg-background/80 backdrop-blur-sm border-b border-border/40 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Logo */}
+            <div className="flex items-center space-x-2">
+              <img src={spiritualLogo} alt="Spiritual Community" className="h-8 w-8" />
+              <span className="text-lg font-semibold text-foreground font-comfortaa">Sacred Space</span>
+            </div>
+            
+            {/* Center: Navigation Icons */}
+            <div className="flex items-center space-x-1">
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="lg" 
+                  className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                  onClick={() => navigate('/')}
+                >
+                  <Home className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                </Button>
+              </div>
+              <div className="relative">
+                <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
+                  <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                </Button>
+              </div>
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="lg" 
+                  className="p-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all hover:scale-110"
+                >
+                  <MessageCircle className="h-9 w-9 text-primary" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Right: Search Bar + Create Button + Profile */}
+            <div className="flex items-center space-x-3">
+              {/* Search Bar */}
+              <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
+                <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                <input 
+                  type="text" 
+                  placeholder="Search..." 
+                  className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="rounded-full h-10 w-10 p-0"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+              <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                <AvatarImage src={elenaProfile} />
+                <AvatarFallback className="text-sm">ME</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
