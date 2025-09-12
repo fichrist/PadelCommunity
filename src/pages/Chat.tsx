@@ -135,11 +135,16 @@ const Chat = () => {
                   <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
                 </Button>
               </div>
-              <div className="relative">
-                <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
-                  <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                </Button>
-              </div>
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/events')}
+                  >
+                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
               <div className="relative">
                 <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110">
                   <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
@@ -153,6 +158,16 @@ const Chat = () => {
                 >
                   <MessageCircle className="h-9 w-9 text-primary" />
                   <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
+                </Button>
+              </div>
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="lg" 
+                  className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                  onClick={() => navigate('/people')}
+                >
+                  <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
                 </Button>
               </div>
             </div>
