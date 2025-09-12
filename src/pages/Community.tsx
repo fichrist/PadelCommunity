@@ -252,7 +252,7 @@ const Community = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-10 h-full">
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
