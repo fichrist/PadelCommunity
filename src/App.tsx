@@ -8,6 +8,7 @@ import Events from "./pages/Events";
 import Community from "./pages/Community";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import EventDetails from "./pages/EventDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Community />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/event/:eventId" element={<EventDetails />} />
           <Route path="/home" element={<Index />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />

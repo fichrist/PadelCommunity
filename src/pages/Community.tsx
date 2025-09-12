@@ -48,6 +48,7 @@ const Community = () => {
       shares: 5,
       image: soundHealingEvent,
       dateRange: { start: "Mar 15", end: null },
+      eventId: "1",
       isPastEvent: false,
       thoughts: [
         { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Can't wait for this healing session! The full moon energy is perfect timing.", likes: 5, timeAgo: "1 hour ago" },
@@ -83,6 +84,7 @@ const Community = () => {
       shares: 3,
       image: crystalWorkshopEvent,
       dateRange: { start: "Apr 2", end: "Apr 4" },
+      eventId: "2",
       isPastEvent: true,
       averageRating: 4.8,
       totalReviews: 12,
@@ -338,74 +340,68 @@ const Community = () => {
                     {/* Event Image Header for Events */}
                     {post.type === 'event' && post.image && (
                       <div className="p-4">
-                        <div className="flex space-x-3">
-                          {/* Event Image - 4:3 Aspect Ratio - Clickable */}
-                          <div className="w-48 h-36 flex-shrink-0 cursor-pointer group relative">
-                            <img 
-                              src={post.image} 
-                              alt={post.title}
-                              className="w-full h-full object-cover rounded-lg group-hover:brightness-75 transition-all duration-200"
-                              onClick={() => {
-                                setSelectedImage({
-                                  src: post.image,
-                                  alt: post.title,
-                                  title: post.title
-                                });
-                                setImageModalOpen(true);
-                              }}
-                            />
-                            {/* Hover overlay */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                              <ExternalLink className="h-6 w-6 text-white" />
-                            </div>
-                          </div>
-                          
-                          {/* Event Details */}
-                          <div className="flex-1 min-w-0">
-                            <h2 className="text-lg font-bold text-foreground mb-2 leading-tight">
-                              {post.title}
-                            </h2>
-                            
-                            <div className="space-y-1 text-sm">
-                              <div className="mb-2">
-                                <span className="text-accent font-semibold">
-                                  {post.dateRange?.end ? 
-                                    `${post.dateRange.start} - ${post.dateRange.end}` : 
-                                    post.dateRange?.start
-                                  }
-                                </span>
-                              </div>
-                              
-                              <div className="flex items-center space-x-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src={post.author.avatar} />
-                                  <AvatarFallback className="bg-primary/10 text-xs">
-                                    {post.author.name.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-xs font-medium text-muted-foreground">
-                                      {post.author.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">•</span>
-                                    <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
-                                      Follow
-                                    </Button>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {post.author.role}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center space-x-2 text-muted-foreground">
-                                <MapPin className="h-4 w-4" />
-                                <span>{post.location}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                         <div className="flex space-x-3">
+                           {/* Event Image - 4:3 Aspect Ratio - Clickable */}
+                           <div 
+                             className="w-48 h-36 flex-shrink-0 cursor-pointer"
+                             onClick={() => navigate(`/event/${post.eventId}`)}
+                           >
+                             <img 
+                               src={post.image} 
+                               alt={post.title}
+                               className="w-full h-full object-cover rounded-lg"
+                             />
+                           </div>
+                           
+                           {/* Event Details */}
+                           <div className="flex-1 min-w-0">
+                             <h2 
+                               className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
+                               onClick={() => navigate(`/event/${post.eventId}`)}
+                             >
+                               {post.title}
+                             </h2>
+                             
+                             <div className="space-y-1 text-sm">
+                               <div className="mb-2">
+                                 <span className="text-2xl font-bold text-primary">
+                                   {post.dateRange?.end ? 
+                                     `${post.dateRange.start} - ${post.dateRange.end}` : 
+                                     post.dateRange?.start
+                                   }
+                                 </span>
+                               </div>
+                               
+                               <div className="flex items-center space-x-2">
+                                 <Avatar className="h-6 w-6">
+                                   <AvatarImage src={post.author.avatar} />
+                                   <AvatarFallback className="bg-primary/10 text-xs">
+                                     {post.author.name.split(' ').map(n => n[0]).join('')}
+                                   </AvatarFallback>
+                                 </Avatar>
+                                 <div>
+                                   <div className="flex items-center space-x-2">
+                                     <span className="text-xs font-medium text-muted-foreground">
+                                       {post.author.name}
+                                     </span>
+                                     <span className="text-xs text-muted-foreground">•</span>
+                                     <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                       Follow
+                                     </Button>
+                                   </div>
+                                   <p className="text-xs text-muted-foreground">
+                                     {post.author.role}
+                                   </p>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center space-x-2 text-muted-foreground">
+                                 <MapPin className="h-4 w-4" />
+                                 <span>{post.location}</span>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
                       </div>
                     )}
 
