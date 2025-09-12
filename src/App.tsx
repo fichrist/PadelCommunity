@@ -11,6 +11,7 @@ import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import EventDetails from "./pages/EventDetails";
 import HealerProfile from "./pages/HealerProfile";
+import CreateEvent from "./pages/CreateEvent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +31,7 @@ const App = () => (
           <Route path="/home" element={<Index />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/create-event" element={<CreateEvent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
