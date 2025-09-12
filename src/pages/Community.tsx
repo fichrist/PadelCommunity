@@ -8,7 +8,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import CreatePostModal from "@/components/CreatePostModal";
 
 // Import images
-import cloudyBackground from "@/assets/cloudy-spiritual-background.jpg";
+import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
 import davidProfile from "@/assets/david-profile.jpg";
@@ -99,7 +99,7 @@ const Community = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${cloudyBackground})` }}
+      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
@@ -168,7 +168,7 @@ const Community = () => {
         </div>
 
         {/* Community Filters - Sticky */}
-        <div className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
