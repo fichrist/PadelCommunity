@@ -208,10 +208,10 @@ const Community = () => {
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar - Fixed */}
-            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-1 fixed top-[130px] left-4 w-[calc((100vw-2rem)/4-1.5rem)] h-[calc(100vh-130px)] overflow-y-auto z-30">
               <div className="space-y-4">
                 {/* Talk Sidebar */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[400px]">
@@ -296,7 +296,7 @@ const Community = () => {
             </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 lg:ml-[calc((100vw-2rem)/4)] lg:mr-[calc((100vw-2rem)/4)] space-y-4">
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
                   {/* Post Timing - Top Right Corner */}
@@ -500,7 +500,7 @@ const Community = () => {
             </div>
 
             {/* Right Sidebar - Fixed */}
-            <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-1 fixed top-[130px] right-4 w-[calc((100vw-2rem)/4-1.5rem)] h-[calc(100vh-130px)] overflow-y-auto z-30">
               <div className="space-y-4">
                 {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
