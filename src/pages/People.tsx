@@ -429,9 +429,6 @@ const People = () => {
                         <div className="text-sm font-medium text-primary">{healer.price}</div>
                       </div>
                       
-                      <Button size="sm" className="w-full">
-                        View Profile
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}
