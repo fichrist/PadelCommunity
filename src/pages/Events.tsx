@@ -27,11 +27,12 @@ const Events = () => {
 
   const events = [
     {
+      eventId: "1",
       title: "Morning Meditation Circle",
       description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome.",
       date: "Tomorrow, 7:00 AM",
       location: "Zen Garden Center, Sedona AZ",
-      organizer: { name: "Sarah Chen", avatar: elenaProfile },
+      organizer: { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
       attendees: 12,
       category: "Meditation",
       image: soundHealingEvent,
@@ -39,11 +40,12 @@ const Events = () => {
       tags: ["Meditation", "Morning Practice", "Garden"]
     },
     {
+      eventId: "2",
       title: "Full Moon Healing Ceremony",
       description: "Join us for a transformative healing circle under the full moon's energy.",
       date: "This Friday, 8:00 PM",
       location: "Sacred Grove, Boulder CO",
-      organizer: { name: "Marcus Rivera", avatar: elenaProfile },
+      organizer: { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" },
       attendees: 28,
       category: "Ceremony",
       image: crystalWorkshopEvent,
@@ -51,11 +53,12 @@ const Events = () => {
       tags: ["Full Moon", "Healing", "Ceremony"]
     },
     {
+      eventId: "3",
       title: "Yoga & Sound Bath",
       description: "Gentle yoga flow followed by immersive crystal singing bowl meditation.",
       date: "Saturday, 10:00 AM",
       location: "Harmony Studio, Asheville NC",
-      organizer: { name: "Luna Wise", avatar: elenaProfile },
+      organizer: { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
       attendees: 15,
       category: "Yoga",
       image: soundHealingEvent,
@@ -63,11 +66,12 @@ const Events = () => {
       tags: ["Yoga", "Sound Bath", "Meditation"]
     },
     {
+      eventId: "4",
       title: "Mindful Nature Walk",
       description: "Connect with nature through mindful walking and forest meditation.",
       date: "Sunday, 9:00 AM",
       location: "Mountain Trail, Big Sur CA",
-      organizer: { name: "River Stone", avatar: elenaProfile },
+      organizer: { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
       attendees: 8,
       category: "Nature",
       image: crystalWorkshopEvent,
@@ -75,11 +79,12 @@ const Events = () => {
       tags: ["Nature", "Walking", "Mindfulness"]
     },
     {
+      eventId: "5",
       title: "Sacred Geometry Workshop",
       description: "Explore the divine patterns in nature and their spiritual significance.",
       date: "Next Tuesday, 6:00 PM",
       location: "Wisdom Circle, Mount Shasta CA",
-      organizer: { name: "Dr. Amara Light", avatar: elenaProfile },
+      organizer: { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" },
       attendees: 22,
       category: "Workshop",
       image: soundHealingEvent,
@@ -87,11 +92,12 @@ const Events = () => {
       tags: ["Sacred Geometry", "Workshop", "Education"]
     },
     {
+      eventId: "6",
       title: "Chakra Balancing Session",
       description: "Realign your energy centers through guided visualization and healing.",
       date: "Next Wednesday, 7:30 PM",
       location: "Crystal Temple, Tulum Mexico",
-      organizer: { name: "Sage Moon", avatar: elenaProfile },
+      organizer: { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
       attendees: 18,
       category: "Healing",
       image: crystalWorkshopEvent,

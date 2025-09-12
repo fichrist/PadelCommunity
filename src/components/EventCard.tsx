@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, MapPin, Users, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface EventCardProps {
+  eventId: string;
   title: string;
   description: string;
   date: string;
@@ -12,6 +14,7 @@ interface EventCardProps {
   organizer: {
     name: string;
     avatar?: string;
+    id: string;
   };
   attendees: number;
   category: string;
@@ -19,6 +22,7 @@ interface EventCardProps {
 }
 
 const EventCard = ({ 
+  eventId,
   title, 
   description, 
   date, 
@@ -28,8 +32,9 @@ const EventCard = ({
   category,
   image 
 }: EventCardProps) => {
+  const navigate = useNavigate();
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden">
+    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer" onClick={() => navigate(`/event/${eventId}`)}>
       {image && (
         <div className="relative h-48 bg-gradient-to-br from-sage/20 to-celestial/20 overflow-hidden">
           <img 
@@ -84,17 +89,28 @@ const EventCard = ({
         </div>
         
         <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors" 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/healer/${organizer.id}`);
+            }}
+          >
             <Avatar className="h-6 w-6">
               <AvatarImage src={organizer.avatar} />
               <AvatarFallback className="text-xs bg-primary/10">
                 {organizer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground">by {organizer.name}</span>
+            <span className="text-xs text-muted-foreground hover:text-primary transition-colors">by {organizer.name}</span>
           </div>
           
-          <Button size="sm" variant="outline" className="text-xs">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             Join Event
           </Button>
         </div>
