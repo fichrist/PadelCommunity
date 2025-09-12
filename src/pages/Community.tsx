@@ -209,7 +209,7 @@ const Community = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-1 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
@@ -296,7 +296,7 @@ const Community = () => {
             </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
                   {/* Post Timing - Top Right Corner */}
@@ -311,8 +311,8 @@ const Community = () => {
                     {post.type === 'event' && post.image && (
                       <div className="p-4">
                         <div className="flex space-x-3">
-                          {/* Small Event Image - 3cm x 3cm (approximately 112px x 112px) */}
-                          <div className="w-28 h-28 flex-shrink-0">
+                          {/* Event Image - Larger Size */}
+                          <div className="w-40 h-40 flex-shrink-0">
                             <img 
                               src={post.image} 
                               alt={post.title}
