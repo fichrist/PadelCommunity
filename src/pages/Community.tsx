@@ -569,6 +569,10 @@ const Community = () => {
                           <span>Reshare</span>
                         </button>
                         <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                          <BookOpen className="h-4 w-4" />
+                          <span>Save</span>
+                        </button>
+                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                           <Share2 className="h-4 w-4" />
                           <span>Share</span>
                         </button>
