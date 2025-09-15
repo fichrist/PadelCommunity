@@ -59,14 +59,10 @@ const EventCard = ({
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg p-2 space-y-1">
-            <div className="flex items-center space-x-1 text-white text-xs">
-              <Calendar className="h-3 w-3" />
+          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg p-2">
+            <div className="flex items-center space-x-1 text-white text-sm font-medium">
+              <Calendar className="h-4 w-4" />
               <span>{date}</span>
-            </div>
-            <div className="flex items-center space-x-1 text-white text-xs">
-              <MapPin className="h-3 w-3" />
-              <span>{location}</span>
             </div>
           </div>
         </div>

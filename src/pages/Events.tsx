@@ -1,6 +1,8 @@
 import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
+import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,9 @@ const Events = () => {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const navigate = useNavigate();
 
@@ -273,6 +278,9 @@ const Events = () => {
                           setSelectedRadius("");
                           setSelectedDate("");
                           setSelectedTags([]);
+                          setShowCustomDatePicker(false);
+                          setCustomDateFrom(undefined);
+                          setCustomDateTo(undefined);
                         }}
                       >
                         Clear
@@ -286,11 +294,11 @@ const Events = () => {
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Where</span>
                       </div>
-                      <Input 
-                        placeholder="Location..." 
-                        className="text-sm"
+                      <LocationAutocomplete
                         value={selectedLocation}
-                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        onChange={setSelectedLocation}
+                        placeholder="Enter a city..."
+                        className="text-sm"
                       />
                       <Select value={selectedRadius} onValueChange={setSelectedRadius}>
                         <SelectTrigger className="text-sm">
@@ -312,18 +320,56 @@ const Events = () => {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">When</span>
                       </div>
-                      <Select value={selectedDate} onValueChange={setSelectedDate}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Time period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="today">Today</SelectItem>
-                          <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                          <SelectItem value="this-week">This Week</SelectItem>
-                          <SelectItem value="next-week">Next Week</SelectItem>
-                          <SelectItem value="this-month">This Month</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Select 
+                          value={selectedDate} 
+                          onValueChange={(value) => {
+                            if (value === "custom") {
+                              setShowCustomDatePicker(true);
+                            } else {
+                              setSelectedDate(value);
+                              setShowCustomDatePicker(false);
+                              setCustomDateFrom(undefined);
+                              setCustomDateTo(undefined);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="text-sm">
+                            <SelectValue placeholder="Time period" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                            <SelectItem value="this-week">This Week</SelectItem>
+                            <SelectItem value="next-week">Next Week</SelectItem>
+                            <SelectItem value="this-month">This Month</SelectItem>
+                            <SelectItem value="custom">Custom Range</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Custom Date Range Picker */}
+                        {showCustomDatePicker && (
+                          <div className="absolute top-full left-0 right-0 mt-2 z-50">
+                            <CustomDateRangePicker
+                              onRangeSelect={(from, to) => {
+                                setCustomDateFrom(from);
+                                setCustomDateTo(to);
+                                if (from && to) {
+                                  setSelectedDate("custom");
+                                }
+                              }}
+                              onClose={() => setShowCustomDatePicker(false)}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Display selected custom range */}
+                        {selectedDate === "custom" && customDateFrom && customDateTo && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {customDateFrom.toLocaleDateString()} - {customDateTo.toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* What Section - Tags */}

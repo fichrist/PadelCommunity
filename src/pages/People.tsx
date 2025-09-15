@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -515,11 +516,11 @@ const People = () => {
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Where</span>
                       </div>
-                      <Input 
-                        placeholder="Location..." 
-                        className="text-sm"
+                      <LocationAutocomplete
                         value={selectedLocation}
-                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        onChange={setSelectedLocation}
+                        placeholder="Enter a city..."
+                        className="text-sm"
                       />
                       <Select value={selectedRadius} onValueChange={setSelectedRadius}>
                         <SelectTrigger className="text-sm">
