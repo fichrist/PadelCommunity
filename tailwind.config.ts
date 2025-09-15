@@ -20,6 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				'comfortaa': ['Comfortaa', 'cursive'],
+				'mystical': ['Inter', 'Comfortaa', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

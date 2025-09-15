@@ -8,55 +8,65 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 45 20% 97%;
-    --foreground: 240 15% 15%;
+    /* Mystical spiritual background with warm undertones */
+    --background: 35 35% 96%;
+    --foreground: 280 25% 20%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 15% 15%;
+    /* Soft ethereal cards */
+    --card: 35 50% 98%;
+    --card-foreground: 280 25% 20%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 15% 15%;
+    --popover: 35 50% 98%;
+    --popover-foreground: 280 25% 20%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 98%;
+    /* Deep spiritual purple as primary */
+    --primary: 280 45% 35%;
+    --primary-foreground: 35 30% 95%;
 
-    --secondary: 45 25% 94%;
-    --secondary-foreground: 240 15% 15%;
+    /* Warm sage secondary */
+    --secondary: 120 30% 88%;
+    --secondary-foreground: 280 25% 25%;
 
-    --muted: 45 15% 92%;
-    --muted-foreground: 240 10% 50%;
+    /* Soft muted tones */
+    --muted: 35 25% 90%;
+    --muted-foreground: 280 15% 45%;
 
-    --accent: 221 83% 73%;
-    --accent-foreground: 221 30% 25%;
+    /* Mystical accent with aurora vibes */
+    --accent: 260 50% 65%;
+    --accent-foreground: 260 20% 15%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 45 15% 87%;
-    --input: 45 15% 87%;
-    --ring: 262 83% 58%;
+    /* Softer borders for ethereal feel */
+    --border: 35 20% 85%;
+    --input: 35 20% 85%;
+    --ring: 280 45% 65%;
 
-    /* Spiritual Design Tokens */
-    --sage: 120 25% 85%;
-    --sage-foreground: 120 15% 25%;
+    /* Enhanced Spiritual Design Tokens */
+    --sage: 120 35% 82%;
+    --sage-foreground: 120 30% 20%;
     
-    --earth: 30 35% 75%;
-    --earth-foreground: 30 25% 25%;
+    --earth: 35 45% 70%;
+    --earth-foreground: 35 40% 20%;
     
-    --celestial: 214 84% 50%;
-    --celestial-foreground: 214 40% 25%;
+    --celestial: 240 60% 60%;
+    --celestial-foreground: 240 30% 20%;
     
-    --lotus: 300 45% 65%;
-    --lotus-foreground: 300 35% 25%;
+    --lotus: 290 55% 70%;
+    --lotus-foreground: 290 40% 20%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
-    --gradient-peaceful: linear-gradient(180deg, hsl(var(--sage)), hsl(var(--earth)));
-    --gradient-celestial: linear-gradient(45deg, hsl(var(--celestial)), hsl(var(--lotus)));
+    /* Mystical Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(280, 45%, 35%), hsl(260, 50%, 65%));
+    --gradient-peaceful: linear-gradient(180deg, hsl(120, 35%, 82%), hsl(35, 45%, 70%));
+    --gradient-celestial: linear-gradient(45deg, hsl(240, 60%, 60%), hsl(290, 55%, 70%));
+    --gradient-aurora: linear-gradient(135deg, hsl(280, 45%, 35%), hsl(240, 60%, 60%), hsl(290, 55%, 70%));
+    --gradient-ethereal: linear-gradient(180deg, hsl(35, 35%, 96%), hsl(35, 45%, 92%));
     
-    /* Shadows */
-    --shadow-gentle: 0 4px 20px hsla(var(--primary), 0.15);
-    --shadow-peaceful: 0 8px 32px hsla(120, 25%, 50%, 0.12);
+    /* Soft mystical shadows */
+    --shadow-gentle: 0 4px 25px hsla(280, 45%, 35%, 0.12);
+    --shadow-peaceful: 0 8px 35px hsla(120, 35%, 50%, 0.08);
+    --shadow-mystical: 0 12px 40px hsla(280, 45%, 35%, 0.15);
 
     --radius: 0.5rem;
 
@@ -78,33 +88,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Deep mystical night background */
+    --background: 280 30% 8%;
+    --foreground: 35 30% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Dark ethereal cards */
+    --card: 280 25% 12%;
+    --card-foreground: 35 30% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 280 25% 12%;
+    --popover-foreground: 35 30% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Glowing spiritual primary */
+    --primary: 260 60% 75%;
+    --primary-foreground: 280 30% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Dark sage secondary */
+    --secondary: 120 20% 20%;
+    --secondary-foreground: 35 30% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Dark muted tones */
+    --muted: 280 20% 18%;
+    --muted-foreground: 35 15% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Mystical dark accent */
+    --accent: 280 25% 25%;
+    --accent-foreground: 35 30% 92%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 35 30% 92%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Subtle dark borders */
+    --border: 280 20% 22%;
+    --input: 280 20% 22%;
+    --ring: 260 60% 75%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
