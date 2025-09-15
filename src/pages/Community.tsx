@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
@@ -13,6 +13,8 @@ import NotificationDropdown from "@/components/NotificationDropdown";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 import ImageModal from "@/components/ImageModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -32,6 +34,12 @@ const Community = () => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
+  const [followedHealers, setFollowedHealers] = useState<string[]>(['Luna Sage', 'River Flow']);
+  const [savedPosts, setSavedPosts] = useState<number[]>([]);
+  const [resharedPosts, setResharedPosts] = useState<number[]>([]);
+  const [sharePopoverOpen, setSharePopoverOpen] = useState<number | null>(null);
+  const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<number | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const navigate = useNavigate();
 
   const posts = [
@@ -493,9 +501,35 @@ const Community = () => {
                             </div>
                             {post.connectionsGoing && post.connectionsGoing.length > 0 && (
                               <div className="flex items-center space-x-1">
-                                <span className="text-primary font-medium">
-                                  {post.connectionsGoing.join(", ")} going
-                                </span>
+                                {post.connectionsGoing.length <= 2 ? (
+                                  <span className="text-primary font-medium">
+                                    {post.connectionsGoing.join(", ")} going
+                                  </span>
+                                ) : (
+                                  <Popover open={connectionPopoverOpen === index} onOpenChange={(open) => setConnectionPopoverOpen(open ? index : null)}>
+                                    <PopoverTrigger asChild>
+                                      <button className="text-primary font-medium hover:underline cursor-pointer">
+                                        {post.connectionsGoing.length} connections going
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-64 p-3">
+                                      <div className="space-y-2">
+                                        <h4 className="text-sm font-semibold">Connections Attending</h4>
+                                        {post.connectionsGoing.map((connection: string, idx: number) => (
+                                          <div key={idx} className="flex items-center space-x-2 p-1 rounded hover:bg-muted cursor-pointer">
+                                            <Avatar className="h-6 w-6">
+                                              <AvatarImage src={idx % 2 === 0 ? elenaProfile : davidProfile} />
+                                              <AvatarFallback className="text-xs">
+                                                {connection.split(' ').map((n: string) => n[0]).join('')}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm">{connection}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
                               </div>
                             )}
                           </div>
@@ -564,18 +598,79 @@ const Community = () => {
                           <MessageCircle className="h-4 w-4" />
                           <span>{post.comments} Thoughts</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                        <button 
+                          className={`flex items-center space-x-2 text-sm transition-colors ${
+                            resharedPosts.includes(index) 
+                              ? 'text-primary font-bold' 
+                              : 'text-muted-foreground hover:text-primary'
+                          }`}
+                          onClick={() => {
+                            if (resharedPosts.includes(index)) {
+                              setResharedPosts(prev => prev.filter(id => id !== index));
+                              toast.success("Reshare removed");
+                            } else {
+                              setResharedPosts(prev => [...prev, index]);
+                              toast.success("Post reshared!");
+                            }
+                          }}
+                        >
                           <Repeat2 className="h-4 w-4" />
-                          <span>Reshare</span>
+                          <span>{resharedPosts.includes(index) ? 'Reshared' : 'Reshare'}</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                          <BookOpen className="h-4 w-4" />
+                        
+                        <button 
+                          className={`flex items-center space-x-2 text-sm transition-colors ${
+                            savedPosts.includes(index) 
+                              ? 'text-primary' 
+                              : 'text-muted-foreground hover:text-primary'
+                          }`}
+                          onClick={() => {
+                            if (savedPosts.includes(index)) {
+                              setSavedPosts(prev => prev.filter(id => id !== index));
+                              toast.success("Removed from saved");
+                            } else {
+                              setSavedPosts(prev => [...prev, index]);
+                              toast.success("Saved to your private page!");
+                            }
+                          }}
+                        >
+                          <BookOpen className={`h-4 w-4 ${savedPosts.includes(index) ? 'fill-current' : ''}`} />
                           <span>Save</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                          <Share2 className="h-4 w-4" />
-                          <span>Share</span>
-                        </button>
+                        
+                        <Popover open={sharePopoverOpen === index} onOpenChange={(open) => setSharePopoverOpen(open ? index : null)}>
+                          <PopoverTrigger asChild>
+                            <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                              <Share2 className="h-4 w-4" />
+                              <span>Share</span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2">
+                            <div className="space-y-2">
+                              <button 
+                                className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/post/${index + 1}`);
+                                  setLinkCopied(true);
+                                  toast.success("Link copied to clipboard!");
+                                  setTimeout(() => setLinkCopied(false), 2000);
+                                  setSharePopoverOpen(null);
+                                }}
+                              >
+                                {linkCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                <span>Copy Link</span>
+                              </button>
+                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Share on Twitter</span>
+                              </button>
+                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Share on Facebook</span>
+                              </button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </CardContent>
@@ -621,9 +716,22 @@ const Community = () => {
                              </p>
                            </div>
                          </div>
-                        <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                          Follow
-                        </Button>
+                         <Button 
+                           variant="ghost" 
+                           size="sm" 
+                           className="p-2 h-auto hover:bg-red-50"
+                           onClick={() => {
+                             if (followedHealers.includes(member.name)) {
+                               setFollowedHealers(prev => prev.filter(name => name !== member.name));
+                               toast.success(`Unfollowed ${member.name}`);
+                             } else {
+                               setFollowedHealers(prev => [...prev, member.name]);
+                               toast.success(`Following ${member.name}`);
+                             }
+                           }}
+                         >
+                           <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                         </Button>
                       </div>
                     ))}
                   </CardContent>
