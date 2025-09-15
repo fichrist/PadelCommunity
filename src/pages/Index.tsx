@@ -1,12 +1,20 @@
-import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Heart, MessageCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, Users, Heart, MessageCircle, ArrowRight, Sparkles, User, Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
+import spiritualLogo from "@/assets/spiritual-logo.png";
+import elenaProfile from "@/assets/elena-profile.jpg";
+import CreateDropdown from "@/components/CreateDropdown";
+import NotificationDropdown from "@/components/NotificationDropdown";
+import ProfileDropdown from "@/components/ProfileDropdown";
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   const featuredEvents = [
     {
       eventId: "1",
@@ -69,7 +77,81 @@ const Index = () => {
       style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
     >
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
-        <Navigation />
+        {/* Top Navigation Bar */}
+        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="flex items-center justify-between">
+              {/* Left: Logo + App Name */}
+              <div className="flex items-center space-x-2">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
+                </div>
+                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
+              </div>
+              
+              {/* Center: Navigation Icons */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/')}
+                  >
+                    <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/events')}
+                  >
+                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/people')}
+                  >
+                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
+                    onClick={() => navigate('/chat')}
+                  >
+                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Right: Search Bar + Create Button + Profile */}
+              <div className="flex items-center space-x-3">
+                {/* Search Bar */}
+                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                  <input 
+                    type="text" 
+                    placeholder="search..." 
+                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
+                  />
+                </div>
+                <CreateDropdown onCreateShare={() => {}} />
+                <NotificationDropdown />
+                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <HeroSection />
       
       {/* Features Section */}
