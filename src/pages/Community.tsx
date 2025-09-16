@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
@@ -40,6 +40,8 @@ const Community = () => {
   const [sharePopoverOpen, setSharePopoverOpen] = useState<number | null>(null);
   const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<number | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   const posts = [
@@ -135,6 +137,15 @@ const Community = () => {
     { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile, location: "Byron Bay, AU" },
   ];
 
+  // Get share titles from followed people for search dropdown
+  const sharesByFollowedPeople = posts.filter(post => 
+    post.type === 'share' && followedHealers.includes(post.author.name)
+  );
+
+  const filteredShareTitles = sharesByFollowedPeople
+    .filter(share => share.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .slice(0, 5); // Limit to 5 results
+
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
@@ -196,14 +207,61 @@ const Community = () => {
               
               {/* Right: Search Bar + Create Button + Profile */}
               <div className="flex items-center space-x-3">
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                  <input 
-                    type="text" 
-                    placeholder="search..." 
-                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                  />
+                {/* Search Bar with Dropdown */}
+                <div className="hidden md:block relative">
+                  <Popover open={searchDropdownOpen} onOpenChange={setSearchDropdownOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center bg-muted rounded-full px-3 py-2 w-64 cursor-pointer">
+                        <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                        <input 
+                          type="text" 
+                          placeholder="search shares..." 
+                          value={searchQuery}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setSearchDropdownOpen(true);
+                          }}
+                          className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
+                        />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-2 mt-1" align="start">
+                      <div className="space-y-1">
+                        {filteredShareTitles.length > 0 ? (
+                          filteredShareTitles.map((share, index) => (
+                            <div 
+                              key={index}
+                              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer transition-colors"
+                              onClick={() => {
+                                setSearchQuery(share.title);
+                                setSearchDropdownOpen(false);
+                              }}
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={share.author.avatar} />
+                                <AvatarFallback className="text-xs">
+                                  {share.author.name.split(' ').map((n: string) => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{share.title}</p>
+                                <p className="text-xs text-muted-foreground">by {share.author.name}</p>
+                              </div>
+                            </div>
+                          ))
+                        ) : searchQuery ? (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            No shares found
+                          </div>
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            Start typing to search shares...
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <CreateDropdown onCreateShare={() => setCreateShareModalOpen(true)} />
                 <NotificationDropdown />
@@ -430,39 +488,6 @@ const Community = () => {
                       </div>
                     )}
 
-                    {/* Author Info for Shares only */}
-                    {post.type === 'share' && (
-                      <div className="px-3 py-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={post.author.avatar} />
-                              <AvatarFallback className="bg-primary/10 text-xs">
-                                {post.author.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                 <span 
-                                   className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                                   onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                                 >
-                                   {post.author.name}
-                                 </span>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
-                                  Follow
-                                </Button>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {post.author.role}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Content */}
                     <div className="px-3">
                       {/* Tags first for events */}
@@ -476,19 +501,30 @@ const Community = () => {
                         </div>
                       )}
 
-                      <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                        {post.thought}
-                      </p>
-
-                      {/* Tags for shares - Without hashtags and different color */}
+                      {/* Share content: description above tags */}
                       {post.type === 'share' && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {post.tags.map((tag, tagIndex) => (
-                            <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-                              {tag}
-                            </Badge>
-                          ))}
+                        <div className="mb-3">
+                          <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                            {post.thought}
+                          </p>
+                          <p className="text-sm text-foreground/80 leading-relaxed mb-3">
+                            {post.description}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {post.tags.map((tag, tagIndex) => (
+                              <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
+                      )}
+
+                      {/* Event content */}
+                      {post.type === 'event' && (
+                        <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                          {post.thought}
+                        </p>
                       )}
 
                       {/* Event Details */}
@@ -577,11 +613,37 @@ const Community = () => {
                         </div>
                       )}
 
-                      {/* Share description */}
+                      {/* Author Info for Shares - Below video */}
                       {post.type === 'share' && (
-                        <p className="text-sm text-foreground/80 mb-3 leading-relaxed">
-                          {post.description}
-                        </p>
+                        <div className="py-2 mb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={post.author.avatar} />
+                                <AvatarFallback className="bg-primary/10 text-xs">
+                                  {post.author.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                   <span 
+                                     className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                     onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                   >
+                                     {post.author.name}
+                                   </span>
+                                  <span className="text-xs text-muted-foreground">•</span>
+                                  <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                    Follow
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {post.author.role}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
 
