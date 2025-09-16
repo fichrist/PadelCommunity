@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -29,6 +31,9 @@ const Events = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
+  const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const navigate = useNavigate();
 
   const events = [
@@ -259,9 +264,9 @@ const Events = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 h-full">
-            {/* Left Sidebar - Filters */}
-            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 h-full">
+            {/* Left Sidebar - Filters - Doubled in size */}
+            <div className="lg:col-span-4 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Filter Card */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
@@ -479,8 +484,9 @@ const Events = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Main Content - Events Grid - Adjusted for larger filter */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6">
                 {filteredEvents.map((event, index) => (
                   <EventCard 
                     key={index} 
@@ -495,12 +501,108 @@ const Events = () => {
                         toast.success("Event saved!");
                       }
                     }}
+                    onJoinEvent={() => {
+                      setSelectedEvent(event);
+                      setEnrollmentModalOpen(true);
+                    }}
                   />
                 ))}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Enrollment Modal */}
+        <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Enroll in Event</DialogTitle>
+              <DialogDescription>
+                Join "{selectedEvent?.title}" - Complete your enrollment below
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Event Details:</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span><strong>Date:</strong> {selectedEvent?.date}</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span><strong>Location:</strong> {selectedEvent?.location}</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span><strong>Organizer:</strong> {selectedEvent?.organizer?.name}</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span><strong>Current attendees:</strong> {selectedEvent?.attendees}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Enrollment Options:</h4>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="anonymous" 
+                    checked={isAnonymous}
+                    onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+                  />
+                  <label
+                    htmlFor="anonymous"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Stay anonymous (your name won't be visible to other participants)
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">What to expect:</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span>You'll receive a confirmation email with event details</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span>Event reminders will be sent 24 hours and 1 hour before</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
+                    <span>You can cancel your enrollment up to 2 hours before the event</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEnrollmentModalOpen(false);
+                  setIsAnonymous(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  toast.success(`Successfully enrolled in "${selectedEvent?.title}"!`);
+                  setEnrollmentModalOpen(false);
+                  setIsAnonymous(false);
+                }}
+              >
+                Confirm Enrollment
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

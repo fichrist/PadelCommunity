@@ -33,6 +33,7 @@ interface EventCardProps {
   }>;
   isSaved?: boolean;
   onSaveToggle?: () => void;
+  onJoinEvent?: () => void;
 }
 
 const EventCard = ({ 
@@ -50,7 +51,8 @@ const EventCard = ({
   totalReviews = 0,
   reviews = [],
   isSaved = false,
-  onSaveToggle
+  onSaveToggle,
+  onJoinEvent
 }: EventCardProps) => {
   const navigate = useNavigate();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -164,7 +166,10 @@ const EventCard = ({
             size="sm" 
             variant="outline" 
             className="text-xs"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onJoinEvent?.();
+            }}
           >
             Join Event
           </Button>
