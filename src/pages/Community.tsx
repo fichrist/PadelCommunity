@@ -749,7 +749,7 @@ const Community = () => {
                         <button 
                           className={`flex items-center space-x-2 text-sm transition-colors ${
                             savedPosts.includes(index) 
-                              ? 'text-primary' 
+                              ? 'text-primary font-bold' 
                               : 'text-muted-foreground hover:text-primary'
                           }`}
                           onClick={() => {
