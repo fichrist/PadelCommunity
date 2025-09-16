@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Users, Heart, Star } from "lucide-react";
+import { Calendar, MapPin, Users, BookOpen, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ReviewModal from "@/components/ReviewModal";
@@ -31,6 +31,8 @@ interface EventCardProps {
     content: string;
     timeAgo: string;
   }>;
+  isSaved?: boolean;
+  onSaveToggle?: () => void;
 }
 
 const EventCard = ({ 
@@ -46,7 +48,9 @@ const EventCard = ({
   isPastEvent = false,
   averageRating = 0,
   totalReviews = 0,
-  reviews = []
+  reviews = [],
+  isSaved = false,
+  onSaveToggle
 }: EventCardProps) => {
   const navigate = useNavigate();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -73,14 +77,24 @@ const EventCard = ({
           <Badge variant="secondary" className="mb-2 bg-sage/20 text-sage-foreground">
             {category}
           </Badge>
-          <Button variant="ghost" size="sm" className="p-2 h-auto">
-            <Heart className="h-4 w-4" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`p-2 h-auto transition-colors ${
+              isSaved ? 'text-primary font-bold' : 'text-muted-foreground hover:text-primary'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSaveToggle?.();
+            }}
+          >
+            <BookOpen className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
           </Button>
         </div>
         <CardTitle className="text-lg group-hover:text-primary transition-colors">
           {title}
         </CardTitle>
-        <CardDescription className="line-clamp-2">
+        <CardDescription className="line-clamp-4">
           {description}
         </CardDescription>
       </CardHeader>

@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -27,14 +28,15 @@ const Events = () => {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const events = [
     {
       eventId: "1",
       title: "Morning Meditation Circle",
-      description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome.",
-      date: "Tomorrow, 7:00 AM",
+      description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome. This gentle practice includes breathing exercises, guided meditation, and silent contemplation in nature.",
+      date: "March 16, 2024 at 7:00 AM",
       location: "Zen Garden Center, Sedona AZ",
       organizer: { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
       attendees: 12,
@@ -46,8 +48,8 @@ const Events = () => {
     {
       eventId: "2",
       title: "Full Moon Healing Ceremony",
-      description: "Join us for a transformative healing circle under the full moon's energy.",
-      date: "This Friday, 8:00 PM",
+      description: "Join us for a transformative healing circle under the full moon's energy. Experience deep healing through sound, crystal work, and collective intention setting in our sacred outdoor space.",
+      date: "March 18, 2024 at 8:00 PM",
       location: "Sacred Grove, Boulder CO",
       organizer: { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" },
       attendees: 28,
@@ -59,8 +61,8 @@ const Events = () => {
     {
       eventId: "3",
       title: "Yoga & Sound Bath",
-      description: "Gentle yoga flow followed by immersive crystal singing bowl meditation.",
-      date: "Saturday, 10:00 AM",
+      description: "Gentle yoga flow followed by immersive crystal singing bowl meditation. Perfect for releasing tension and finding inner peace through movement and sound healing vibrations.",
+      date: "March 14, 2024 at 10:00 AM",
       location: "Harmony Studio, Asheville NC",
       organizer: { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
       attendees: 15,
@@ -79,8 +81,8 @@ const Events = () => {
     {
       eventId: "4",
       title: "Mindful Nature Walk",
-      description: "Connect with nature through mindful walking and forest meditation.",
-      date: "Sunday, 9:00 AM",
+      description: "Connect with nature through mindful walking and forest meditation. Discover the healing power of trees, breathe fresh mountain air, and practice walking meditation techniques.",
+      date: "March 17, 2024 at 9:00 AM",
       location: "Mountain Trail, Big Sur CA",
       organizer: { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
       attendees: 8,
@@ -92,8 +94,8 @@ const Events = () => {
     {
       eventId: "5",
       title: "Sacred Geometry Workshop",
-      description: "Explore the divine patterns in nature and their spiritual significance.",
-      date: "Next Tuesday, 6:00 PM",
+      description: "Explore the divine patterns in nature and their spiritual significance. Learn how to recognize and work with sacred geometric forms in meditation, art, and daily life practices.",
+      date: "March 12, 2024 at 6:00 PM",
       location: "Wisdom Circle, Mount Shasta CA",
       organizer: { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" },
       attendees: 22,
@@ -112,8 +114,8 @@ const Events = () => {
     {
       eventId: "6",
       title: "Chakra Balancing Session",
-      description: "Realign your energy centers through guided visualization and healing.",
-      date: "Next Wednesday, 7:30 PM",
+      description: "Realign your energy centers through guided visualization and healing. Experience deep chakra cleansing, energy balancing, and learn techniques for maintaining energetic harmony.",
+      date: "March 19, 2024 at 7:30 PM",
       location: "Crystal Temple, Tulum Mexico",
       organizer: { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
       attendees: 18,
@@ -477,11 +479,23 @@ const Events = () => {
               </div>
             </div>
 
-            {/* Main Content - Events Grid */}
             <div className="lg:col-span-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEvents.map((event, index) => (
-                  <EventCard key={index} {...event} />
+                  <EventCard 
+                    key={index} 
+                    {...event} 
+                    isSaved={savedEvents.includes(event.eventId)}
+                    onSaveToggle={() => {
+                      if (savedEvents.includes(event.eventId)) {
+                        setSavedEvents(prev => prev.filter(id => id !== event.eventId));
+                        toast.success("Removed from saved");
+                      } else {
+                        setSavedEvents(prev => [...prev, event.eventId]);
+                        toast.success("Event saved!");
+                      }
+                    }}
+                  />
                 ))}
               </div>
             </div>
