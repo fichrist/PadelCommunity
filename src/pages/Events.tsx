@@ -43,7 +43,10 @@ const Events = () => {
       description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome. This gentle practice includes breathing exercises, guided meditation, and silent contemplation in nature.",
       date: "March 16, 2024 at 7:00 AM",
       location: "Zen Garden Center, Sedona AZ",
-      organizer: { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
+      organizers: [
+        { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
+        { name: "Michael Zen", avatar: elenaProfile, id: "healer-7" }
+      ],
       attendees: 12,
       category: "Meditation",
       image: soundHealingEvent,
@@ -56,7 +59,9 @@ const Events = () => {
       description: "Join us for a transformative healing circle under the full moon's energy. Experience deep healing through sound, crystal work, and collective intention setting in our sacred outdoor space.",
       date: "March 18, 2024 at 8:00 PM",
       location: "Sacred Grove, Boulder CO",
-      organizer: { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" },
+      organizers: [
+        { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" }
+      ],
       attendees: 28,
       category: "Ceremony",
       image: crystalWorkshopEvent,
@@ -69,7 +74,11 @@ const Events = () => {
       description: "Gentle yoga flow followed by immersive crystal singing bowl meditation. Perfect for releasing tension and finding inner peace through movement and sound healing vibrations.",
       date: "March 14, 2024 at 10:00 AM",
       location: "Harmony Studio, Asheville NC",
-      organizer: { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
+      organizers: [
+        { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
+        { name: "Echo Sound", avatar: elenaProfile, id: "healer-8" },
+        { name: "River Flow", avatar: elenaProfile, id: "healer-9" }
+      ],
       attendees: 15,
       category: "Yoga",
       image: soundHealingEvent,
@@ -89,7 +98,10 @@ const Events = () => {
       description: "Connect with nature through mindful walking and forest meditation. Discover the healing power of trees, breathe fresh mountain air, and practice walking meditation techniques.",
       date: "March 17, 2024 at 9:00 AM",
       location: "Mountain Trail, Big Sur CA",
-      organizer: { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
+      organizers: [
+        { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
+        { name: "Forest Guide", avatar: elenaProfile, id: "healer-10" }
+      ],
       attendees: 8,
       category: "Nature",
       image: crystalWorkshopEvent,
@@ -102,7 +114,9 @@ const Events = () => {
       description: "Explore the divine patterns in nature and their spiritual significance. Learn how to recognize and work with sacred geometric forms in meditation, art, and daily life practices.",
       date: "March 12, 2024 at 6:00 PM",
       location: "Wisdom Circle, Mount Shasta CA",
-      organizer: { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" },
+      organizers: [
+        { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" }
+      ],
       attendees: 22,
       category: "Workshop",
       image: soundHealingEvent,
@@ -122,7 +136,11 @@ const Events = () => {
       description: "Realign your energy centers through guided visualization and healing. Experience deep chakra cleansing, energy balancing, and learn techniques for maintaining energetic harmony.",
       date: "March 19, 2024 at 7:30 PM",
       location: "Crystal Temple, Tulum Mexico",
-      organizer: { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
+      organizers: [
+        { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
+        { name: "Crystal Aura", avatar: elenaProfile, id: "healer-11" },
+        { name: "Energy Master", avatar: elenaProfile, id: "healer-12" }
+      ],
       attendees: 18,
       category: "Healing",
       image: crystalWorkshopEvent,
@@ -266,7 +284,7 @@ const Events = () => {
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 h-full">
             {/* Left Sidebar - Filters */}
-            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+            <div className="lg:col-span-2 sticky top-0 h-[calc(200vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Filter Card */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
@@ -536,7 +554,7 @@ const Events = () => {
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span><strong>Organizer:</strong> {selectedEvent?.organizer?.name}</span>
+                    <span><strong>Organizers:</strong> {selectedEvent?.organizers?.map((org: any) => org.name).join(', ')}</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>

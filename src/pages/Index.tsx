@@ -22,7 +22,7 @@ const Index = () => {
       description: "Start your day with peaceful meditation in our beautiful garden sanctuary.",
       date: "Tomorrow, 7:00 AM",
       location: "Zen Garden Center", 
-      organizer: { name: "Sarah Chen", avatar: "", id: "healer-1" },
+      organizers: [{ name: "Sarah Chen", avatar: "", id: "healer-1" }],
       attendees: 12,
       category: "Meditation"
     },
@@ -32,7 +32,7 @@ const Index = () => {
       description: "Join us for a transformative healing circle under the full moon's energy.",
       date: "This Friday, 8:00 PM",
       location: "Sacred Grove",
-      organizer: { name: "Marcus Rivera", avatar: "", id: "healer-2" },
+      organizers: [{ name: "Marcus Rivera", avatar: "", id: "healer-2" }],
       attendees: 28,
       category: "Ceremony"
     },
@@ -42,7 +42,7 @@ const Index = () => {
       description: "Gentle yoga flow followed by immersive crystal singing bowl meditation.",
       date: "Saturday, 10:00 AM", 
       location: "Harmony Studio",
-      organizer: { name: "Luna Wise", avatar: "", id: "healer-3" },
+      organizers: [{ name: "Luna Wise", avatar: "", id: "healer-3" }],
       attendees: 15,
       category: "Yoga"
     }

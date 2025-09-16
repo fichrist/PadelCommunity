@@ -13,11 +13,11 @@ interface EventCardProps {
   description: string;
   date: string;
   location: string;
-  organizer: {
+  organizers: Array<{
     name: string;
     avatar?: string;
     id: string;
-  };
+  }>;
   attendees: number;
   category: string;
   image?: string;
@@ -42,7 +42,7 @@ const EventCard = ({
   description, 
   date, 
   location, 
-  organizer, 
+  organizers, 
   attendees, 
   category,
   image,
@@ -146,26 +146,41 @@ const EventCard = ({
         </div>
         
         <div className="flex items-center justify-between pt-2">
-          <div 
-            className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors" 
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/healer/${organizer.id}`);
-            }}
-          >
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={organizer.avatar} />
-              <AvatarFallback className="text-xs bg-primary/10">
-                {organizer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground hover:text-primary transition-colors">by {organizer.name}</span>
+          <div className="flex flex-col space-y-2 flex-1">
+            <div className="text-xs text-muted-foreground">
+              Organized by:
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {organizers.map((organizer, index) => (
+                <div 
+                  key={organizer.id}
+                  className="flex items-center space-x-1 cursor-pointer hover:text-primary transition-colors group" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/healer/${organizer.id}`);
+                  }}
+                >
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={organizer.avatar} />
+                    <AvatarFallback className="text-xs bg-primary/10">
+                      {organizer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                    {organizer.name}
+                  </span>
+                  {index < organizers.length - 1 && (
+                    <span className="text-xs text-muted-foreground">•</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
           
           <Button 
             size="sm" 
             variant="outline" 
-            className="text-xs"
+            className="text-xs ml-3"
             onClick={(e) => {
               e.stopPropagation();
               onJoinEvent?.();
