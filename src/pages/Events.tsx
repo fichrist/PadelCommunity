@@ -264,9 +264,9 @@ const Events = () => {
 
         {/* Scrollable Content Area */}
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-130px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 h-full">
-            {/* Left Sidebar - Filters - Doubled in size */}
-            <div className="lg:col-span-4 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 h-full">
+            {/* Left Sidebar - Filters */}
+            <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-y-auto">
               <div className="space-y-4">
                 {/* Filter Card */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
@@ -484,9 +484,9 @@ const Events = () => {
               </div>
             </div>
 
-            {/* Main Content - Events Grid - Adjusted for larger filter */}
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6">
+            {/* Main Content - Events Grid */}
+            <div className="lg:col-span-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEvents.map((event, index) => (
                   <EventCard 
                     key={index} 
