@@ -743,6 +743,60 @@ const Community = () => {
             {/* Right Sidebar - Fixed */}
             <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
               <div className="space-y-4">
+                {/* Featured Events */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Star className="h-4 w-4 text-primary" />
+                      <span>Featured Events</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    <div 
+                      className="relative overflow-hidden rounded-lg cursor-pointer group"
+                      onClick={() => navigate('/events/1')}
+                    >
+                      <img 
+                        src={soundHealingEvent} 
+                        alt="Full Moon Sound Healing"
+                        className="w-full h-24 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-white text-xs font-medium leading-tight">Full Moon Sound Healing</p>
+                          <p className="text-white/80 text-xs">Mar 15 • Sedona AZ</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="relative overflow-hidden rounded-lg cursor-pointer group"
+                      onClick={() => navigate('/events/2')}
+                    >
+                      <img 
+                        src={crystalWorkshopEvent} 
+                        alt="Crystal Healing Workshop"
+                        className="w-full h-24 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-white text-xs font-medium leading-tight">Crystal Healing Workshop</p>
+                          <p className="text-white/80 text-xs">Apr 2-4 • Asheville NC</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-xs h-8"
+                      onClick={() => navigate('/events')}
+                    >
+                      View All Events
+                    </Button>
+                  </CardContent>
+                </Card>
+                
                 {/* Healers to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[750px]">
                   <CardHeader className="pb-1">
