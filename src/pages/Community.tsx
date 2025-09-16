@@ -25,6 +25,7 @@ import ariaProfile from "@/assets/aria-profile.jpg";
 import phoenixProfile from "@/assets/phoenix-profile.jpg";
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
 import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
+import spiritualBackground from "@/assets/spiritual-background.jpg";
 
 const Community = () => {
   const [filter, setFilter] = useState("all");
@@ -319,7 +320,7 @@ const Community = () => {
               <div className="space-y-4">
                 {/* Talk Sidebar - Clickable */}
                 <Card 
-                  className="bg-card/90 backdrop-blur-sm border border-border min-h-[750px] cursor-pointer hover:shadow-lg transition-all duration-200"
+                  className="bg-card/90 backdrop-blur-sm border border-border cursor-pointer hover:shadow-lg transition-all duration-200"
                   onClick={() => navigate('/chat')}
                 >
                   <CardHeader className="pb-1">
@@ -328,7 +329,7 @@ const Community = () => {
                       <span>Talk</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 h-[675px] overflow-hidden">
+                  <CardContent className="pt-0 h-[400px] overflow-hidden">
                     <div className="space-y-2">
                       {[
                         {
@@ -339,64 +340,118 @@ const Community = () => {
                           isGroup: false
                         },
                         {
-                          name: "Sacred Geometry Group",
-                          lastMessage: "David: Just shared some sacred geometry insights",
+                          name: "Sacred Circle",
+                          lastMessage: "David: The energy work was incredible today",
                           timestamp: "5 min ago",
                           avatar: davidProfile,
                           isGroup: true
                         },
                         {
                           name: "Aria Starseed",
-                          lastMessage: "Crystal workshop was amazing! Thank you all ✨",
-                          timestamp: "10 min ago",
+                          lastMessage: "Thank you for joining the crystal workshop! ✨",
+                          timestamp: "1 hour ago",
                           avatar: ariaProfile,
                           isGroup: false
                         },
                         {
-                          name: "Meditation Circle",
-                          lastMessage: "Phoenix: Movement meditation session starts now",
-                          timestamp: "15 min ago",
+                          name: "Phoenix Rising",
+                          lastMessage: "Movement meditation tomorrow at sunrise?",
+                          timestamp: "2 hours ago",
                           avatar: phoenixProfile,
-                          isGroup: true
-                        },
-                        {
-                          name: "Luna Sage",
-                          lastMessage: "Sending healing light to everyone today 💫",
-                          timestamp: "30 min ago",
-                          avatar: elenaProfile,
                           isGroup: false
                         },
                         {
-                          name: "Astrology & Moon Cycles",
-                          lastMessage: "River: Full moon energy is intense tonight",
-                          timestamp: "45 min ago",
-                          avatar: davidProfile,
+                          name: "Healing Hearts",
+                          lastMessage: "Luna: Beautiful sharing today everyone 💚",
+                          timestamp: "3 hours ago",
+                          avatar: elenaProfile,
                           isGroup: true
                         }
-                      ].map((conversation, index) => (
+                      ].map((chat, index) => (
                         <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={conversation.avatar} />
-                            <AvatarFallback className="bg-primary/10 text-xs">
-                              {conversation.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="relative">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={chat.avatar} />
+                              <AvatarFallback className="bg-primary/10 text-xs">
+                                {chat.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            {chat.isGroup && (
+                              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
+                                <Users className="h-2 w-2 text-white" />
+                              </div>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-foreground truncate">
-                                {conversation.name} {conversation.isGroup && '👥'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {conversation.timestamp}
-                              </span>
-                            </div>
+                            <p className="font-medium text-sm leading-tight truncate">
+                              {chat.name}
+                            </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {conversation.lastMessage}
+                              {chat.lastMessage}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {chat.timestamp}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Healers to Follow */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span>Healers to Follow</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0 max-h-[300px] overflow-y-auto">
+                    {featuredMembers.slice(0, 5).map((member, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                         <div className="flex items-center space-x-3">
+                           <Avatar 
+                             className="h-8 w-8 cursor-pointer"
+                             onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                           >
+                             <AvatarImage src={member.avatar} />
+                             <AvatarFallback className="bg-primary/10 text-xs">
+                               {member.name.split(' ').map(n => n[0]).join('')}
+                             </AvatarFallback>
+                           </Avatar>
+                           <div>
+                             <p 
+                               className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
+                               onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                             >
+                               {member.name}
+                             </p>
+                             <p className="text-xs text-muted-foreground">{member.role}</p>
+                             <p className="text-xs text-muted-foreground flex items-center">
+                               <MapPin className="h-3 w-3 mr-1" />
+                               {member.location}
+                             </p>
+                           </div>
+                         </div>
+                         <Button 
+                           variant="ghost" 
+                           size="sm" 
+                           className="p-2 h-auto hover:bg-red-50"
+                           onClick={() => {
+                             if (followedHealers.includes(member.name)) {
+                               setFollowedHealers(prev => prev.filter(name => name !== member.name));
+                               toast.success(`Unfollowed ${member.name}`);
+                             } else {
+                               setFollowedHealers(prev => [...prev, member.name]);
+                               toast.success(`Following ${member.name}`);
+                             }
+                           }}
+                         >
+                           <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                         </Button>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               </div>
@@ -743,113 +798,147 @@ const Community = () => {
             {/* Right Sidebar - Fixed */}
             <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)] overflow-hidden">
               <div className="space-y-4">
-                {/* Featured Events */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Star className="h-4 w-4 text-primary" />
+                {/* Featured Events - Expanded */}
+                <Card className="bg-card/90 backdrop-blur-sm border border-border h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold flex items-center space-x-2">
+                      <Star className="h-5 w-5 text-primary" />
                       <span>Featured Events</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
+                  <CardContent className="space-y-6 pt-0 h-[calc(100%-80px)] overflow-y-auto">
                     <div 
-                      className="relative overflow-hidden rounded-lg cursor-pointer group"
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
                       onClick={() => navigate('/events/1')}
                     >
                       <img 
                         src={soundHealingEvent} 
                         alt="Full Moon Sound Healing"
-                        className="w-full h-24 object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-white text-xs font-medium leading-tight">Full Moon Sound Healing</p>
-                          <p className="text-white/80 text-xs">Mar 15 • Sedona AZ</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={elenaProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">EM</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Elena Moonchild</p>
+                              <p className="text-white/80 text-xs">Sound Healer</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Full Moon Sound Healing Ceremony
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">March 15</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Sedona, AZ</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Experience healing power of crystal bowls and gongs under the full moon energy
+                          </p>
                         </div>
                       </div>
                     </div>
                     
                     <div 
-                      className="relative overflow-hidden rounded-lg cursor-pointer group"
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
                       onClick={() => navigate('/events/2')}
                     >
                       <img 
                         src={crystalWorkshopEvent} 
                         alt="Crystal Healing Workshop"
-                        className="w-full h-24 object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-white text-xs font-medium leading-tight">Crystal Healing Workshop</p>
-                          <p className="text-white/80 text-xs">Apr 2-4 • Asheville NC</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={ariaProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">AS</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Aria Starseed</p>
+                              <p className="text-white/80 text-xs">Crystal Healer</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Crystal Healing Workshop
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Apr 2-4</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Asheville, NC</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Learn to select, cleanse, and work with crystals for healing and spiritual growth
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
+                      onClick={() => navigate('/events/3')}
+                    >
+                      <img 
+                        src={spiritualBackground} 
+                        alt="Meditation Circle"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={phoenixProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">PR</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Phoenix Rising</p>
+                              <p className="text-white/80 text-xs">Movement Therapist</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Sacred Movement Circle
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Mar 20</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Santa Fe, NM</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Express your soul through sacred movement and ecstatic dance
+                          </p>
                         </div>
                       </div>
                     </div>
                     
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="w-full text-xs h-8"
+                      size="lg" 
+                      className="w-full"
                       onClick={() => navigate('/events')}
                     >
+                      <ExternalLink className="h-4 w-4 mr-2" />
                       View All Events
                     </Button>
-                  </CardContent>
-                </Card>
-                
-                {/* Healers to Follow */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border min-h-[750px]">
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span>Healers to Follow</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0 max-h-[600px] overflow-y-hidden">
-                    {featuredMembers.map((member, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                         <div className="flex items-center space-x-3">
-                           <Avatar 
-                             className="h-8 w-8 cursor-pointer"
-                             onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                           >
-                             <AvatarImage src={member.avatar} />
-                             <AvatarFallback className="bg-primary/10 text-xs">
-                               {member.name.split(' ').map(n => n[0]).join('')}
-                             </AvatarFallback>
-                           </Avatar>
-                           <div>
-                             <p 
-                               className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
-                               onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                             >
-                               {member.name}
-                             </p>
-                             <p className="text-xs text-muted-foreground">{member.role}</p>
-                             <p className="text-xs text-muted-foreground flex items-center">
-                               <MapPin className="h-3 w-3 mr-1" />
-                               {member.location}
-                             </p>
-                           </div>
-                         </div>
-                         <Button 
-                           variant="ghost" 
-                           size="sm" 
-                           className="p-2 h-auto hover:bg-red-50"
-                           onClick={() => {
-                             if (followedHealers.includes(member.name)) {
-                               setFollowedHealers(prev => prev.filter(name => name !== member.name));
-                               toast.success(`Unfollowed ${member.name}`);
-                             } else {
-                               setFollowedHealers(prev => [...prev, member.name]);
-                               toast.success(`Following ${member.name}`);
-                             }
-                           }}
-                         >
-                           <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
-                         </Button>
-                      </div>
-                    ))}
                   </CardContent>
                 </Card>
               </div>
