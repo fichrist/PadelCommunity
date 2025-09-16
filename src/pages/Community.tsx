@@ -136,6 +136,17 @@ const Community = () => {
     { name: "Forest Walker", role: "Shaman", followers: 423, avatar: elenaProfile, location: "Tulum, Mexico" },
     { name: "Crystal Dawn", role: "Crystal Therapist", followers: 398, avatar: davidProfile, location: "Mount Shasta, CA" },
     { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile, location: "Byron Bay, AU" },
+    { name: "Sacred Rose", role: "Breathwork Facilitator", followers: 892, avatar: phoenixProfile, location: "Costa Rica" },
+    { name: "Divine Light", role: "Chakra Healer", followers: 678, avatar: elenaProfile, location: "Glastonbury, UK" },
+    { name: "Mystic Moon", role: "Tarot Reader", followers: 543, avatar: davidProfile, location: "New Orleans, LA" },
+    { name: "Earth Angel", role: "Herbalist", followers: 467, avatar: ariaProfile, location: "Oregon Coast" },
+    { name: "Soul Fire", role: "Kundalini Teacher", followers: 834, avatar: phoenixProfile, location: "Rishikesh, India" },
+    { name: "Rainbow Spirit", role: "Art Therapist", followers: 389, avatar: elenaProfile, location: "Santa Fe, NM" },
+    { name: "Golden Dawn", role: "Life Coach", followers: 612, avatar: davidProfile, location: "Maui, HI" },
+    { name: "Cosmic Heart", role: "Sound Healer", followers: 445, avatar: ariaProfile, location: "Ibiza, Spain" },
+    { name: "Wild Moon", role: "Nature Guide", followers: 567, avatar: phoenixProfile, location: "Banff, Canada" },
+    { name: "Healing Waters", role: "Hydrotherapist", followers: 378, avatar: elenaProfile, location: "Blue Mountains, AU" },
+    { name: "Ancient Wisdom", role: "Vedic Teacher", followers: 723, avatar: davidProfile, location: "Vrindavan, India" },
   ];
 
   // Get share titles from followed people for search dropdown
@@ -925,6 +936,170 @@ const Community = () => {
                           </div>
                           <p className="text-white/80 text-xs mt-2 line-clamp-2">
                             Express your soul through sacred movement and ecstatic dance
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
+                      onClick={() => navigate('/events/4')}
+                    >
+                      <img 
+                        src={soundHealingEvent} 
+                        alt="Breathwork Journey"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={davidProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">DL</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">David Lightwalker</p>
+                              <p className="text-white/80 text-xs">Breathwork Facilitator</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Transformational Breathwork Journey
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Mar 25</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Boulder, CO</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Release deep trauma and connect with your higher self through breath
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
+                      onClick={() => navigate('/events/5')}
+                    >
+                      <img 
+                        src={crystalWorkshopEvent} 
+                        alt="Cacao Ceremony"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={ariaProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">SR</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Sacred Rose</p>
+                              <p className="text-white/80 text-xs">Cacao Ceremonialist</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Heart Opening Cacao Ceremony
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Apr 1</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Tulum, Mexico</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Open your heart with sacred cacao and ancestral wisdom
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
+                      onClick={() => navigate('/events/6')}
+                    >
+                      <img 
+                        src={spiritualBackground} 
+                        alt="Yoga Retreat"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={phoenixProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">DL</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Divine Light</p>
+                              <p className="text-white/80 text-xs">Yoga Teacher</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Sacred Yoga & Meditation Retreat
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Apr 8-10</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Big Sur, CA</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Deepen your practice with daily yoga, meditation and nature connection
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
+                      onClick={() => navigate('/events/7')}
+                    >
+                      <img 
+                        src={soundHealingEvent} 
+                        alt="Shamanic Journey"
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="h-8 w-8 border-2 border-white">
+                              <AvatarImage src={elenaProfile} />
+                              <AvatarFallback className="text-xs bg-primary text-white">FW</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-sm font-medium">Forest Walker</p>
+                              <p className="text-white/80 text-xs">Shaman</p>
+                            </div>
+                          </div>
+                          <h3 className="text-white text-base font-bold leading-tight mb-1">
+                            Shamanic Healing Journey
+                          </h3>
+                          <div className="flex items-center justify-between text-white/90">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-sm font-medium">Apr 15</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-sm">Mount Shasta, CA</span>
+                            </div>
+                          </div>
+                          <p className="text-white/80 text-xs mt-2 line-clamp-2">
+                            Connect with spirit guides and receive healing through ancient shamanic practices
                           </p>
                         </div>
                       </div>
