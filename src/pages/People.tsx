@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, Info } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -311,10 +312,11 @@ const People = () => {
   const allTags = [...new Set(healers.flatMap(healer => healer.tags))];
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
+    <TooltipProvider>
+      <div 
+        className="min-h-screen bg-cover bg-center bg-fixed"
+        style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
+      >
       {/* Background Overlay */}
       <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
         {/* Top Navigation Bar - Same as Community */}
@@ -418,29 +420,36 @@ const People = () => {
                                </div>
                              </div>
                              
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="p-2 h-auto ml-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (isFollowed) {
-                                    setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
-                                    setSelectedIcons(prev => ({
-                                      ...prev,
-                                      [originalIndex]: { calendar: false, info: false }
-                                    }));
-                                  } else {
-                                    setFollowedUsers(prev => [...prev, originalIndex]);
-                                    setSelectedIcons(prev => ({
-                                      ...prev,
-                                      [originalIndex]: { calendar: true, info: true }
-                                    }));
-                                  }
-                                }}
-                             >
-                               <Heart className={`h-4 w-4 ${isFollowed ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
-                             </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-2 h-auto ml-2"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       if (isFollowed) {
+                                         setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
+                                         setSelectedIcons(prev => ({
+                                           ...prev,
+                                           [originalIndex]: { calendar: false, info: false }
+                                         }));
+                                       } else {
+                                         setFollowedUsers(prev => [...prev, originalIndex]);
+                                         setSelectedIcons(prev => ({
+                                           ...prev,
+                                           [originalIndex]: { calendar: true, info: true }
+                                         }));
+                                       }
+                                     }}
+                                  >
+                                    <Heart className={`h-4 w-4 ${isFollowed ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Follow</p>
+                                </TooltipContent>
+                              </Tooltip>
                            </div>
                          );
                        })}
@@ -726,22 +735,29 @@ const People = () => {
                           </div>
                         </div>
                         <div className="relative">
-                          {followedUsers.includes(index) ? (
-                            <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="p-2 h-auto hover:bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setUserToUnfollow(index);
-                                    setUnfollowDialogOpen(true);
-                                  }}
-                                >
-                                  <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
+                           {followedUsers.includes(index) ? (
+                             <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
+                               <AlertDialogTrigger asChild>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <Button 
+                                       variant="ghost" 
+                                       size="sm" 
+                                       className="p-2 h-auto hover:bg-red-50"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setUserToUnfollow(index);
+                                         setUnfollowDialogOpen(true);
+                                       }}
+                                     >
+                                       <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+                                     </Button>
+                                   </TooltipTrigger>
+                                   <TooltipContent>
+                                     <p>Follow</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Unfollow {healer.name}?</AlertDialogTitle>
@@ -772,23 +788,30 @@ const People = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="p-2 h-auto hover:bg-red-50"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setFollowedUsers(prev => [...prev, index]);
-                                 setSelectedIcons(prev => ({
-                                   ...prev,
-                                   [index]: { calendar: true, info: true }
-                                 }));
-                               }}
-                            >
-                              <Heart className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
+                           ) : (
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm" 
+                                   className="p-2 h-auto hover:bg-red-50"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setFollowedUsers(prev => [...prev, index]);
+                                     setSelectedIcons(prev => ({
+                                       ...prev,
+                                       [index]: { calendar: true, info: true }
+                                     }));
+                                   }}
+                                 >
+                                   <Heart className="h-4 w-4 text-red-500" />
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent>
+                                 <p>Follow</p>
+                               </TooltipContent>
+                             </Tooltip>
+                           )}
                         </div>
                       </div>
                     </CardHeader>
@@ -892,6 +915,7 @@ const People = () => {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
