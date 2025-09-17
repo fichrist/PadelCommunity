@@ -2,7 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { MessageCircle, Repeat2, BookOpen, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 interface CommunityShareCardProps {
   title: string;
@@ -17,6 +21,13 @@ interface CommunityShareCardProps {
   youtubeUrl?: string;
   comments: number;
   isHorizontal?: boolean;
+  index?: number;
+  onOpenThoughts?: (share: any) => void;
+  isReshared?: boolean;
+  onToggleReshare?: () => void;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
+  onShare?: () => void;
 }
 
 const CommunityShareCard = ({
@@ -27,12 +38,21 @@ const CommunityShareCard = ({
   author,
   youtubeUrl,
   comments,
-  isHorizontal = false
+  isHorizontal = false,
+  index = 0,
+  onOpenThoughts,
+  isReshared = false,
+  onToggleReshare,
+  isSaved = false,
+  onToggleSave,
+  onShare
 }: CommunityShareCardProps) => {
   const navigate = useNavigate();
+  const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   return (
-    <Card className={`bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative ${isHorizontal ? 'flex-shrink-0 w-96' : ''}`}>
+    <Card className={`bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative ${isHorizontal ? 'flex-shrink-0 w-[32rem]' : ''}`}>
       <CardContent className="p-0">
         {/* Share Title Header */}
         <div className="p-3 pb-2">
@@ -106,6 +126,68 @@ const CommunityShareCard = ({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="px-3 py-2 border-t border-border">
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={() => onOpenThoughts && onOpenThoughts({ title, comments })}
+              className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>{comments} Thoughts</span>
+            </button>
+            <button 
+              className={`flex items-center space-x-2 text-sm transition-colors ${
+                isReshared 
+                  ? 'text-primary font-bold' 
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+              onClick={onToggleReshare}
+            >
+              <Repeat2 className="h-4 w-4" />
+              <span>{isReshared ? 'Reshared' : 'Reshare'}</span>
+            </button>
+            
+            <button 
+              className={`flex items-center space-x-2 text-sm transition-colors ${
+                isSaved 
+                  ? 'text-primary font-bold' 
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+              onClick={onToggleSave}
+            >
+              <BookOpen className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+              <span>Save</span>
+            </button>
+            
+            <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2">
+                <div className="space-y-2">
+                  <button 
+                    className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/share/${title.toLowerCase().replace(/\s+/g, '-')}`);
+                      setLinkCopied(true);
+                      toast.success("Link copied to clipboard!");
+                      setTimeout(() => setLinkCopied(false), 2000);
+                      setSharePopoverOpen(false);
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>{linkCopied ? "Copied!" : "Copy Link"}</span>
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardContent>

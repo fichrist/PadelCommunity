@@ -11,7 +11,9 @@ import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import CommunityShareCard from "@/components/CommunityShareCard";
+import ThoughtsModal from "@/components/ThoughtsModal";
 import { toast } from "sonner";
+import { useState } from "react";
 
 // Import images
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
@@ -24,6 +26,14 @@ import phoenixProfile from "@/assets/phoenix-profile.jpg";
 const HealerProfile = () => {
   const { healerId } = useParams();
   const navigate = useNavigate();
+  
+  // State for interactions
+  const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [resharedPosts, setResharedPosts] = useState<string[]>([]);
+  const [savedPosts, setSavedPosts] = useState<string[]>([]);
+  const [resharedShares, setResharedShares] = useState<string[]>([]);
+  const [savedShares, setSavedShares] = useState<string[]>([]);
 
   const healerData = {
     "elena-moonchild": {
@@ -608,7 +618,32 @@ const HealerProfile = () => {
                 <CommunityEventCard
                   key={index}
                   {...event}
+                  index={index}
                   isHorizontal={true}
+                  onOpenThoughts={(eventData) => {
+                    setSelectedPost(eventData);
+                    setThoughtsModalOpen(true);
+                  }}
+                  isReshared={resharedPosts.includes(event.eventId)}
+                  onToggleReshare={() => {
+                    if (resharedPosts.includes(event.eventId)) {
+                      setResharedPosts(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Reshare removed");
+                    } else {
+                      setResharedPosts(prev => [...prev, event.eventId]);
+                      toast.success("Event reshared!");
+                    }
+                  }}
+                  isSaved={savedPosts.includes(event.eventId)}
+                  onToggleSave={() => {
+                    if (savedPosts.includes(event.eventId)) {
+                      setSavedPosts(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Removed from saved");
+                    } else {
+                      setSavedPosts(prev => [...prev, event.eventId]);
+                      toast.success("Saved to your private page!");
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -624,7 +659,32 @@ const HealerProfile = () => {
                 <CommunityEventCard
                   key={index}
                   {...event}
+                  index={index}
                   isHorizontal={true}
+                  onOpenThoughts={(eventData) => {
+                    setSelectedPost(eventData);
+                    setThoughtsModalOpen(true);
+                  }}
+                  isReshared={resharedPosts.includes(event.eventId)}
+                  onToggleReshare={() => {
+                    if (resharedPosts.includes(event.eventId)) {
+                      setResharedPosts(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Reshare removed");
+                    } else {
+                      setResharedPosts(prev => [...prev, event.eventId]);
+                      toast.success("Event reshared!");
+                    }
+                  }}
+                  isSaved={savedPosts.includes(event.eventId)}
+                  onToggleSave={() => {
+                    if (savedPosts.includes(event.eventId)) {
+                      setSavedPosts(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Removed from saved");
+                    } else {
+                      setSavedPosts(prev => [...prev, event.eventId]);
+                      toast.success("Saved to your private page!");
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -640,13 +700,48 @@ const HealerProfile = () => {
                 <CommunityShareCard
                   key={index}
                   {...share}
+                  index={index}
                   isHorizontal={true}
+                  onOpenThoughts={(shareData) => {
+                    setSelectedPost(shareData);
+                    setThoughtsModalOpen(true);
+                  }}
+                  isReshared={resharedShares.includes(`${share.title}-${index}`)}
+                  onToggleReshare={() => {
+                    const shareId = `${share.title}-${index}`;
+                    if (resharedShares.includes(shareId)) {
+                      setResharedShares(prev => prev.filter(id => id !== shareId));
+                      toast.success("Reshare removed");
+                    } else {
+                      setResharedShares(prev => [...prev, shareId]);
+                      toast.success("Share reshared!");
+                    }
+                  }}
+                  isSaved={savedShares.includes(`${share.title}-${index}`)}
+                  onToggleSave={() => {
+                    const shareId = `${share.title}-${index}`;
+                    if (savedShares.includes(shareId)) {
+                      setSavedShares(prev => prev.filter(id => id !== shareId));
+                      toast.success("Removed from saved");
+                    } else {
+                      setSavedShares(prev => [...prev, shareId]);
+                      toast.success("Saved to your private page!");
+                    }
+                  }}
                 />
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Thoughts Modal */}
+      <ThoughtsModal
+        open={thoughtsModalOpen}
+        onOpenChange={setThoughtsModalOpen}
+        postTitle={selectedPost?.title || selectedPost?.eventId || ""}
+        thoughts={[]}
+      />
       </div>
     </div>
   );
