@@ -1,14 +1,20 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 // Import images
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
@@ -21,6 +27,13 @@ import phoenixProfile from "@/assets/phoenix-profile.jpg";
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
+  const [stayAnonymous, setStayAnonymous] = useState(false);
+  const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isReshared, setIsReshared] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const eventData = {
     "1": {
@@ -197,9 +210,81 @@ const EventDetails = () => {
                 </div>
               </div>
 
-              <Button size="lg" className="w-full mb-4">
+              <Button 
+                size="lg" 
+                className="w-full mb-4"
+                onClick={() => setEnrollmentModalOpen(true)}
+              >
                 Join Event
               </Button>
+              
+              {/* Social Interaction Buttons */}
+              <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-2 h-auto transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                    onClick={() => setIsLiked(!isLiked)}
+                  >
+                    <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-2 h-auto text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-2 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
+                    onClick={() => setIsReshared(!isReshared)}
+                  >
+                    <Repeat2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-2 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                    onClick={() => setIsSaved(!isSaved)}
+                  >
+                    <BookOpen className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-2 h-auto text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" align="end">
+                      <div className="space-y-1">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-sm h-8"
+                          onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            setLinkCopied(true);
+                            setTimeout(() => setLinkCopied(false), 2000);
+                            toast.success("Link copied to clipboard!");
+                            setSharePopoverOpen(false);
+                          }}
+                        >
+                          {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                          Copy Link
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
               
               <div className="flex flex-wrap gap-2">
                 {event.tags.map((tag, index) => (
@@ -470,9 +555,89 @@ const EventDetails = () => {
           </div>
         </div>
       </div>
+        </div>
+        
+        {/* Enrollment Modal */}
+        <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Join {event.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium">Event Details</p>
+                    <p className="text-sm text-muted-foreground">{event.date} • {event.time}</p>
+                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium">Price</p>
+                    <p className="text-sm text-muted-foreground">{event.price}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium">Organizer</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={event.organizer.avatar} />
+                        <AvatarFallback className="text-xs">
+                          {event.organizer.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-muted-foreground">{event.organizer.name}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                <Checkbox 
+                  id="anonymous" 
+                  checked={stayAnonymous}
+                  onCheckedChange={(checked) => setStayAnonymous(checked === true)}
+                />
+                <div>
+                  <Label htmlFor="anonymous" className="text-sm font-medium">
+                    Stay anonymous
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Your name won't be visible to other attendees
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setEnrollmentModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    toast.success("Successfully enrolled in the event!");
+                    setEnrollmentModalOpen(false);
+                  }}
+                >
+                  Confirm Enrollment
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
-  );
-};
-
-export default EventDetails;
+    );
+  };
+  
+  export default EventDetails;

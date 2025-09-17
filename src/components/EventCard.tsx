@@ -177,17 +177,6 @@ const EventCard = ({
             </div>
           </div>
           
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="text-xs ml-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              onJoinEvent?.();
-            }}
-          >
-            Join Event
-          </Button>
         </div>
       </CardContent>
 
