@@ -548,9 +548,20 @@ const HealerProfile = () => {
                 </div>
               </div>
               
-              <p className="text-muted-foreground text-xl leading-loose mb-8 max-w-none">
+              <p className="text-muted-foreground text-xl leading-loose mb-6 max-w-none">
                 {healer.bio}
               </p>
+              
+              <div className="mb-8">
+                <h3 className="font-semibold mb-3">Specialties</h3>
+                <div className="flex flex-wrap gap-2">
+                  {healer.specialties.map((specialty, index) => (
+                    <Badge key={index} variant="secondary">
+                      {specialty}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </div>
             
             <div>
@@ -583,16 +594,6 @@ const HealerProfile = () => {
                           <Instagram className="h-4 w-4" />
                           <span>{healer.contact.instagram}</span>
                         </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Specialties</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {healer.specialties.map((specialty, index) => (
-                          <Badge key={index} variant="secondary">
-                            {specialty}
-                          </Badge>
-                        ))}
                       </div>
                     </div>
                   </div>
