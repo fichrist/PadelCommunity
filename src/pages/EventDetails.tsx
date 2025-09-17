@@ -39,6 +39,7 @@ const EventDetails = () => {
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
+  const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
 
 const eventData = {
     "1": {
@@ -80,6 +81,12 @@ const eventData = {
         { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony" }
       ],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
+      addOns: [
+        { id: "cacao", name: "Sacred Cacao Ceremony", price: "$25", description: "Ceremonial cacao drink to open the heart chakra" },
+        { id: "crystals", name: "Personal Crystal Set", price: "$35", description: "Take home your own set of charged healing crystals" },
+        { id: "sage", name: "Sage Cleansing Kit", price: "$15", description: "White sage bundle and palo santo for home cleansing" },
+        { id: "recording", name: "Session Recording", price: "$20", description: "Audio recording of the healing session for home practice" }
+      ],
       attendees: [
         { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
         { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
@@ -120,6 +127,11 @@ const eventData = {
         { type: "Premium Package", price: "$295", description: "Workshop, kit & private session" }
       ],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
+      addOns: [
+        { id: "advanced-kit", name: "Advanced Crystal Kit", price: "$45", description: "Premium crystals including rare healing stones" },
+        { id: "private-session", name: "Private Consultation", price: "$75", description: "30-minute one-on-one crystal healing session" },
+        { id: "guidebook", name: "Comprehensive Guidebook", price: "$28", description: "Detailed crystal healing reference book" }
+      ],
       attendees: [
         { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
         { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC", isAnonymous: false },
@@ -145,7 +157,7 @@ const eventData = {
       <div className="min-h-screen bg-background/90 backdrop-blur-sm">
         {/* Top Navigation Bar */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               {/* Left: Logo + App Name */}
               <div className="flex items-center space-x-2">
@@ -220,7 +232,7 @@ const eventData = {
 
         {/* Header */}
         <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8">
             <Button
               variant="ghost"
               onClick={() => window.history.back()}
@@ -371,7 +383,7 @@ const eventData = {
         </div>
       </div>
 
-      <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -427,6 +439,33 @@ const eventData = {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Add-ons Display */}
+            {event.addOns && event.addOns.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Available Add-ons</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {event.addOns.map((addon, index) => (
+                      <div key={addon.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{addon.name}</h4>
+                          <p className="text-xs text-muted-foreground mt-1">{addon.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-primary">{addon.price}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Add-ons can be selected during registration to enhance your experience.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -673,6 +712,44 @@ const eventData = {
                 </div>
               </div>
 
+              {/* Add-ons Section */}
+              {event.addOns && event.addOns.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium">Optional Add-ons</p>
+                      <p className="text-xs text-muted-foreground">Enhance your experience with these optional extras</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {event.addOns.map((addon, index) => (
+                      <label key={addon.id} className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={selectedAddOns.includes(addon.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedAddOns([...selectedAddOns, addon.id]);
+                            } else {
+                              setSelectedAddOns(selectedAddOns.filter(id => id !== addon.id));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{addon.name}</span>
+                            <span className="font-bold text-primary text-sm">{addon.price}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">{addon.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
@@ -725,8 +802,13 @@ const eventData = {
                   className="flex-1"
                   disabled={!selectedPrice}
                   onClick={() => {
-                    toast.success(`Successfully enrolled in ${event.title}! Check your email for confirmation.`);
+                    const addOnNames = selectedAddOns.map(id => event.addOns?.find(addon => addon.id === id)?.name).filter(Boolean).join(', ');
+                    const message = addOnNames 
+                      ? `Successfully enrolled in ${event.title} with add-ons: ${addOnNames}! Check your email for confirmation.`
+                      : `Successfully enrolled in ${event.title}! Check your email for confirmation.`;
+                    toast.success(message);
                     setEnrollmentModalOpen(false);
+                    setSelectedAddOns([]);
                   }}
                 >
                   Confirm Enrollment
