@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +16,8 @@ import elenaProfile from "@/assets/elena-profile.jpg";
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(0);
   const [message, setMessage] = useState("");
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const conversations = [
@@ -103,11 +106,62 @@ const Chat = () => {
     }
   ];
 
+  // Mock data for people to chat with
+  const followingPeople = [
+    {
+      id: 1,
+      name: "Elena Moonchild",
+      username: "@elena_moon",
+      avatar: "",
+      online: true
+    },
+    {
+      id: 2,
+      name: "David Healer",
+      username: "@david_heals",
+      avatar: "",
+      online: false
+    },
+    {
+      id: 3,
+      name: "Aria Starseed", 
+      username: "@aria_star",
+      avatar: "",
+      online: true
+    },
+    {
+      id: 4,
+      name: "Luna Sage",
+      username: "@luna_wisdom",
+      avatar: "",
+      online: true
+    },
+    {
+      id: 5,
+      name: "River Flow",
+      username: "@river_healing",
+      avatar: "",
+      online: false
+    }
+  ];
+
+  const filteredPeople = followingPeople.filter(person =>
+    person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    person.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleSendMessage = () => {
     if (message.trim()) {
       // Handle sending message
       setMessage("");
     }
+  };
+
+  const handleStartChat = (person: typeof followingPeople[0]) => {
+    // Add logic to start new conversation
+    setIsNewChatOpen(false);
+    setSearchQuery("");
+    // You could add the person to conversations list or navigate to their chat
   };
 
   return (
@@ -205,6 +259,7 @@ const Chat = () => {
                     <Button
                       size="sm"
                       className="rounded-full h-8 w-8 p-0"
+                      onClick={() => setIsNewChatOpen(true)}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -335,6 +390,59 @@ const Chat = () => {
             </div>
           </div>
         </div>
+
+        {/* New Chat Modal */}
+        <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+          <DialogContent className="sm:max-w-md bg-card border border-border">
+            <DialogHeader>
+              <DialogTitle>Start New Conversation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search people you follow..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {filteredPeople.map((person) => (
+                  <div
+                    key={person.id}
+                    onClick={() => handleStartChat(person)}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={person.avatar} />
+                        <AvatarFallback className="bg-primary/10">
+                          {person.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {person.online && (
+                        <Circle className="absolute -bottom-1 -right-1 h-3 w-3 text-green-500 fill-current" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-foreground">{person.name}</p>
+                      <p className="text-xs text-muted-foreground">{person.username}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {person.online ? "Online" : "Offline"}
+                    </Badge>
+                  </div>
+                ))}
+                {filteredPeople.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    {searchQuery ? "No people found matching your search." : "You're not following anyone yet."}
+                  </p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
