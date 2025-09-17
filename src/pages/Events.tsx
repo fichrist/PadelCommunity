@@ -20,6 +20,7 @@ import ReviewModal from "@/components/ReviewModal";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
+import davidProfile from "@/assets/david-profile.jpg";
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
 import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
 
@@ -41,6 +42,7 @@ const Events = () => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const events = [
@@ -59,7 +61,8 @@ const Events = () => {
       image: soundHealingEvent,
       isPastEvent: false,
       tags: ["Meditation", "Morning Practice", "Garden"],
-      comments: 5
+      comments: 5,
+      connectionsGoing: ["Luna Sage", "River Flow"]
     },
     {
       eventId: "2",
@@ -75,7 +78,8 @@ const Events = () => {
       image: crystalWorkshopEvent,
       isPastEvent: false,
       tags: ["Full Moon", "Healing", "Ceremony"],
-      comments: 8
+      comments: 8,
+      connectionsGoing: ["Sarah Light", "David Peace", "Luna Sage"]
     },
     {
       eventId: "3",
@@ -100,7 +104,11 @@ const Events = () => {
         { id: "3", author: { name: "River Flow", avatar: elenaProfile }, rating: 5, content: "Best sound bath I've experienced. The space was beautiful too.", timeAgo: "3 days ago" }
       ],
       tags: ["Yoga", "Sound Bath", "Meditation"],
-      comments: 12
+      comments: 12,
+      connectionsGoing: ["David Peace"],
+      thoughts: [
+        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Amazing workshop! Looking forward to more sessions like this.", likes: 8, timeAgo: "2 days ago" }
+      ]
     },
     {
       eventId: "4",
@@ -117,7 +125,11 @@ const Events = () => {
       image: crystalWorkshopEvent,
       isPastEvent: false,
       tags: ["Nature", "Walking", "Mindfulness"],
-      comments: 3
+      comments: 3,
+      connectionsGoing: ["Luna Sage"],
+      thoughts: [
+        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, content: "Can't wait for this peaceful nature walk. Perfect way to start the day.", likes: 5, timeAgo: "1 hour ago" }
+      ]
     },
     {
       eventId: "5",
@@ -140,7 +152,11 @@ const Events = () => {
         { id: "3", author: { name: "Sacred Soul", avatar: elenaProfile }, rating: 4, content: "Fascinating content and great presentation. Worth every minute.", timeAgo: "1 week ago" }
       ],
       tags: ["Sacred Geometry", "Workshop", "Education"],
-      comments: 15
+      comments: 15,
+      connectionsGoing: ["Star Seeker", "Cosmic Mind"],
+      thoughts: [
+        { id: "1", author: { name: "Star Seeker", avatar: elenaProfile }, content: "Dr. Amara's workshops are always enlightening. This one was exceptional!", likes: 12, timeAgo: "1 week ago" }
+      ]
     },
     {
       eventId: "6",
@@ -158,7 +174,11 @@ const Events = () => {
       image: crystalWorkshopEvent,
       isPastEvent: false,
       tags: ["Chakras", "Healing", "Energy Work"],
-      comments: 7
+      comments: 7,
+      connectionsGoing: ["Sacred Soul", "Energy Master"],
+      thoughts: [
+        { id: "1", author: { name: "Sacred Soul", avatar: elenaProfile }, content: "Looking forward to this chakra session. Sage Moon's healing work is incredible.", likes: 6, timeAgo: "3 hours ago" }
+      ]
     }
   ];
 
@@ -600,11 +620,41 @@ const Events = () => {
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{event.attendees} attending</span>
+                            <span className="font-medium">{event.attendees} attending</span>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            {event.category}
-                          </Badge>
+                          {event.connectionsGoing && event.connectionsGoing.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              {event.connectionsGoing.length <= 2 ? (
+                                <span className="text-primary font-medium">
+                                  {event.connectionsGoing.join(", ")} going
+                                </span>
+                              ) : (
+                                <Popover open={connectionPopoverOpen === event.eventId} onOpenChange={(open) => setConnectionPopoverOpen(open ? event.eventId : null)}>
+                                  <PopoverTrigger asChild>
+                                    <button className="text-primary font-medium hover:underline cursor-pointer">
+                                      {event.connectionsGoing.length} connections going
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-3">
+                                    <div className="space-y-2">
+                                      <h4 className="text-sm font-semibold">Connections Attending</h4>
+                                      {event.connectionsGoing.map((connection: string, idx: number) => (
+                                        <div key={idx} className="flex items-center space-x-2 p-1 rounded hover:bg-muted cursor-pointer">
+                                          <Avatar className="h-6 w-6">
+                                            <AvatarImage src={idx % 2 === 0 ? elenaProfile : davidProfile} />
+                                            <AvatarFallback className="text-xs">
+                                              {connection.split(' ').map((n: string) => n[0]).join('')}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="text-sm">{connection}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Past Event Ratings */}

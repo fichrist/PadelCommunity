@@ -46,14 +46,14 @@ const ReviewModal = ({ open, onOpenChange, eventTitle, reviews, averageRating, t
               <div className="flex items-center">
                 {renderStars(Math.round(averageRating))}
               </div>
-              <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
+              <span className="text-sm font-medium">{averageRating?.toFixed(1) || '0.0'}</span>
               <span className="text-xs text-muted-foreground">({totalReviews} reviews)</span>
             </div>
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4">
-          {reviews.map((review) => (
+          {reviews?.map((review) => (
             <div key={review.id} className="border rounded-lg p-4">
               <div className="flex items-start space-x-3">
                 <Avatar className="h-8 w-8">

@@ -66,7 +66,7 @@ const ThoughtsModal = ({ open, onOpenChange, postTitle, thoughts }: ThoughtsModa
 
           {/* Existing thoughts */}
           <div className="space-y-4">
-            {thoughts.map((thought) => (
+            {thoughts?.map((thought) => (
               <div key={thought.id} className="border rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <Avatar className="h-8 w-8">
