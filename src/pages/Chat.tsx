@@ -169,17 +169,8 @@ const Chat = () => {
                 </div>
               </div>
               
-              {/* Right: Search Bar + Create Button + Profile */}
+              {/* Right: Create Button + Profile */}
               <div className="flex items-center space-x-3">
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                  <input 
-                    type="text" 
-                    placeholder="search talk..." 
-                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                  />
-                </div>
                 <Button
                   size="sm"
                   className="rounded-full h-10 w-10 p-0"
@@ -209,10 +200,14 @@ const Chat = () => {
             <div className="lg:col-span-1">
               <Card className="h-full bg-card/90 backdrop-blur-sm border border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Conversations</CardTitle>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search conversations..." className="pl-10 h-9" />
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Conversations</CardTitle>
+                    <Button
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
