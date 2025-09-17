@@ -1,4 +1,3 @@
-import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
@@ -7,12 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X, Heart, Repeat2, Share2, Link, Copy, Check, ChevronDown, Star } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -34,15 +34,23 @@ const Events = () => {
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [savedPosts, setSavedPosts] = useState<number[]>([]);
+  const [resharedPosts, setResharedPosts] = useState<number[]>([]);
+  const [likedPosts, setLikedPosts] = useState<number[]>([]);
+  const [sharePopoverOpen, setSharePopoverOpen] = useState<number | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const navigate = useNavigate();
 
   const events = [
     {
+      type: "event",
       eventId: "1",
       title: "Morning Meditation Circle",
-      description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome. This gentle practice includes breathing exercises, guided meditation, and silent contemplation in nature.",
+      thought: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome.",
+      description: "This gentle practice includes breathing exercises, guided meditation, and silent contemplation in nature.",
       date: "March 16, 2024 at 7:00 AM",
       location: "Zen Garden Center, Sedona AZ",
+      author: { name: "Sarah Chen", avatar: elenaProfile, followers: 234, role: "Meditation Teacher" },
       organizers: [
         { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
         { name: "Michael Zen", avatar: elenaProfile, id: "healer-7" }
@@ -51,14 +59,23 @@ const Events = () => {
       category: "Meditation",
       image: soundHealingEvent,
       isPastEvent: false,
-      tags: ["Meditation", "Morning Practice", "Garden"]
+      tags: ["Meditation", "Morning Practice", "Garden"],
+      timeAgo: "2 hours ago",
+      comments: 5,
+      likes: 23,
+      shares: 3,
+      dateRange: { start: "Mar 16", end: null },
+      connectionsGoing: ["Michael Zen"]
     },
     {
+      type: "event",
       eventId: "2",
       title: "Full Moon Healing Ceremony",
-      description: "Join us for a transformative healing circle under the full moon's energy. Experience deep healing through sound, crystal work, and collective intention setting in our sacred outdoor space.",
+      thought: "Join us for a transformative healing circle under the full moon's energy.",
+      description: "Experience deep healing through sound, crystal work, and collective intention setting in our sacred outdoor space.",
       date: "March 18, 2024 at 8:00 PM",
       location: "Sacred Grove, Boulder CO",
+      author: { name: "Marcus Rivera", avatar: elenaProfile, followers: 189, role: "Healing Facilitator" },
       organizers: [
         { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" }
       ],
@@ -66,14 +83,23 @@ const Events = () => {
       category: "Ceremony",
       image: crystalWorkshopEvent,
       isPastEvent: false,
-      tags: ["Full Moon", "Healing", "Ceremony"]
+      tags: ["Full Moon", "Healing", "Ceremony"],
+      timeAgo: "4 hours ago",
+      comments: 12,
+      likes: 45,
+      shares: 8,
+      dateRange: { start: "Mar 18", end: null },
+      connectionsGoing: ["Luna Wise", "Echo Sound"]
     },
     {
+      type: "event",
       eventId: "3",
       title: "Yoga & Sound Bath",
-      description: "Gentle yoga flow followed by immersive crystal singing bowl meditation. Perfect for releasing tension and finding inner peace through movement and sound healing vibrations.",
+      thought: "Gentle yoga flow followed by immersive crystal singing bowl meditation.",
+      description: "Perfect for releasing tension and finding inner peace through movement and sound healing vibrations.",
       date: "March 14, 2024 at 10:00 AM",
       location: "Harmony Studio, Asheville NC",
+      author: { name: "Luna Wise", avatar: elenaProfile, followers: 298, role: "Yoga & Sound Healer" },
       organizers: [
         { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
         { name: "Echo Sound", avatar: elenaProfile, id: "healer-8" },
@@ -90,62 +116,16 @@ const Events = () => {
         { id: "2", author: { name: "David Peace", avatar: elenaProfile }, rating: 4, content: "Perfect combination of yoga and sound healing. Luna is very skilled.", timeAgo: "1 day ago" },
         { id: "3", author: { name: "River Flow", avatar: elenaProfile }, rating: 5, content: "Best sound bath I've experienced. The space was beautiful too.", timeAgo: "3 days ago" }
       ],
-      tags: ["Yoga", "Sound Bath", "Meditation"]
-    },
-    {
-      eventId: "4",
-      title: "Mindful Nature Walk",
-      description: "Connect with nature through mindful walking and forest meditation. Discover the healing power of trees, breathe fresh mountain air, and practice walking meditation techniques.",
-      date: "March 17, 2024 at 9:00 AM",
-      location: "Mountain Trail, Big Sur CA",
-      organizers: [
-        { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
-        { name: "Forest Guide", avatar: elenaProfile, id: "healer-10" }
-      ],
-      attendees: 8,
-      category: "Nature",
-      image: crystalWorkshopEvent,
-      isPastEvent: false,
-      tags: ["Nature", "Walking", "Mindfulness"]
-    },
-    {
-      eventId: "5",
-      title: "Sacred Geometry Workshop",
-      description: "Explore the divine patterns in nature and their spiritual significance. Learn how to recognize and work with sacred geometric forms in meditation, art, and daily life practices.",
-      date: "March 12, 2024 at 6:00 PM",
-      location: "Wisdom Circle, Mount Shasta CA",
-      organizers: [
-        { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" }
-      ],
-      attendees: 22,
-      category: "Workshop",
-      image: soundHealingEvent,
-      isPastEvent: true,
-      averageRating: 4.9,
-      totalReviews: 18,
-      reviews: [
-        { id: "1", author: { name: "Star Seeker", avatar: elenaProfile }, rating: 5, content: "Mind-blowing insights into sacred geometry! Dr. Amara's knowledge is incredible.", timeAgo: "1 week ago" },
-        { id: "2", author: { name: "Cosmic Mind", avatar: elenaProfile }, rating: 5, content: "This workshop changed my perspective on everything. Highly recommended!", timeAgo: "5 days ago" },
-        { id: "3", author: { name: "Sacred Soul", avatar: elenaProfile }, rating: 4, content: "Fascinating content and great presentation. Worth every minute.", timeAgo: "1 week ago" }
-      ],
-      tags: ["Sacred Geometry", "Workshop", "Education"]
-    },
-    {
-      eventId: "6",
-      title: "Chakra Balancing Session",
-      description: "Realign your energy centers through guided visualization and healing. Experience deep chakra cleansing, energy balancing, and learn techniques for maintaining energetic harmony.",
-      date: "March 19, 2024 at 7:30 PM",
-      location: "Crystal Temple, Tulum Mexico",
-      organizers: [
-        { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
-        { name: "Crystal Aura", avatar: elenaProfile, id: "healer-11" },
-        { name: "Energy Master", avatar: elenaProfile, id: "healer-12" }
-      ],
-      attendees: 18,
-      category: "Healing",
-      image: crystalWorkshopEvent,
-      isPastEvent: false,
-      tags: ["Chakras", "Healing", "Energy Work"]
+      tags: ["Yoga", "Sound Bath", "Meditation"],
+      timeAgo: "2 days ago",
+      comments: 18,
+      likes: 67,
+      shares: 12,
+      dateRange: { start: "Mar 14", end: null },
+      connectionsGoing: ["Echo Sound", "River Flow"],
+      thoughts: [
+        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "This workshop exceeded my expectations. Luna's energy is so pure and healing.", likes: 12, timeAgo: "2 days ago" }
+      ]
     }
   ];
 
@@ -372,160 +352,390 @@ const Events = () => {
                           </SelectContent>
                         </Select>
                         
-                        {/* Custom Date Range Picker */}
                         {showCustomDatePicker && (
-                          <div className="absolute top-full left-0 right-0 mt-2 z-50">
+                          <div className="mt-2">
                             <CustomDateRangePicker
-                              onRangeSelect={(from, to) => {
-                                setCustomDateFrom(from);
-                                setCustomDateTo(to);
-                                if (from && to) {
-                                  setSelectedDate("custom");
-                                }
-                              }}
-                              onClose={() => setShowCustomDatePicker(false)}
+                              dateFrom={customDateFrom}
+                              dateTo={customDateTo}
+                              onDateFromChange={setCustomDateFrom}
+                              onDateToChange={setCustomDateTo}
                             />
                           </div>
                         )}
-                        
-                        {/* Display selected custom range */}
-                        {selectedDate === "custom" && customDateFrom && customDateTo && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            {customDateFrom.toLocaleDateString()} - {customDateTo.toLocaleDateString()}
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* What Section - Tags */}
+                    {/* Tags Section */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Tag className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">What</span>
+                        <span className="text-sm font-medium">Tags</span>
                       </div>
                       
-                      {/* Dance Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Dance</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Movement", "Dance", "Yoga"].includes(tag)).map((tag) => (
+                      {/* Show selected tags */}
+                      {selectedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {selectedTags.map((tag) => (
                             <Badge 
                               key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              variant="default"
+                              className="text-xs cursor-pointer hover:bg-primary/80 transition-colors flex items-center space-x-1"
                               onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
+                                setSelectedTags(prev => prev.filter(t => t !== tag));
                               }}
                             >
-                              {tag}
+                              <span>{tag}</span>
+                              <X className="h-3 w-3" />
                             </Badge>
                           ))}
                         </div>
-                      </div>
-
-                      {/* Exhibition/Festival Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Exhibition/Festival</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Exhibition", "Festival", "Garden"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
+                      )}
+                      
+                      {/* Categorized tag groups */}
+                      <div className="space-y-3">
+                        {/* Meditation Category */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Meditation</p>
+                          <div className="flex flex-wrap gap-1">
+                            {allTags.filter(tag => ["Meditation", "Mindfulness", "Morning Practice"].includes(tag)).map((tag) => (
+                              <Badge 
+                                key={tag}
+                                variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                                onClick={() => {
+                                  setSelectedTags(prev => 
+                                    prev.includes(tag) 
+                                      ? prev.filter(t => t !== tag)
+                                      : [...prev, tag]
+                                  );
+                                }}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Workshop Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Workshop</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Workshop", "Education", "Sacred Geometry", "Sound Bath", "Chakras", "Energy Work", "Healing"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
+                        {/* Healing Category */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Healing</p>
+                          <div className="flex flex-wrap gap-1">
+                            {allTags.filter(tag => ["Healing", "Sound Bath", "Full Moon", "Ceremony"].includes(tag)).map((tag) => (
+                              <Badge 
+                                key={tag}
+                                variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                                onClick={() => {
+                                  setSelectedTags(prev => 
+                                    prev.includes(tag) 
+                                      ? prev.filter(t => t !== tag)
+                                      : [...prev, tag]
+                                  );
+                                }}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Ceremony Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Ceremony</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Ceremony", "Full Moon", "Meditation", "Morning Practice", "Nature", "Walking", "Mindfulness"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
+                        {/* Yoga Category */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Yoga</p>
+                          <div className="flex flex-wrap gap-1">
+                            {allTags.filter(tag => ["Yoga"].includes(tag)).map((tag) => (
+                              <Badge 
+                                key={tag}
+                                variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                                onClick={() => {
+                                  setSelectedTags(prev => 
+                                    prev.includes(tag) 
+                                      ? prev.filter(t => t !== tag)
+                                      : [...prev, tag]
+                                  );
+                                }}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Nature Category */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Nature</p>
+                          <div className="flex flex-wrap gap-1">
+                            {allTags.filter(tag => ["Garden", "Nature"].includes(tag)).map((tag) => (
+                              <Badge 
+                                key={tag}
+                                variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                                onClick={() => {
+                                  setSelectedTags(prev => 
+                                    prev.includes(tag) 
+                                      ? prev.filter(t => t !== tag)
+                                      : [...prev, tag]
+                                  );
+                                }}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-
                   </CardContent>
                 </Card>
               </div>
             </div>
 
-            {/* Main Content - Events Grid */}
-            <div className="lg:col-span-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event, index) => (
-                  <EventCard 
-                    key={index} 
-                    {...event} 
-                    isSaved={savedEvents.includes(event.eventId)}
-                    onSaveToggle={() => {
-                      if (savedEvents.includes(event.eventId)) {
-                        setSavedEvents(prev => prev.filter(id => id !== event.eventId));
-                        toast.success("Removed from saved");
-                      } else {
-                        setSavedEvents(prev => [...prev, event.eventId]);
-                        toast.success("Event saved!");
-                      }
-                    }}
-                    onJoinEvent={() => {
-                      setSelectedEvent(event);
-                      setEnrollmentModalOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
+            {/* Main Content */}
+            <div className="lg:col-span-6 space-y-4">
+              {filteredEvents.map((event, index) => (
+                <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
+                  <CardContent className="p-0">
+                    {/* Event Image Header */}
+                    {event.image && (
+                      <div className="p-4">
+                         <div className="flex space-x-3">
+                           {/* Event Image - 4:3 Aspect Ratio - Clickable */}
+                           <div 
+                             className="w-48 h-36 flex-shrink-0 cursor-pointer"
+                             onClick={() => navigate(`/event/${event.eventId}`)}
+                           >
+                             <img 
+                               src={event.image} 
+                               alt={event.title}
+                               className="w-full h-full object-cover rounded-lg"
+                             />
+                           </div>
+                           
+                           {/* Event Details */}
+                           <div className="flex-1 min-w-0">
+                             <h2 
+                               className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
+                               onClick={() => navigate(`/event/${event.eventId}`)}
+                             >
+                               {event.title}
+                             </h2>
+                             
+                             <div className="space-y-1 text-sm">
+                               <div className="mb-2">
+                                 <span className="text-2xl font-bold text-primary">
+                                   {event.dateRange?.end ? 
+                                     `${event.dateRange.start} - ${event.dateRange.end}` : 
+                                     event.dateRange?.start
+                                   }
+                                 </span>
+                               </div>
+                               
+                               <div className="flex items-center space-x-2">
+                                 <Avatar className="h-6 w-6">
+                                   <AvatarImage src={event.author.avatar} />
+                                   <AvatarFallback className="bg-primary/10 text-xs">
+                                     {event.author.name.split(' ').map(n => n[0]).join('')}
+                                   </AvatarFallback>
+                                 </Avatar>
+                                 <div>
+                                   <div className="flex items-center space-x-2">
+                                      <span 
+                                        className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                        onClick={() => navigate(`/healer/${event.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                      >
+                                        {event.author.name}
+                                      </span>
+                                     <span className="text-xs text-muted-foreground">•</span>
+                                     <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                       Follow
+                                     </Button>
+                                   </div>
+                                   <p className="text-xs text-muted-foreground">
+                                     {event.author.role}
+                                   </p>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center space-x-2 text-muted-foreground">
+                                 <MapPin className="h-4 w-4" />
+                                 <span>{event.location}</span>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="px-3">
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {event.tags.map((tag, tagIndex) => (
+                          <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {/* Event thought */}
+                      <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                        {event.thought}
+                      </p>
+
+                      {/* Event Details */}
+                      <div className="mb-3">
+                        <div className="flex items-center space-x-4 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{event.attendees} attending</span>
+                          </div>
+                          {event.connectionsGoing && event.connectionsGoing.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <UserCheck className="h-4 w-4 text-primary" />
+                              <span className="text-primary text-xs font-medium">
+                                {event.connectionsGoing.join(', ')} {event.connectionsGoing.length === 1 ? 'is' : 'are'} going
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Past Event Reviews */}
+                      {event.isPastEvent && event.averageRating && (
+                        <div className="mb-3 p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className="flex">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.round(event.averageRating || 0) 
+                                        ? "text-yellow-400 fill-current" 
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm font-medium">{event.averageRating?.toFixed(1)}</span>
+                              <span className="text-sm text-muted-foreground">({event.totalReviews} reviews)</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Social Actions */}
+                    <div className="px-3 py-2 border-t border-border/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`h-auto p-2 transition-colors ${
+                              likedPosts.includes(index) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                            }`}
+                            onClick={() => {
+                              if (likedPosts.includes(index)) {
+                                setLikedPosts(prev => prev.filter(id => id !== index));
+                              } else {
+                                setLikedPosts(prev => [...prev, index]);
+                              }
+                            }}
+                          >
+                            <Heart className={`h-4 w-4 mr-1 ${likedPosts.includes(index) ? 'fill-current' : ''}`} />
+                            <span className="text-xs">{event.likes + (likedPosts.includes(index) ? 1 : 0)}</span>
+                          </Button>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-auto p-2 text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            <span className="text-xs">{event.comments}</span>
+                          </Button>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`h-auto p-2 transition-colors ${
+                              resharedPosts.includes(index) ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'
+                            }`}
+                            onClick={() => {
+                              if (resharedPosts.includes(index)) {
+                                setResharedPosts(prev => prev.filter(id => id !== index));
+                                toast.success("Unshared event");
+                              } else {
+                                setResharedPosts(prev => [...prev, index]);
+                                toast.success("Event reshared");
+                              }
+                            }}
+                          >
+                            <Repeat2 className="h-4 w-4 mr-1" />
+                            <span className="text-xs">{event.shares + (resharedPosts.includes(index) ? 1 : 0)}</span>
+                          </Button>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`h-auto p-2 transition-colors ${
+                              savedPosts.includes(index) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                            }`}
+                            onClick={() => {
+                              if (savedPosts.includes(index)) {
+                                setSavedPosts(prev => prev.filter(id => id !== index));
+                                toast.success("Event unsaved");
+                              } else {
+                                setSavedPosts(prev => [...prev, index]);
+                                toast.success("Event saved");
+                              }
+                            }}
+                          >
+                            <BookOpen className={`h-4 w-4 ${savedPosts.includes(index) ? 'fill-current' : ''}`} />
+                          </Button>
+                          
+                          <Popover 
+                            open={sharePopoverOpen === index} 
+                            onOpenChange={(open) => setSharePopoverOpen(open ? index : null)}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-auto p-2 text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-2" align="end">
+                              <div className="space-y-1">
+                                <Button 
+                                  variant="ghost" 
+                                  className="w-full justify-start text-sm h-8"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/event/${event.eventId}`);
+                                    setLinkCopied(true);
+                                    setTimeout(() => setLinkCopied(false), 2000);
+                                    toast.success("Event link copied!");
+                                    setSharePopoverOpen(null);
+                                  }}
+                                >
+                                  {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                                  Copy Link
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
@@ -540,62 +750,40 @@ const Events = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6 py-4">
+            <div className="space-y-4">
               <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Event Details:</h4>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span><strong>Date:</strong> {selectedEvent?.date}</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span><strong>Location:</strong> {selectedEvent?.location}</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span><strong>Organizers:</strong> {selectedEvent?.organizers?.map((org: any) => org.name).join(', ')}</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span><strong>Current attendees:</strong> {selectedEvent?.attendees}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Enrollment Options:</h4>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="anonymous" 
-                    checked={isAnonymous}
-                    onCheckedChange={(checked) => setIsAnonymous(checked === true)}
-                  />
-                  <label
-                    htmlFor="anonymous"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Stay anonymous (your name won't be visible to other participants)
-                  </label>
+                <div className="flex items-start space-x-2">
+                  <span className="text-sm">•</span>
+                  <div>
+                    <p className="text-sm font-medium">Event Details</p>
+                    <p className="text-sm text-muted-foreground">{selectedEvent?.date}</p>
+                    <p className="text-sm text-muted-foreground">{selectedEvent?.location}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-2">
+                  <span className="text-sm">•</span>
+                  <div>
+                    <p className="text-sm font-medium">Organizer</p>
+                    <p className="text-sm text-muted-foreground">{selectedEvent?.author?.name}</p>
+                  </div>
                 </div>
               </div>
-
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm">What to expect:</h4>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span>You'll receive a confirmation email with event details</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span>Event reminders will be sent 24 hours and 1 hour before</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                    <span>You can cancel your enrollment up to 2 hours before the event</span>
-                  </li>
-                </ul>
+              
+              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                <Checkbox 
+                  id="anonymous" 
+                  checked={isAnonymous}
+                  onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+                />
+                <div>
+                  <label htmlFor="anonymous" className="text-sm font-medium">
+                    Stay anonymous
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Your name won't be visible to other attendees
+                  </p>
+                </div>
               </div>
             </div>
 
