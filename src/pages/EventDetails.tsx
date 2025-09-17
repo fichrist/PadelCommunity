@@ -343,7 +343,7 @@ const eventData = {
               <CardTitle>Event Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 mb-6">
                 <div className="flex items-center space-x-3">
                   <Calendar className="h-5 w-5 text-primary" />
                   <div>
@@ -364,6 +364,29 @@ const eventData = {
                     <span className="font-medium text-sm text-muted-foreground">Location</span>
                     <p className="font-medium">{event.location}</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Action Buttons in Event Details */}
+              <div className="space-y-3">
+                <Button 
+                  size="lg" 
+                  className="w-full"
+                  onClick={() => setEnrollmentModalOpen(true)}
+                >
+                  Join Event
+                </Button>
+                
+                <div className="text-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+                  >
+                    <Flag className="h-3 w-3 mr-1" />
+                    Report Event
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -410,31 +433,10 @@ const eventData = {
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-8">
-          <Button 
-            size="lg" 
-            className="w-full sm:w-auto px-8"
-            onClick={() => setEnrollmentModalOpen(true)}
-          >
-            Join Event
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-muted-foreground hover:text-destructive"
-            onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
-          >
-            <Flag className="h-4 w-4 mr-2" />
-            Report Event
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Event Description */}
+        {/* Main Content - About Event and Event Community Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* About Event */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>About this Event</CardTitle>
@@ -454,13 +456,12 @@ const eventData = {
                     <p className="text-sm text-muted-foreground mt-1">Click to watch introduction</p>
                   </div>
                 </div>
-                
               </CardContent>
             </Card>
 
             {/* Add-ons Display */}
             {event.addOns && event.addOns.length > 0 && (
-              <Card>
+              <Card className="mt-6">
                 <CardHeader>
                   <CardTitle>Available Add-ons</CardTitle>
                 </CardHeader>
@@ -486,96 +487,8 @@ const eventData = {
             )}
           </div>
 
-          {/* Previous Events by Organizers - Separate Container */}
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>Previous Events by Organizers</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {event.organizers.flatMap(organizer => 
-                    organizer.previousEvents?.map((prevEvent, eventIndex) => (
-                      <div 
-                        key={`${organizer.name}-${eventIndex}`}
-                        className="group cursor-pointer border rounded-lg p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                        onClick={() => navigate(`/event/prev-${organizer.name}-${eventIndex}`)}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="h-10 w-10 flex-shrink-0">
-                            <AvatarImage src={organizer.avatar} />
-                            <AvatarFallback className="bg-primary/10">
-                              {organizer.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
-                              {prevEvent.title}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              by {organizer.name}
-                            </p>
-                            <div className="flex items-center text-xs text-muted-foreground space-x-3">
-                              <div className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {prevEvent.date}
-                              </div>
-                              <div className="flex items-center">
-                                <Users className="h-3 w-3 mr-1" />
-                                {prevEvent.attendees}
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center text-xs">
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
-                                  ))}
-                                </div>
-                                <span className="ml-1 text-muted-foreground">4.5</span>
-                              </div>
-                              <div className="flex space-x-1">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-6 w-6 p-0 rounded-full hover:bg-primary/10"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate('/chat');
-                                    toast.success(`Opening chat with ${organizer.name}`);
-                                  }}
-                                >
-                                  <MessageCircle className="h-3 w-3 text-primary" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-6 w-6 p-0 rounded-full hover:bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.success(`Connection request sent to ${organizer.name}`);
-                                  }}
-                                >
-                                  <Heart className="h-3 w-3 text-muted-foreground hover:text-red-500" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )) || []
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Organizers & Attendees */}
+          {/* Event Community Sidebar */}
+          <div>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -709,73 +622,93 @@ const eventData = {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Review Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Star className="h-5 w-5" />
-                  <span>Reviews</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="min-h-96">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-current text-yellow-400" />
-                      ))}
-                    </div>
-                    <span className="text-sm font-medium">4.9</span>
-                    <span className="text-sm text-muted-foreground">(24 reviews)</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-4 mb-4">
-                  <div className="border-l-2 border-primary/20 pl-3">
-                    <p className="text-sm text-foreground/90 mb-1">
-                      "Absolutely transformative experience. Elena's sound healing brought me to tears of joy."
-                    </p>
-                    <p className="text-xs text-muted-foreground">- Sarah M.</p>
-                  </div>
-                  <div className="border-l-2 border-primary/20 pl-3">
-                    <p className="text-sm text-foreground/90 mb-1">
-                      "The energy in the room was incredible. I felt completely renewed after the session."
-                    </p>
-                    <p className="text-xs text-muted-foreground">- Michael R.</p>
-                  </div>
-                  <div className="border-l-2 border-primary/20 pl-3">
-                    <p className="text-sm text-foreground/90 mb-1">
-                      "Elena creates such a sacred space. The crystal bowls transported me to another dimension."
-                    </p>
-                    <p className="text-xs text-muted-foreground">- Luna K.</p>
-                  </div>
-                  <div className="border-l-2 border-primary/20 pl-3">
-                    <p className="text-sm text-foreground/90 mb-1">
-                      "Perfect for beginners. Very welcoming environment and amazing healing energy."
-                    </p>
-                    <p className="text-xs text-muted-foreground">- David T.</p>
-                  </div>
-                  <div className="border-l-2 border-primary/20 pl-3">
-                    <p className="text-sm text-foreground/90 mb-1">
-                      "The full moon energy combined with sound healing was extraordinary. Highly recommend!"
-                    </p>
-                    <p className="text-xs text-muted-foreground">- River S.</p>
-                  </div>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full mt-3"
-                  onClick={() => setReviewsModalOpen(true)}
-                >
-                  View All Reviews
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
+
+        {/* Previous Events by Organizers - Bottom Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Previous Events by Organizers</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {event.organizers.flatMap(organizer => 
+                organizer.previousEvents?.map((prevEvent, eventIndex) => (
+                  <div 
+                    key={`${organizer.name}-${eventIndex}`}
+                    className="group cursor-pointer border rounded-lg p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                    onClick={() => navigate(`/event/prev-${organizer.name}-${eventIndex}`)}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={organizer.avatar} />
+                        <AvatarFallback className="bg-primary/10">
+                          {organizer.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                          {prevEvent.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          by {organizer.name}
+                        </p>
+                        <div className="flex items-center text-xs text-muted-foreground space-x-3">
+                          <div className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {prevEvent.date}
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            {prevEvent.attendees}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center text-xs">
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                              ))}
+                            </div>
+                            <span className="ml-1 text-muted-foreground">4.5</span>
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-6 w-6 p-0 rounded-full hover:bg-primary/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/chat');
+                                toast.success(`Opening chat with ${organizer.name}`);
+                              }}
+                            >
+                              <MessageCircle className="h-3 w-3 text-primary" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-6 w-6 p-0 rounded-full hover:bg-red-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.success(`Connection request sent to ${organizer.name}`);
+                              }}
+                            >
+                              <Heart className="h-3 w-3 text-muted-foreground hover:text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )) || []
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
         
         {/* Enrollment Modal */}
