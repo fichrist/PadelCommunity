@@ -196,14 +196,15 @@ const eventData = {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
+            
+            {/* Full width title */}
+            <h1 className="text-4xl font-bold mb-8 text-foreground text-center">
+              {event.title}
+            </h1>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left side - Image and interactions */}
             <div className="lg:col-span-1">
-              <h1 className="text-4xl font-bold mb-4 text-foreground">
-                {event.title}
-              </h1>
-              
               <div className="relative mb-4">
                 <img
                   src={event.image}
@@ -214,15 +215,6 @@ const eventData = {
               
               {/* Social buttons and tags at same height */}
               <div className="flex justify-between items-start">
-                {/* Tags on the left */}
-                <div className="flex flex-wrap gap-1">
-                  {event.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                
                 {/* Social Interaction Buttons */}
                 <div className="flex items-center space-x-4">
                   <Button 
@@ -281,6 +273,15 @@ const eventData = {
                       </div>
                     </PopoverContent>
                   </Popover>
+                </div>
+                
+                {/* Tags on the right */}
+                <div className="flex flex-wrap gap-1">
+                  {event.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
