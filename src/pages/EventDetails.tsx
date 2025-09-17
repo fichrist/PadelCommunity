@@ -230,196 +230,160 @@ const eventData = {
           </div>
         </div>
 
-        {/* Hero Section */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-sage/20 via-celestial/20 to-lotus/20" />
-          <div className="relative max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
+          <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8">
             <Button
               variant="ghost"
               onClick={() => window.history.back()}
-              className="mb-8 hover:bg-white/10"
+              className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
             
-            {/* Main Hero Card */}
-            <Card className="overflow-hidden bg-card/90 backdrop-blur-sm border-0 shadow-2xl">
-              <div className="relative">
-                {/* Hero Image */}
-                <div className="relative h-80 md:h-96 overflow-hidden">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  
-                  {/* Title Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
-                      {event.title}
-                    </h1>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {event.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="bg-white/20 text-white border-white/30">
-                          {tag}
-                        </Badge>
-                      ))}
+            {/* Full width title */}
+            <h1 className="text-4xl font-bold mb-8 text-foreground text-center">
+              {event.title}
+            </h1>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left side - Image and interactions */}
+            <div className="lg:col-span-1">
+              <div className="relative mb-4">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                />
+              </div>
+              
+              {/* Social buttons */}
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex flex-col items-center space-y-1 p-3 h-auto"
+                >
+                  <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <span className="text-xs text-muted-foreground">Comment</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
+                  onClick={() => setIsReshared(!isReshared)}
+                >
+                  <Repeat2 className="h-5 w-5" />
+                  <span className="text-xs">Reshare</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                  onClick={() => setIsSaved(!isSaved)}
+                >
+                  <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span className="text-xs">Save</span>
+                </Button>
+                <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Share2 className="h-5 w-5" />
+                      <span className="text-xs">Share</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2" align="end">
+                    <div className="space-y-1">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-sm h-8"
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          setLinkCopied(true);
+                          setTimeout(() => setLinkCopied(false), 2000);
+                          toast.success("Link copied to clipboard!");
+                          setSharePopoverOpen(false);
+                        }}
+                      >
+                        {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                        Copy Link
+                      </Button>
                     </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            {/* Right side - Event details */}
+            <div className="lg:col-span-2">           
+              <p className="text-lg text-muted-foreground mb-6">
+                {event.description}
+              </p>
+              
+              {/* Event Meta Info */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <span className="font-medium">{event.date}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <span>{event.time}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <span>{event.location}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <div className="space-y-1">
+                    {event.priceOptions.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <span className="font-medium text-lg">{option.price}</span>
+                        <span className="text-sm text-muted-foreground">({option.type})</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                {/* Content Section */}
-                <CardContent className="p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left - Description */}
-                    <div className="lg:col-span-2 space-y-6">
-                      <p className="text-lg text-muted-foreground leading-relaxed">
-                        {event.description}
-                      </p>
-                      
-                      {/* Social Actions */}
-                      <div className="flex items-center space-x-6 pt-4 border-t border-border">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <MessageCircle className="h-5 w-5" />
-                          <span>Comment</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`flex items-center space-x-2 transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
-                          onClick={() => setIsReshared(!isReshared)}
-                        >
-                          <Repeat2 className="h-5 w-5" />
-                          <span>Reshare</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`flex items-center space-x-2 transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                          onClick={() => setIsSaved(!isSaved)}
-                        >
-                          <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
-                          <span>Save</span>
-                        </Button>
-                        <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors"
-                            >
-                              <Share2 className="h-5 w-5" />
-                              <span>Share</span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48 p-2" align="end">
-                            <div className="space-y-1">
-                              <Button 
-                                variant="ghost" 
-                                className="w-full justify-start text-sm h-8"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(window.location.href);
-                                  setLinkCopied(true);
-                                  setTimeout(() => setLinkCopied(false), 2000);
-                                  toast.success("Link copied to clipboard!");
-                                  setSharePopoverOpen(false);
-                                }}
-                              >
-                                {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
-                                Copy Link
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                    
-                    {/* Right - Event Info Card */}
-                    <div className="lg:col-span-1">
-                      <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-                        <CardContent className="p-6 space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <Calendar className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Date</p>
-                              <p className="font-semibold">{event.date}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <Clock className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Time</p>
-                              <p className="font-semibold">{event.time}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <MapPin className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Location</p>
-                              <p className="font-semibold">{event.location}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <DollarSign className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Price</p>
-                              <div className="space-y-1">
-                                {event.priceOptions.map((option, index) => (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <span className="font-semibold">{option.price}</span>
-                                    <span className="text-sm text-muted-foreground">({option.type})</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="pt-4 space-y-3">
-                            <Button 
-                              className="w-full"
-                              onClick={() => setEnrollmentModalOpen(true)}
-                            >
-                              Join Event
-                            </Button>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="w-full text-muted-foreground hover:text-destructive"
-                              onClick={() => toast.info("Event reported")}
-                            >
-                              <Flag className="h-4 w-4 mr-2" />
-                              Report Event
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                </CardContent>
               </div>
-            </Card>
+
+              <Button 
+                size="sm" 
+                className="w-24"
+                onClick={() => setEnrollmentModalOpen(true)}
+              >
+                Join Event
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+              >
+                <Flag className="h-4 w-4 mr-2" />
+                Report
+              </Button>
+              
+              {/* Tags under Join Event button */}
+              <div className="flex flex-wrap gap-1 justify-center">
+                {event.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
