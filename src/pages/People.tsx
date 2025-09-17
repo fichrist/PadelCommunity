@@ -456,11 +456,11 @@ const People = () => {
         {/* People Filters - Sticky */}
         <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
               
-              {/* Sort Options - Right Aligned */}
-              <div className="flex items-center space-x-3">
+              {/* Sort Options - Completely Right Aligned */}
+              <div className="ml-auto flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">Sort by:</span>
                   <Select value={sortBy} onValueChange={setSortBy}>
