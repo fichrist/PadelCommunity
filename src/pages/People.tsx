@@ -29,6 +29,7 @@ const People = () => {
   const [userToUnfollow, setUserToUnfollow] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [sortBy, setSortBy] = useState("alphabetical");
   const navigate = useNavigate();
 
   const healers = [
@@ -286,6 +287,16 @@ const People = () => {
     filter === "followers" ? [...healers.filter(healer => healer.followers > 1000), ...simpleUsers] :
     healers;
 
+  // Sort users based on selected sort option
+  const sortedUsers = [...filteredHealers].sort((a, b) => {
+    if (sortBy === "alphabetical") {
+      return a.name.localeCompare(b.name);
+    } else if (sortBy === "followers") {
+      return b.followers - a.followers;
+    }
+    return 0;
+  });
+
   const searchResults = searchQuery.length >= 3 
     ? allUsers.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -445,6 +456,20 @@ const People = () => {
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
+              
+              {/* Sort By Dropdown */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Sort by:</span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40 h-9">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                    <SelectItem value="followers">Followers</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               {/* Centered Filters */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
@@ -645,7 +670,7 @@ const People = () => {
             {/* Main Content - People Grid */}
             <div className="lg:col-span-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredHealers.map((healer, index) => (
+                {sortedUsers.map((healer, index) => (
                   <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
                     onClick={() => navigate(`/healer/${index + 1}`)}
                   >
