@@ -536,12 +536,12 @@ const HealerProfile = () => {
                     </div>
                   </div>
                   <div className="flex space-x-3">
-                    <Button>
+                    <Button onClick={() => navigate(`/chat?healer=${healer.id}`)}>
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message
                     </Button>
                     <Button variant="outline">
-                      <UserPlus className="h-4 w-4 mr-2" />
+                      <Heart className="h-4 w-4 mr-2" />
                       Follow
                     </Button>
                   </div>
