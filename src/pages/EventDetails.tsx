@@ -197,11 +197,96 @@ const eventData = {
               Back
             </Button>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left side - Image and interactions */}
+            <div className="lg:col-span-1">
               <h1 className="text-4xl font-bold mb-4 text-foreground">
                 {event.title}
               </h1>
+              
+              <div className="relative mb-4">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                />
+              </div>
+              
+              {/* Social buttons and tags at same height */}
+              <div className="flex justify-between items-start">
+                {/* Tags on the left */}
+                <div className="flex flex-wrap gap-1">
+                  {event.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                
+                {/* Social Interaction Buttons */}
+                <div className="flex items-center space-x-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex flex-col items-center space-y-1 p-3 h-auto"
+                  >
+                    <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                    <span className="text-xs text-muted-foreground">Comment</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
+                    onClick={() => setIsReshared(!isReshared)}
+                  >
+                    <Repeat2 className="h-5 w-5" />
+                    <span className="text-xs">Reshare</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                    onClick={() => setIsSaved(!isSaved)}
+                  >
+                    <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+                    <span className="text-xs">Save</span>
+                  </Button>
+                  <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Share2 className="h-5 w-5" />
+                        <span className="text-xs">Share</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" align="end">
+                      <div className="space-y-1">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-sm h-8"
+                          onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            setLinkCopied(true);
+                            setTimeout(() => setLinkCopied(false), 2000);
+                            toast.success("Link copied to clipboard!");
+                            setSharePopoverOpen(false);
+                          }}
+                        >
+                          {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                          Copy Link
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right side - Event details */}
+            <div className="lg:col-span-2">           
               <p className="text-lg text-muted-foreground mb-6">
                 {event.description}
               </p>
@@ -240,86 +325,6 @@ const eventData = {
               >
                 Join Event
               </Button>
-              
-              {/* Social Interaction Buttons */}
-              <div className="flex items-center justify-center space-x-6 mb-6">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex flex-col items-center space-y-1 p-3 h-auto"
-                >
-                  <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                  <span className="text-xs text-muted-foreground">Comment</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
-                  onClick={() => setIsReshared(!isReshared)}
-                >
-                  <Repeat2 className="h-5 w-5" />
-                  <span className="text-xs">Reshare</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                  onClick={() => setIsSaved(!isSaved)}
-                >
-                  <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
-                  <span className="text-xs">Save</span>
-                </Button>
-                <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      <Share2 className="h-5 w-5" />
-                      <span className="text-xs">Share</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 p-2" align="end">
-                    <div className="space-y-1">
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start text-sm h-8"
-                        onClick={() => {
-                          navigator.clipboard.writeText(window.location.href);
-                          setLinkCopied(true);
-                          setTimeout(() => setLinkCopied(false), 2000);
-                          toast.success("Link copied to clipboard!");
-                          setSharePopoverOpen(false);
-                        }}
-                      >
-                        {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
-                        Copy Link
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              {/* Tags with categorized layout */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Tags</p>
-                <div className="flex flex-wrap gap-1">
-                  {event.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover rounded-lg shadow-lg"
-              />
             </div>
           </div>
         </div>
@@ -398,40 +403,44 @@ const eventData = {
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-8 w-8 p-0"
-                              onClick={() => navigate('/chat')}
+                              className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
                             >
-                              <MessageCircle className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                              <Heart className="h-4 w-4" />
+                              <MessageCircle className="h-4 w-4 text-primary" />
                             </Button>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Attendees */}
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3">Attendees ({event.attendees.length})</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                      Attendees ({event.attendees.filter(a => !a.isAnonymous).length + event.attendees.filter(a => a.isAnonymous).length})
+                    </h3>
                     <div className="space-y-3">
                       {event.attendees.map((attendee, index) => (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8">
-                              {!attendee.isAnonymous ? (
-                                <AvatarImage src={attendee.avatar} />
-                              ) : null}
-                              <AvatarFallback className="bg-muted text-muted-foreground">
-                                {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                              </AvatarFallback>
+                              {attendee.isAnonymous ? (
+                                <AvatarFallback className="bg-muted">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                </AvatarFallback>
+                              ) : (
+                                <>
+                                  <AvatarImage src={attendee.avatar} />
+                                  <AvatarFallback className="bg-primary/10">
+                                    {attendee.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </>
+                              )}
                             </Avatar>
                             <div className="flex-1">
                               <div className="text-sm font-medium">
-                                {attendee.isAnonymous ? "Anonymous User" : attendee.name}
+                                {attendee.isAnonymous ? "Anonymous" : attendee.name}
                               </div>
-                              {!attendee.isAnonymous && attendee.location && (
+                              {!attendee.isAnonymous && (
                                 <div className="flex items-center text-xs text-muted-foreground">
                                   <MapPin className="h-3 w-3 mr-1" />
                                   {attendee.location}
@@ -444,13 +453,16 @@ const eventData = {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="h-8 w-8 p-0"
-                                onClick={() => navigate('/chat')}
+                                className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
                               >
-                                <MessageCircle className="h-4 w-4" />
+                                <MessageCircle className="h-3 w-3 text-primary" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                                <Heart className="h-4 w-4" />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
+                              >
+                                <UserPlus className="h-3 w-3 text-primary" />
                               </Button>
                             </div>
                           )}
@@ -461,147 +473,73 @@ const eventData = {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-        
-        {/* Healer Reviews Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reviews for {event.organizers[0].name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-1 mb-4">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-5 w-5 fill-primary text-primary" />
-                    ))}
+
+            {/* Event Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MapPin className="h-5 w-5" />
+                  <span>Location</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">{event.location}</p>
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="h-8 w-8 text-muted-foreground mb-2 mx-auto" />
+                    <p className="text-sm text-muted-foreground">Interactive Map</p>
                   </div>
-                  <span className="text-sm text-muted-foreground ml-2">4.9 (23 reviews)</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Review Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Star className="h-5 w-5" />
+                  <span>Reviews</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="h-4 w-4 fill-current text-yellow-400" />
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium">4.9</span>
+                    <span className="text-sm text-muted-foreground">(24 reviews)</span>
+                  </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="border-b pb-4">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={davidProfile} />
-                        <AvatarFallback>DP</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">David Peace</p>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star key={star} className="h-3 w-3 fill-primary text-primary" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      "Transformative experience! Elena's sound healing session was exactly what I needed for my spiritual journey."
+                <div className="space-y-3">
+                  <div className="border-l-2 border-primary/20 pl-3">
+                    <p className="text-sm text-foreground/90 mb-1">
+                      "Absolutely transformative experience. Elena's sound healing brought me to tears of joy."
                     </p>
+                    <p className="text-xs text-muted-foreground">- Sarah M.</p>
                   </div>
-                  
-                  <div className="border-b pb-4">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={ariaProfile} />
-                        <AvatarFallback>AS</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">Luna Sage</p>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star key={star} className="h-3 w-3 fill-primary text-primary" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      "Beautiful healing space and incredible energy. Elena creates such a safe and sacred environment."
+                  <div className="border-l-2 border-primary/20 pl-3">
+                    <p className="text-sm text-foreground/90 mb-1">
+                      "The energy in the room was incredible. I felt completely renewed after the session."
                     </p>
+                    <p className="text-xs text-muted-foreground">- Michael R.</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Previous Events Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Previous Events by {event.organizers[0].name}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300">
-              <div className="relative overflow-hidden">
-                <img
-                  src={soundHealingEvent}
-                  alt="Past Sound Healing"
-                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <CardContent className="p-4">
-                <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  February 18, 2024
-                </div>
-                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                  New Moon Sound Journey
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Deep healing with crystal bowls and sacred chanting under the new moon energy.
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                    <span className="text-sm text-muted-foreground ml-1">(18)</span>
-                  </div>
-                  <Badge variant="secondary">Completed</Badge>
-                </div>
+                
+                <Button variant="outline" size="sm" className="w-full mt-3">
+                  View All Reviews
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300">
-              <div className="relative overflow-hidden">
-                <img
-                  src={crystalWorkshopEvent}
-                  alt="Past Crystal Workshop"
-                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <CardContent className="p-4">
-                <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  January 25, 2024
-                </div>
-                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                  Winter Solstice Ceremony
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Celebrating the return of light with meditation and sound healing.
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                    <span className="text-sm text-muted-foreground ml-1">(25)</span>
-                  </div>
-                  <Badge variant="secondary">Completed</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        
-        {/* Report Event */}
-        <div className="mt-12 pt-8 border-t border-border">
-          <div className="flex justify-center">
+            {/* Report Event */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-muted-foreground hover:text-destructive transition-colors"
+              className="w-full text-muted-foreground hover:text-destructive"
               onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
             >
               <Flag className="h-4 w-4 mr-2" />
@@ -610,7 +548,6 @@ const eventData = {
           </div>
         </div>
       </div>
-        </div>
         
         {/* Enrollment Modal */}
         <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
@@ -623,95 +560,87 @@ const eventData = {
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <div>
-                    <p className="text-sm font-medium">Event Details</p>
-                    <p className="text-sm text-muted-foreground">{event.date} • {event.time}</p>
-                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                    <p className="text-sm font-medium">Select your pricing option</p>
+                    <p className="text-xs text-muted-foreground">Choose the option that works best for you</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                  <div className="w-full">
-                    <p className="text-sm font-medium mb-2">Price Options</p>
-                    <div className="space-y-2">
-                      {event.priceOptions.map((option, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id={`price-${index}`}
-                            name="price"
-                            value={option.type}
-                            checked={selectedPrice === option.type}
-                            onChange={(e) => setSelectedPrice(e.target.value)}
-                            className="text-primary focus:ring-primary"
-                          />
-                          <label htmlFor={`price-${index}`} className="flex-1 cursor-pointer">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{option.price}</span>
-                              <span className="text-xs text-muted-foreground">({option.type})</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{option.description}</p>
-                          </label>
+                <div className="space-y-3">
+                  {event.priceOptions.map((option, index) => (
+                    <label key={index} className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <input
+                        type="radio"
+                        name="priceOption"
+                        value={option.type}
+                        checked={selectedPrice === option.type}
+                        onChange={(e) => setSelectedPrice(e.target.value)}
+                        className="text-primary focus:ring-primary"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{option.type}</span>
+                          <span className="font-bold text-primary">{option.price}</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                      </div>
+                    </label>
+                  ))}
                 </div>
-                
+              </div>
+
+              <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <div>
-                    <p className="text-sm font-medium">Organizers</p>
-                    <div className="space-y-2 mt-1">
-                      {event.organizers.map((organizer, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={organizer.avatar} />
-                            <AvatarFallback className="text-xs">
-                              {organizer.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm text-muted-foreground">{organizer.name}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-sm font-medium">Visibility Settings</p>
+                    <p className="text-xs text-muted-foreground">Control how others see your participation</p>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
-                <Checkbox 
-                  id="visible" 
-                  checked={allowVisible}
-                  onCheckedChange={(checked) => setAllowVisible(checked === true)}
-                />
-                <div>
-                  <Label htmlFor="visible" className="text-sm font-medium">
+                
+                <div className="flex items-center space-x-3">
+                  <Checkbox 
+                    id="allow-visible" 
+                    checked={allowVisible}
+                    onCheckedChange={(checked) => setAllowVisible(checked === true)}
+                  />
+                  <Label htmlFor="allow-visible" className="text-sm">
                     Allow others to see me attending
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Your name will be visible to other attendees
-                  </p>
                 </div>
               </div>
-              
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium">What to Expect</p>
+                    <p className="text-xs text-muted-foreground">You'll receive confirmation details via email</p>
+                  </div>
+                </div>
+                
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Confirmation email with event details</li>
+                    <li>• Location and parking information</li>
+                    <li>• What to bring and how to prepare</li>
+                    <li>• Organizer contact information</li>
+                  </ul>
+                </div>
+              </div>
+
               <div className="flex space-x-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setEnrollmentModalOpen(false)}
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   className="flex-1"
-                  disabled={event.priceOptions.length > 1 && !selectedPrice}
+                  disabled={!selectedPrice}
                   onClick={() => {
-                    if (event.priceOptions.length > 1 && !selectedPrice) {
-                      toast.error("Please select a price option");
-                      return;
-                    }
-                    toast.success("Successfully enrolled in the event!");
+                    toast.success(`Successfully enrolled in ${event.title}! Check your email for confirmation.`);
                     setEnrollmentModalOpen(false);
                   }}
                 >
@@ -721,6 +650,7 @@ const eventData = {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     );
   };
