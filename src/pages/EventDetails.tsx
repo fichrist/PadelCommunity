@@ -335,13 +335,14 @@ const eventData = {
       </div>
 
       <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Event Details Container */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Event Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Event Details and Pricing Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Event Details Container */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Event Details</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Calendar className="h-5 w-5 text-primary" />
@@ -365,100 +366,70 @@ const eventData = {
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                {/* Organizers */}
-                <div>
-                  <span className="font-medium text-sm text-muted-foreground">Organizers</span>
-                  <div className="space-y-2 mt-1">
-                    {event.organizers.map((organizer, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={organizer.avatar} />
-                          <AvatarFallback className="bg-primary/10">
-                            {organizer.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{organizer.name}</p>
-                          <p className="text-xs text-muted-foreground">{organizer.role}</p>
-                        </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing Container */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Pricing Options</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {event.priceOptions.map((option, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <span className="font-medium">{option.type}</span>
+                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                    </div>
+                    <span className="font-bold text-primary text-lg">{option.price}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add-ons Preview */}
+              {event.addOns && event.addOns.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-medium mb-3">Optional Add-ons</h3>
+                  <div className="space-y-2">
+                    {event.addOns.slice(0, 2).map((addon) => (
+                      <div key={addon.id} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{addon.name}</span>
+                        <span className="font-medium text-primary">{addon.price}</span>
                       </div>
                     ))}
+                    {event.addOns.length > 2 && (
+                      <p className="text-xs text-muted-foreground">
+                        +{event.addOns.length - 2} more options available during registration
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Pricing and Actions Container */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Pricing & Registration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Pricing Options */}
-              <div>
-                <h3 className="font-medium mb-4">Pricing Options</h3>
-                <div className="space-y-3">
-                  {event.priceOptions.map((option, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <span className="font-medium">{option.type}</span>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
-                      </div>
-                      <span className="font-bold text-primary text-lg">{option.price}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add-ons Preview */}
-                {event.addOns && event.addOns.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="font-medium mb-3">Optional Add-ons</h3>
-                    <div className="space-y-2">
-                      {event.addOns.slice(0, 2).map((addon) => (
-                        <div key={addon.id} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{addon.name}</span>
-                          <span className="font-medium text-primary">{addon.price}</span>
-                        </div>
-                      ))}
-                      {event.addOns.length > 2 && (
-                        <p className="text-xs text-muted-foreground">
-                          +{event.addOns.length - 2} more options available during registration
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col justify-center space-y-4">
-                <Button 
-                  size="lg" 
-                  className="w-full"
-                  onClick={() => setEnrollmentModalOpen(true)}
-                >
-                  Join Event
-                </Button>
-                
-                <div className="flex items-center justify-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
-                  >
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report Event
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-8">
+          <Button 
+            size="lg" 
+            className="w-full sm:w-auto px-8"
+            onClick={() => setEnrollmentModalOpen(true)}
+          >
+            Join Event
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+          >
+            <Flag className="h-4 w-4 mr-2" />
+            Report Event
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
