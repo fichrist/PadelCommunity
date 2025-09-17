@@ -411,7 +411,13 @@ const Chat = () => {
                 {filteredPeople.map((person) => (
                   <div
                     key={person.id}
-                    onClick={() => handleStartChat(person)}
+                    onClick={() => {
+                      if (person.name.includes('Healer') || person.name === 'Elena Moonchild' || person.name === 'Aria Starseed' || person.name === 'Luna Sage' || person.name === 'River Flow') {
+                        navigate(`/healer/${person.name.toLowerCase().replace(/\s+/g, '-')}`);
+                      } else {
+                        handleStartChat(person);
+                      }
+                    }}
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                   >
                     <div className="relative">

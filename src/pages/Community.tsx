@@ -251,7 +251,10 @@ const Community = () => {
                                 setSearchDropdownOpen(false);
                               }}
                             >
-                              <Avatar className="h-6 w-6">
+                               <Avatar 
+                                 className="h-6 w-6 cursor-pointer"
+                                 onClick={() => navigate(`/healer/${share.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                               >
                                 <AvatarImage src={share.author.avatar} />
                                 <AvatarFallback className="text-xs">
                                   {share.author.name.split(' ').map((n: string) => n[0]).join('')}
@@ -511,7 +514,10 @@ const Community = () => {
                                </div>
                                
                                <div className="flex items-center space-x-2">
-                                 <Avatar className="h-6 w-6">
+                                  <Avatar 
+                                    className="h-6 w-6 cursor-pointer"
+                                    onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                  >
                                    <AvatarImage src={post.author.avatar} />
                                    <AvatarFallback className="bg-primary/10 text-xs">
                                      {post.author.name.split(' ').map(n => n[0]).join('')}
@@ -620,7 +626,10 @@ const Community = () => {
                                         <h4 className="text-sm font-semibold">Connections Attending</h4>
                                         {post.connectionsGoing.map((connection: string, idx: number) => (
                                           <div key={idx} className="flex items-center space-x-2 p-1 rounded hover:bg-muted cursor-pointer">
-                                            <Avatar className="h-6 w-6">
+                                             <Avatar 
+                                               className="h-6 w-6 cursor-pointer"
+                                               onClick={() => navigate(`/healer/${connection.toLowerCase().replace(/\s+/g, '-')}`)}
+                                             >
                                               <AvatarImage src={idx % 2 === 0 ? elenaProfile : davidProfile} />
                                               <AvatarFallback className="text-xs">
                                                 {connection.split(' ').map((n: string) => n[0]).join('')}
@@ -685,7 +694,10 @@ const Community = () => {
                         <div className="py-2 mb-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
-                              <Avatar className="h-6 w-6">
+                               <Avatar 
+                                 className="h-6 w-6 cursor-pointer"
+                                 onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                               >
                                 <AvatarImage src={post.author.avatar} />
                                 <AvatarFallback className="bg-primary/10 text-xs">
                                   {post.author.name.split(' ').map(n => n[0]).join('')}
@@ -831,7 +843,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/elena-moonchild`)}
+                             >
                               <AvatarImage src={elenaProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">EM</AvatarFallback>
                             </Avatar>
@@ -872,7 +887,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/aria-starseed`)}
+                             >
                               <AvatarImage src={ariaProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">AS</AvatarFallback>
                             </Avatar>
@@ -913,7 +931,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/phoenix-rising`)}
+                             >
                               <AvatarImage src={phoenixProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">PR</AvatarFallback>
                             </Avatar>
@@ -954,7 +975,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/david-lightwalker`)}
+                             >
                               <AvatarImage src={davidProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">DL</AvatarFallback>
                             </Avatar>
@@ -995,7 +1019,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/aria-starseed`)}
+                             >
                               <AvatarImage src={ariaProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">SR</AvatarFallback>
                             </Avatar>
@@ -1036,7 +1063,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/phoenix-rising`)}
+                             >
                               <AvatarImage src={phoenixProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">DL</AvatarFallback>
                             </Avatar>
@@ -1077,7 +1107,10 @@ const Community = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-center space-x-2 mb-2">
-                            <Avatar className="h-8 w-8 border-2 border-white">
+                             <Avatar 
+                               className="h-8 w-8 border-2 border-white cursor-pointer"
+                               onClick={() => navigate(`/healer/elena-moonchild`)}
+                             >
                               <AvatarImage src={elenaProfile} />
                               <AvatarFallback className="text-xs bg-primary text-white">FW</AvatarFallback>
                             </Avatar>
