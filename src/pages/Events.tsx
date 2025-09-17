@@ -609,7 +609,7 @@ const Events = () => {
                     )}
 
                     {/* Tags */}
-                    <div className="px-3 pt-3">
+                    <div className="px-3">
                       <div className="flex flex-wrap gap-2 mb-3">
                         {event.tags.map((tag) => (
                           <Badge 
