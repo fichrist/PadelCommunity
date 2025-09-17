@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import EventCard from "@/components/EventCard";
 
 // Import images
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
@@ -398,34 +399,30 @@ const eventData = {
                 {/* Previous Events by Organizers */}
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-semibold mb-4">Previous Events by Organizers</h3>
-                  <div className="space-y-6">
-                    {event.organizers.map((organizer, orgIndex) => (
-                      <div key={orgIndex} className="space-y-3">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={organizer.avatar} />
-                            <AvatarFallback className="bg-primary/10">
-                              {organizer.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-medium text-sm">{organizer.name}</h4>
-                            <p className="text-xs text-muted-foreground">{organizer.role}</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-11">
-                          {organizer.previousEvents?.map((prevEvent, eventIndex) => (
-                            <div key={eventIndex} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                              <h5 className="font-medium text-sm mb-1">{prevEvent.title}</h5>
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{prevEvent.date}</span>
-                                <span>{prevEvent.attendees} attendees</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="grid gap-4">
+                    {event.organizers.flatMap(organizer => 
+                      organizer.previousEvents?.map((prevEvent, eventIndex) => (
+                        <EventCard
+                          key={`${organizer.name}-${eventIndex}`}
+                          eventId={`prev-${organizer.name}-${eventIndex}`}
+                          title={prevEvent.title}
+                          description={`Past event organized by ${organizer.name}`}
+                          date={prevEvent.date}
+                          location={organizer.location}
+                          organizers={[{ 
+                            name: organizer.name, 
+                            avatar: organizer.avatar, 
+                            id: `organizer-${eventIndex}` 
+                          }]}
+                          attendees={prevEvent.attendees}
+                          category="Past Event"
+                          image={event.image}
+                          isPastEvent={true}
+                          averageRating={4.5}
+                          totalReviews={Math.floor(prevEvent.attendees * 0.6)}
+                        />
+                      )) || []
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -478,8 +475,22 @@ const eventData = {
                               size="sm" 
                               variant="ghost" 
                               className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+                              onClick={() => {
+                                navigate('/chat');
+                                toast.success(`Opening chat with ${organizer.name}`);
+                              }}
                             >
                               <MessageCircle className="h-4 w-4 text-primary" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0 rounded-full hover:bg-red-50"
+                              onClick={() => {
+                                toast.success(`Connection request sent to ${organizer.name}`);
+                              }}
+                            >
+                              <Heart className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                             </Button>
                           </div>
                         </div>
@@ -528,15 +539,22 @@ const eventData = {
                                 size="sm" 
                                 variant="ghost" 
                                 className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
+                                onClick={() => {
+                                  navigate('/chat');
+                                  toast.success(`Opening chat with ${attendee.name}`);
+                                }}
                               >
                                 <MessageCircle className="h-3 w-3 text-primary" />
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
+                                className="h-7 w-7 p-0 rounded-full hover:bg-red-50"
+                                onClick={() => {
+                                  toast.success(`Connection request sent to ${attendee.name}`);
+                                }}
                               >
-                                <UserPlus className="h-3 w-3 text-primary" />
+                                <Heart className="h-3 w-3 text-muted-foreground hover:text-red-500" />
                               </Button>
                             </div>
                           )}
