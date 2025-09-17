@@ -1,4 +1,3 @@
-import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
@@ -14,6 +13,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ThoughtsModal from "@/components/ThoughtsModal";
+import ReviewModal from "@/components/ReviewModal";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -38,6 +39,8 @@ const Events = () => {
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const events = [
@@ -55,7 +58,8 @@ const Events = () => {
       category: "Meditation",
       image: soundHealingEvent,
       isPastEvent: false,
-      tags: ["Meditation", "Morning Practice", "Garden"]
+      tags: ["Meditation", "Morning Practice", "Garden"],
+      comments: 5
     },
     {
       eventId: "2",
@@ -70,7 +74,8 @@ const Events = () => {
       category: "Ceremony",
       image: crystalWorkshopEvent,
       isPastEvent: false,
-      tags: ["Full Moon", "Healing", "Ceremony"]
+      tags: ["Full Moon", "Healing", "Ceremony"],
+      comments: 8
     },
     {
       eventId: "3",
@@ -94,7 +99,8 @@ const Events = () => {
         { id: "2", author: { name: "David Peace", avatar: elenaProfile }, rating: 4, content: "Perfect combination of yoga and sound healing. Luna is very skilled.", timeAgo: "1 day ago" },
         { id: "3", author: { name: "River Flow", avatar: elenaProfile }, rating: 5, content: "Best sound bath I've experienced. The space was beautiful too.", timeAgo: "3 days ago" }
       ],
-      tags: ["Yoga", "Sound Bath", "Meditation"]
+      tags: ["Yoga", "Sound Bath", "Meditation"],
+      comments: 12
     },
     {
       eventId: "4",
@@ -110,7 +116,8 @@ const Events = () => {
       category: "Nature",
       image: crystalWorkshopEvent,
       isPastEvent: false,
-      tags: ["Nature", "Walking", "Mindfulness"]
+      tags: ["Nature", "Walking", "Mindfulness"],
+      comments: 3
     },
     {
       eventId: "5",
@@ -132,7 +139,8 @@ const Events = () => {
         { id: "2", author: { name: "Cosmic Mind", avatar: elenaProfile }, rating: 5, content: "This workshop changed my perspective on everything. Highly recommended!", timeAgo: "5 days ago" },
         { id: "3", author: { name: "Sacred Soul", avatar: elenaProfile }, rating: 4, content: "Fascinating content and great presentation. Worth every minute.", timeAgo: "1 week ago" }
       ],
-      tags: ["Sacred Geometry", "Workshop", "Education"]
+      tags: ["Sacred Geometry", "Workshop", "Education"],
+      comments: 15
     },
     {
       eventId: "6",
@@ -149,7 +157,8 @@ const Events = () => {
       category: "Healing",
       image: crystalWorkshopEvent,
       isPastEvent: false,
-      tags: ["Chakras", "Healing", "Energy Work"]
+      tags: ["Chakras", "Healing", "Energy Work"],
+      comments: 7
     }
   ];
 
@@ -581,15 +590,6 @@ const Events = () => {
 
                     {/* Content */}
                     <div className="px-3">
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {event.tags?.map((tag, tagIndex) => (
-                          <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-
                       {/* Event Description */}
                       <p className="text-sm text-foreground/90 leading-relaxed mb-3">
                         {event.description}
@@ -621,9 +621,30 @@ const Events = () => {
                               ))}
                             </div>
                             <span className="text-sm font-medium">{event.averageRating.toFixed(1)}</span>
-                            <span className="text-sm text-primary">
+                            <button
+                              onClick={() => {
+                                setSelectedEvent(event);
+                                setReviewModalOpen(true);
+                              }}
+                              className="text-sm text-primary hover:underline"
+                            >
                               ({event.totalReviews} reviews)
-                            </span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Past Event with No Reviews */}
+                        {event.isPastEvent && !event.averageRating && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => {
+                                setSelectedEvent(event);
+                                setReviewModalOpen(true);
+                              }}
+                              className="text-sm text-primary hover:underline"
+                            >
+                              Be the first to review this event
+                            </button>
                           </div>
                         )}
                       </div>
@@ -633,11 +654,14 @@ const Events = () => {
                     <div className="px-3 py-2 border-t border-border">
                       <div className="flex items-center justify-between">
                         <button 
-                          onClick={() => navigate(`/event/${event.eventId}`)}
+                          onClick={() => {
+                            setSelectedEvent(event);
+                            setThoughtsModalOpen(true);
+                          }}
                           className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                         >
                           <MessageCircle className="h-4 w-4" />
-                          <span>Comments</span>
+                          <span>{event.comments} Comments</span>
                         </button>
                         <button 
                           className={`flex items-center space-x-2 text-sm transition-colors ${
@@ -720,6 +744,24 @@ const Events = () => {
             </div>
           </div>
         </div>
+
+        {/* Thoughts Modal */}
+        <ThoughtsModal
+          open={thoughtsModalOpen}
+          onOpenChange={setThoughtsModalOpen}
+          postTitle={selectedEvent?.title || ""}
+          thoughts={selectedEvent?.thoughts || []}
+        />
+
+        {/* Review Modal */}
+        <ReviewModal
+          open={reviewModalOpen}
+          onOpenChange={setReviewModalOpen}
+          eventTitle={selectedEvent?.title || ""}
+          reviews={selectedEvent?.reviews || []}
+          averageRating={selectedEvent?.averageRating || 0}
+          totalReviews={selectedEvent?.totalReviews || 0}
+        />
 
         {/* Enrollment Modal */}
         <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
