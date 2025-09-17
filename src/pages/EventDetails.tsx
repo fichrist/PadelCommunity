@@ -50,6 +50,11 @@ const eventData = {
       time: "7:00 PM - 9:30 PM",
       location: "Sacred Grove Sanctuary, Sedona AZ",
       price: "$65",
+      priceOptions: [
+        { type: "Early Bird", price: "$55", description: "Limited time offer" },
+        { type: "Regular", price: "$65", description: "Standard price" },
+        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony" }
+      ],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
       attendees: [
         { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
@@ -75,6 +80,11 @@ const eventData = {
       time: "10:00 AM - 4:00 PM",
       location: "Crystal Cave Studio, Asheville NC",
       price: "$225",
+      priceOptions: [
+        { type: "Workshop Only", price: "$195", description: "3-day workshop access" },
+        { type: "Workshop + Kit", price: "$225", description: "Includes crystal starter kit" },
+        { type: "Premium Package", price: "$295", description: "Workshop, kit & private session" }
+      ],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
       attendees: [
         { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
@@ -211,7 +221,14 @@ const eventData = {
                 </div>
                 <div className="flex items-center space-x-2">
                   <DollarSign className="h-5 w-5 text-primary" />
-                  <span className="font-medium text-lg">{event.price}</span>
+                  <div className="space-y-1">
+                    {event.priceOptions.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <span className="font-medium text-lg">{option.price}</span>
+                        <span className="text-sm text-muted-foreground">({option.type})</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -311,55 +328,6 @@ const eventData = {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Organizers Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Organized by</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {event.organizers.map((organizer, index) => (
-                    <div key={index} className="flex items-center space-x-4">
-                      <Avatar 
-                        className="h-12 w-12 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
-                        onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
-                      >
-                        <AvatarImage src={organizer.avatar} />
-                        <AvatarFallback className="bg-primary/10">
-                          {organizer.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div 
-                        className="flex-1 cursor-pointer" 
-                        onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
-                      >
-                        <h3 className="font-semibold hover:text-primary transition-colors">{organizer.name}</h3>
-                        <p className="text-sm text-muted-foreground">{organizer.role}</p>
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {organizer.location}
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => navigate('/chat')}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-1" />
-                          Chat
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Heart className="h-4 w-4 mr-1" />
-                          Follow
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Event Description */}
             <Card>
               <CardHeader>
@@ -386,56 +354,109 @@ const eventData = {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Attendees */}
+            {/* Organizers & Attendees */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Users className="h-5 w-5" />
-                  <span>Attendees ({event.attendees.length})</span>
+                  <span>Event Community</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {event.attendees.map((attendee, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          {!attendee.isAnonymous ? (
-                            <AvatarImage src={attendee.avatar} />
-                          ) : null}
-                          <AvatarFallback className="bg-muted text-muted-foreground">
-                            {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">
-                            {attendee.isAnonymous ? "Anonymous User" : attendee.name}
+                <div className="space-y-6">
+                  {/* Organizers */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">Organizers ({event.organizers.length})</h3>
+                    <div className="space-y-3">
+                      {event.organizers.map((organizer, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Avatar 
+                              className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
+                              onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                            >
+                              <AvatarImage src={organizer.avatar} />
+                              <AvatarFallback className="bg-primary/10">
+                                {organizer.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div 
+                                className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                              >
+                                {organizer.name}
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {organizer.location}
+                              </div>
+                            </div>
                           </div>
-                          {!attendee.isAnonymous && attendee.location && (
-                            <div className="flex items-center text-xs text-muted-foreground">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {attendee.location}
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => navigate('/chat')}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Heart className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Attendees */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">Attendees ({event.attendees.length})</h3>
+                    <div className="space-y-3">
+                      {event.attendees.map((attendee, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              {!attendee.isAnonymous ? (
+                                <AvatarImage src={attendee.avatar} />
+                              ) : null}
+                              <AvatarFallback className="bg-muted text-muted-foreground">
+                                {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">
+                                {attendee.isAnonymous ? "Anonymous User" : attendee.name}
+                              </div>
+                              {!attendee.isAnonymous && attendee.location && (
+                                <div className="flex items-center text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {attendee.location}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {!attendee.isAnonymous && (
+                            <div className="flex space-x-1">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => navigate('/chat')}
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <Heart className="h-4 w-4" />
+                              </Button>
                             </div>
                           )}
                         </div>
-                      </div>
-                      {!attendee.isAnonymous && (
-                        <div className="flex space-x-1">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => navigate('/chat')}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <Heart className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
