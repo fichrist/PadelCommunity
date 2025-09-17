@@ -35,6 +35,9 @@ const EventDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isReshared, setIsReshared] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [newReview, setNewReview] = useState("");
+  const [newRating, setNewRating] = useState(5);
 
 const eventData = {
     "1": {
@@ -44,8 +47,27 @@ const eventData = {
       fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening. The session begins with a guided meditation to help you connect with the lunar energy, followed by 90 minutes of immersive sound healing. You'll lie comfortably on yoga mats as the healing vibrations wash over you, releasing tension, clearing energy blocks, and promoting deep relaxation. Many participants report profound spiritual insights, emotional release, and a sense of renewal after these sessions.",
       image: soundHealingEvent,
       organizers: [
-        { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer", location: "Sedona, AZ" },
-        { name: "David Peace", avatar: davidProfile, role: "Assistant Healer", location: "Sedona, AZ" }
+        { 
+          name: "Elena Moonchild", 
+          avatar: elenaProfile, 
+          role: "Sound Healer", 
+          location: "Sedona, AZ",
+          previousEvents: [
+            { title: "New Moon Meditation Circle", date: "Feb 28, 2024", attendees: 18 },
+            { title: "Chakra Balancing Workshop", date: "Feb 14, 2024", attendees: 24 },
+            { title: "Sound Bath Experience", date: "Jan 30, 2024", attendees: 32 }
+          ]
+        },
+        { 
+          name: "David Peace", 
+          avatar: davidProfile, 
+          role: "Assistant Healer", 
+          location: "Sedona, AZ",
+          previousEvents: [
+            { title: "Mindfulness Retreat", date: "Mar 1, 2024", attendees: 15 },
+            { title: "Healing Touch Workshop", date: "Feb 20, 2024", attendees: 20 }
+          ]
+        }
       ],
       date: "March 15, 2024",
       time: "7:00 PM - 9:30 PM",
@@ -75,7 +97,17 @@ const eventData = {
       fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques. The workshop includes hands-on practice with crystal layouts, meditation with stones, and creating your own crystal grid for manifestation. Each participant will receive a starter crystal kit including clear quartz, amethyst, rose quartz, and black tourmaline, along with a detailed guidebook. Aria will share her decade of experience working with crystals, including personal stories of transformation and healing. The intimate class size ensures personalized attention and plenty of opportunity for questions.",
       image: crystalWorkshopEvent,
       organizers: [
-        { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer", location: "Asheville, NC" }
+        { 
+          name: "Aria Starseed", 
+          avatar: ariaProfile, 
+          role: "Crystal Healer", 
+          location: "Asheville, NC",
+          previousEvents: [
+            { title: "Crystal Grid Mastery", date: "Mar 5, 2024", attendees: 12 },
+            { title: "Gemstone Healing Circle", date: "Feb 22, 2024", attendees: 16 },
+            { title: "Advanced Crystal Workshop", date: "Feb 8, 2024", attendees: 14 }
+          ]
+        }
       ],
       date: "April 2-4, 2024",
       time: "10:00 AM - 4:00 PM",
@@ -308,11 +340,21 @@ const eventData = {
               </div>
 
               <Button 
-                size="lg" 
-                className="w-full mb-4"
+                size="sm" 
+                className="w-24"
                 onClick={() => setEnrollmentModalOpen(true)}
               >
                 Join Event
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+              >
+                <Flag className="h-4 w-4 mr-2" />
+                Report
               </Button>
               
               {/* Tags under Join Event button */}
@@ -342,14 +384,48 @@ const eventData = {
                   {event.fullDescription}
                 </p>
                 
-                {/* Event Video */}
-                <div className="relative aspect-video bg-muted rounded-lg flex items-center justify-center">
+                 {/* Event Video */}
+                <div className="relative aspect-video bg-muted rounded-lg flex items-center justify-center mb-6">
                   <div className="text-center">
                     <div className="bg-primary/10 p-4 rounded-full mb-4 inline-block">
                       <Play className="h-8 w-8 text-primary" />
                     </div>
                     <p className="text-muted-foreground">Event Preview Video</p>
                     <p className="text-sm text-muted-foreground mt-1">Click to watch introduction</p>
+                  </div>
+                </div>
+                
+                {/* Previous Events by Organizers */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Previous Events by Organizers</h3>
+                  <div className="space-y-6">
+                    {event.organizers.map((organizer, orgIndex) => (
+                      <div key={orgIndex} className="space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={organizer.avatar} />
+                            <AvatarFallback className="bg-primary/10">
+                              {organizer.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-medium text-sm">{organizer.name}</h4>
+                            <p className="text-xs text-muted-foreground">{organizer.role}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-11">
+                          {organizer.previousEvents?.map((prevEvent, eventIndex) => (
+                            <div key={eventIndex} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                              <h5 className="font-medium text-sm mb-1">{prevEvent.title}</h5>
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{prevEvent.date}</span>
+                                <span>{prevEvent.attendees} attendees</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>
@@ -472,25 +548,6 @@ const eventData = {
               </CardContent>
             </Card>
 
-            {/* Event Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MapPin className="h-5 w-5" />
-                  <span>Location</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">{event.location}</p>
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-8 w-8 text-muted-foreground mb-2 mx-auto" />
-                    <p className="text-sm text-muted-foreground">Interactive Map</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Review Card */}
             <Card>
               <CardHeader>
@@ -499,7 +556,7 @@ const eventData = {
                   <span>Reviews</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-h-96">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <div className="flex">
@@ -512,7 +569,7 @@ const eventData = {
                   </div>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-4 mb-4">
                   <div className="border-l-2 border-primary/20 pl-3">
                     <p className="text-sm text-foreground/90 mb-1">
                       "Absolutely transformative experience. Elena's sound healing brought me to tears of joy."
@@ -525,24 +582,36 @@ const eventData = {
                     </p>
                     <p className="text-xs text-muted-foreground">- Michael R.</p>
                   </div>
+                  <div className="border-l-2 border-primary/20 pl-3">
+                    <p className="text-sm text-foreground/90 mb-1">
+                      "Elena creates such a sacred space. The crystal bowls transported me to another dimension."
+                    </p>
+                    <p className="text-xs text-muted-foreground">- Luna K.</p>
+                  </div>
+                  <div className="border-l-2 border-primary/20 pl-3">
+                    <p className="text-sm text-foreground/90 mb-1">
+                      "Perfect for beginners. Very welcoming environment and amazing healing energy."
+                    </p>
+                    <p className="text-xs text-muted-foreground">- David T.</p>
+                  </div>
+                  <div className="border-l-2 border-primary/20 pl-3">
+                    <p className="text-sm text-foreground/90 mb-1">
+                      "The full moon energy combined with sound healing was extraordinary. Highly recommend!"
+                    </p>
+                    <p className="text-xs text-muted-foreground">- River S.</p>
+                  </div>
                 </div>
                 
-                <Button variant="outline" size="sm" className="w-full mt-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-3"
+                  onClick={() => setReviewsModalOpen(true)}
+                >
                   View All Reviews
                 </Button>
               </CardContent>
             </Card>
-
-            {/* Report Event */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full text-muted-foreground hover:text-destructive"
-              onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
-            >
-              <Flag className="h-4 w-4 mr-2" />
-              Report this event
-            </Button>
           </div>
         </div>
       </div>
@@ -644,6 +713,136 @@ const eventData = {
                 >
                   Confirm Enrollment
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Reviews Modal */}
+        <Dialog open={reviewsModalOpen} onOpenChange={setReviewsModalOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-96 overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Reviews for {event.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Add Review Section */}
+              <div className="border-b pb-4">
+                <h3 className="font-medium mb-3">Add Your Review</h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="rating" className="text-sm">Rating</Label>
+                    <div className="flex space-x-1 mt-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className={`h-5 w-5 cursor-pointer transition-colors ${
+                            star <= newRating 
+                              ? 'fill-current text-yellow-400' 
+                              : 'text-muted-foreground hover:text-yellow-300'
+                          }`}
+                          onClick={() => setNewRating(star)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="review" className="text-sm">Your Review</Label>
+                    <textarea 
+                      id="review"
+                      placeholder="Share your experience..."
+                      value={newReview}
+                      onChange={(e) => setNewReview(e.target.value)}
+                      className="w-full mt-1 p-2 border rounded-md text-sm min-h-20 resize-none"
+                    />
+                  </div>
+                  <Button 
+                    size="sm" 
+                    disabled={!newReview.trim()}
+                    onClick={() => {
+                      toast.success("Review submitted successfully!");
+                      setNewReview("");
+                      setNewRating(5);
+                    }}
+                  >
+                    Submit Review
+                  </Button>
+                </div>
+              </div>
+              
+              {/* All Reviews */}
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                <h3 className="font-medium">All Reviews (24)</h3>
+                <div className="space-y-4">
+                  <div className="border-l-2 border-primary/20 pl-3 pb-3 border-b border-muted">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Sarah M. - March 10, 2024</span>
+                    </div>
+                    <p className="text-sm text-foreground/90">
+                      "Absolutely transformative experience. Elena's sound healing brought me to tears of joy. The crystal bowls created such beautiful harmonics that I felt my entire being vibrating in perfect resonance."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-2 border-primary/20 pl-3 pb-3 border-b border-muted">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Michael R. - March 8, 2024</span>
+                    </div>
+                    <p className="text-sm text-foreground/90">
+                      "The energy in the room was incredible. I felt completely renewed after the session. David's assistance made everyone feel welcome and supported throughout the journey."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-2 border-primary/20 pl-3 pb-3 border-b border-muted">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Luna K. - March 5, 2024</span>
+                    </div>
+                    <p className="text-sm text-foreground/90">
+                      "Elena creates such a sacred space. The crystal bowls transported me to another dimension. I've been to many sound baths, but this was exceptional."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-2 border-primary/20 pl-3 pb-3 border-b border-muted">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">David T. - February 28, 2024</span>
+                    </div>
+                    <p className="text-sm text-foreground/90">
+                      "Perfect for beginners. Very welcoming environment and amazing healing energy. I was nervous at first but felt so supported throughout."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-2 border-primary/20 pl-3 pb-3 border-b border-muted">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">River S. - February 25, 2024</span>
+                    </div>
+                    <p className="text-sm text-foreground/90">
+                      "The full moon energy combined with sound healing was extraordinary. Highly recommend! This is exactly what my soul needed."
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </DialogContent>
