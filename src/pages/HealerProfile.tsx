@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search, Heart, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search, Heart, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Share2, Repeat2 } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import CommunityEventCard from "@/components/CommunityEventCard";
+import CommunityShareCard from "@/components/CommunityShareCard";
+import { toast } from "sonner";
 
 // Import images
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
@@ -35,133 +38,205 @@ const HealerProfile = () => {
       specialties: ["Sound Healing", "Crystal Bowl Therapy", "Chakra Alignment", "Energy Clearing"],
       rating: 4.9,
       reviewCount: 23,
-      pastEvents: [
-        {
-          title: "New Moon Sound Journey",
-          date: "February 18, 2024",
-          image: soundHealingEvent,
-          rating: 5.0,
-          reviews: 18,
-          description: "Deep healing with crystal bowls and sacred chanting under the new moon energy."
-        },
-        {
-          title: "Winter Solstice Ceremony", 
-          date: "January 25, 2024",
-          image: crystalWorkshopEvent,
-          rating: 4.8,
-          reviews: 25,
-          description: "Celebrating the return of light with meditation and sound healing."
-        },
-        {
-          title: "Chakra Balancing Workshop",
-          date: "January 12, 2024",
-          image: soundHealingEvent,
-          rating: 4.9,
-          reviews: 31,
-          description: "A transformative journey through all seven chakras using sound frequencies."
-        },
-        {
-          title: "Crystal Bowl Meditation",
-          date: "December 8, 2023",
-          image: crystalWorkshopEvent,
-          rating: 4.7,
-          reviews: 22,
-          description: "Peaceful meditation session with Tibetan singing bowls and crystal bowls."
-        },
-        {
-          title: "Sacred Sound Healing Circle",
-          date: "November 23, 2023",
-          image: soundHealingEvent,
-          rating: 5.0,
-          reviews: 19,
-          description: "Community healing circle with group sound healing and sharing."
-        },
-        {
-          title: "Autumn Equinox Ceremony",
-          date: "September 22, 2023",
-          image: crystalWorkshopEvent,
-          rating: 4.8,
-          reviews: 27,
-          description: "Balancing mind, body, and spirit with the seasonal energy shift."
-        }
-      ],
       upcomingEvents: [
         {
+          eventId: "elena-1",
           title: "Full Moon Sound Healing Ceremony",
-          date: "March 15, 2024",
+          thought: "Join us for a transformative sound healing journey under the powerful energy of the full moon.",
           image: soundHealingEvent,
-          price: "$65",
-          description: "Experience the healing power of crystal bowls, gongs, and ancient chants."
+          dateRange: { start: "March 15, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 28,
+          tags: ["Sound Healing", "Full Moon", "Crystal Bowls", "Energy Work"],
+          connectionsGoing: ["Luna Sage", "River Flow"],
+          comments: 12
         },
         {
+          eventId: "elena-2",
           title: "Spring Awakening Workshop",
-          date: "March 28, 2024",
+          thought: "Welcome the spring season with renewal energy work and transformative sound healing techniques.",
           image: crystalWorkshopEvent,
-          price: "$85",
-          description: "Welcome spring with renewal energy work and sound healing techniques."
+          dateRange: { start: "March 28, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 15,
+          tags: ["Spring", "Energy Work", "Workshop", "Renewal"],
+          connectionsGoing: ["Aria Starseed"],
+          comments: 8
         },
         {
+          eventId: "elena-3",
           title: "Tibetan Gong Bath Experience",
-          date: "April 10, 2024",
+          thought: "Immerse yourself in the ancient healing vibrations of traditional Tibetan gongs and singing bowls.",
           image: soundHealingEvent,
-          price: "$55",
-          description: "Immersive sound journey with traditional Tibetan gongs and singing bowls."
+          dateRange: { start: "April 10, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 22,
+          tags: ["Tibetan", "Gong Bath", "Sound Healing", "Ancient Wisdom"],
+          connectionsGoing: ["David Lightwalker", "Phoenix Rising", "Luna Sage"],
+          comments: 15
         },
         {
+          eventId: "elena-4",
           title: "Heart Chakra Opening Circle",
-          date: "April 22, 2024",
+          thought: "Focus on opening and balancing the heart chakra through targeted sound healing and meditation practices.",
           image: crystalWorkshopEvent,
-          price: "$70",
-          description: "Focus on opening and balancing the heart chakra through sound and meditation."
+          dateRange: { start: "April 22, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 18,
+          tags: ["Heart Chakra", "Chakra Healing", "Meditation", "Energy Balance"],
+          comments: 9
         },
         {
+          eventId: "elena-5",
           title: "Crystal Bowl Intensive Weekend",
-          date: "May 4-5, 2024",
+          thought: "Two-day intensive workshop learning crystal bowl therapy techniques from beginner to advanced levels.",
           image: soundHealingEvent,
-          price: "$180",
-          description: "Two-day intensive workshop learning crystal bowl therapy techniques."
+          dateRange: { start: "May 4", end: "May 5, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 12,
+          tags: ["Crystal Bowl", "Intensive", "Workshop", "Certification"],
+          connectionsGoing: ["River Flow"],
+          comments: 6
+        }
+      ],
+      pastEvents: [
+        {
+          eventId: "elena-past-1",
+          title: "New Moon Sound Journey",
+          thought: "Deep healing with crystal bowls and sacred chanting under the powerful new moon energy.",
+          image: soundHealingEvent,
+          dateRange: { start: "February 18, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 32,
+          tags: ["New Moon", "Sound Journey", "Crystal Bowls", "Sacred Chanting"],
+          isPastEvent: true,
+          averageRating: 5.0,
+          totalReviews: 18,
+          comments: 24
+        },
+        {
+          eventId: "elena-past-2",
+          title: "Winter Solstice Ceremony",
+          thought: "Celebrating the return of light with meditation, sound healing, and community connection.",
+          image: crystalWorkshopEvent,
+          dateRange: { start: "January 25, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 45,
+          tags: ["Winter Solstice", "Ceremony", "Light", "Community"],
+          isPastEvent: true,
+          averageRating: 4.8,
+          totalReviews: 25,
+          comments: 31
+        },
+        {
+          eventId: "elena-past-3",
+          title: "Chakra Balancing Workshop",
+          thought: "A transformative journey through all seven chakras using specific sound frequencies and healing techniques.",
+          image: soundHealingEvent,
+          dateRange: { start: "January 12, 2024" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 28,
+          tags: ["Chakra", "Balancing", "Sound Frequencies", "Transformation"],
+          isPastEvent: true,
+          averageRating: 4.9,
+          totalReviews: 31,
+          comments: 19
+        },
+        {
+          eventId: "elena-past-4",
+          title: "Crystal Bowl Meditation",
+          thought: "Peaceful meditation session combining Tibetan singing bowls with crystal bowl harmonics.",
+          image: crystalWorkshopEvent,
+          dateRange: { start: "December 8, 2023" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 35,
+          tags: ["Crystal Bowl", "Meditation", "Tibetan", "Harmonics"],
+          isPastEvent: true,
+          averageRating: 4.7,
+          totalReviews: 22,
+          comments: 16
+        },
+        {
+          eventId: "elena-past-5",
+          title: "Sacred Sound Healing Circle",
+          thought: "Community healing circle featuring group sound healing, sharing, and collective energy work.",
+          image: soundHealingEvent,
+          dateRange: { start: "November 23, 2023" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 24,
+          tags: ["Sacred", "Community", "Healing Circle", "Group Energy"],
+          isPastEvent: true,
+          averageRating: 5.0,
+          totalReviews: 19,
+          comments: 22
+        },
+        {
+          eventId: "elena-past-6",
+          title: "Autumn Equinox Ceremony",
+          thought: "Balancing mind, body, and spirit with the seasonal energy shift and harmonic frequencies.",
+          image: crystalWorkshopEvent,
+          dateRange: { start: "September 22, 2023" },
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          location: "Sedona, AZ",
+          attendees: 39,
+          tags: ["Autumn Equinox", "Balance", "Seasonal", "Harmonic"],
+          isPastEvent: true,
+          averageRating: 4.8,
+          totalReviews: 27,
+          comments: 18
         }
       ],
       shares: [
         {
           title: "Morning Meditation Practice",
-          content: "Starting each day with 20 minutes of silence has transformed my practice. The clarity that comes from this simple routine is profound.",
-          image: soundHealingEvent,
-          likes: 45,
-          comments: 12,
-          timeAgo: "2 days ago"
+          thought: "Starting each day with 20 minutes of silence has transformed my practice completely.",
+          description: "The clarity that comes from this simple routine is profound. I've noticed increased intuition, better emotional regulation, and a deeper connection to my healing work. Try it for just one week and feel the difference.",
+          tags: ["Meditation", "Morning Practice", "Mindfulness", "Daily Ritual"],
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          comments: 12
         },
         {
           title: "Crystal Bowl Frequencies",
-          content: "Each crystal bowl resonates at a specific frequency that corresponds to our chakras. The 432Hz frequency is particularly healing for the heart center.",
-          image: crystalWorkshopEvent,
-          likes: 67,
-          comments: 18,
-          timeAgo: "5 days ago"
+          thought: "Each crystal bowl resonates at a specific frequency that corresponds to our chakras.",
+          description: "The 432Hz frequency is particularly healing for the heart center, while 528Hz is known as the 'love frequency.' Understanding these vibrations helps us target specific areas for healing and transformation.",
+          tags: ["Crystal Bowls", "Frequencies", "Chakras", "Sound Healing"],
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          comments: 18
         },
         {
           title: "Sacred Space Creation",
-          content: "Creating a sacred space in your home doesn't require expensive items. Sometimes a single candle and clear intention is all you need.",
-          image: soundHealingEvent,
-          likes: 32,
-          comments: 8,
-          timeAgo: "1 week ago"
+          thought: "Creating a sacred space in your home doesn't require expensive items or elaborate setups.",
+          description: "Sometimes a single candle and clear intention is all you need. The energy you bring to the space is far more important than any physical objects. Start simple and let your practice evolve naturally.",
+          tags: ["Sacred Space", "Home Practice", "Intention", "Simplicity"],
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          comments: 8
         },
         {
           title: "Full Moon Energy",
-          content: "Tonight's full moon is perfect for releasing what no longer serves you. Take a moment to write down what you want to let go of and burn it safely.",
-          image: crystalWorkshopEvent,
-          likes: 89,
-          comments: 24,
-          timeAgo: "2 weeks ago"
+          thought: "Tonight's full moon is perfect for releasing what no longer serves you.",
+          description: "Take a moment to write down what you want to let go of and burn it safely under the moonlight. The lunar energy amplifies our intentions and supports deep transformation. Trust the process.",
+          tags: ["Full Moon", "Release", "Lunar Energy", "Transformation"],
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          comments: 24
         },
         {
           title: "Sound Healing Benefits",
-          content: "Research shows that sound healing can reduce stress hormones by up to 40%. The vibrations literally help our cells return to their natural frequency.",
-          image: soundHealingEvent,
-          likes: 56,
-          comments: 15,
-          timeAgo: "3 weeks ago"
+          thought: "Research shows that sound healing can reduce stress hormones by up to 40%.",
+          description: "The vibrations literally help our cells return to their natural frequency, promoting healing on all levels. This isn't just spiritual practice - it's backed by science and measurable results.",
+          tags: ["Sound Healing", "Research", "Stress Relief", "Cellular Healing"],
+          author: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer & Energy Worker" },
+          comments: 15
         }
       ]
     },
@@ -179,93 +254,140 @@ const HealerProfile = () => {
       reviewCount: 31,
       pastEvents: [
         {
+          eventId: "aria-past-1",
           title: "Autumn Equinox Crystal Circle",
-          date: "September 22, 2023",
+          thought: "Balancing your energy with the seasonal shift using the power of crystal healing and meditation.",
           image: crystalWorkshopEvent,
-          rating: 4.9,
-          reviews: 22,
-          description: "Balancing your energy with the seasonal shift using crystal healing."
+          dateRange: { start: "September 22, 2023" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 28,
+          tags: ["Autumn Equinox", "Crystal Healing", "Balance", "Seasonal"],
+          isPastEvent: true,
+          averageRating: 4.9,
+          totalReviews: 22,
+          comments: 16
         },
         {
+          eventId: "aria-past-2",
           title: "Rose Quartz Heart Healing",
-          date: "February 14, 2024",
+          thought: "Opening the heart chakra with rose quartz energy and loving-kindness meditation practices.",
           image: crystalWorkshopEvent,
-          rating: 5.0,
-          reviews: 28,
-          description: "Opening the heart chakra with rose quartz and loving-kindness meditation."
+          dateRange: { start: "February 14, 2024" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 35,
+          tags: ["Rose Quartz", "Heart Healing", "Love", "Meditation"],
+          isPastEvent: true,
+          averageRating: 5.0,
+          totalReviews: 28,
+          comments: 22
         },
         {
+          eventId: "aria-past-3",
           title: "Amethyst Intuition Workshop",
-          date: "January 20, 2024",
+          thought: "Enhancing psychic abilities and intuition through focused amethyst crystal work and energy practices.",
           image: soundHealingEvent,
-          rating: 4.8,
-          reviews: 19,
-          description: "Enhancing psychic abilities and intuition with amethyst crystal work."
+          dateRange: { start: "January 20, 2024" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 22,
+          tags: ["Amethyst", "Intuition", "Psychic", "Energy Work"],
+          isPastEvent: true,
+          averageRating: 4.8,
+          totalReviews: 19,
+          comments: 14
         },
         {
+          eventId: "aria-past-4",
           title: "Crystal Grid Manifestation",
-          date: "December 1, 2023",
+          thought: "Learn to create powerful crystal grids for manifestation, protection, and energy amplification.",
           image: crystalWorkshopEvent,
-          rating: 4.7,
-          reviews: 24,
-          description: "Learn to create powerful crystal grids for manifestation and protection."
+          dateRange: { start: "December 1, 2023" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 31,
+          tags: ["Crystal Grid", "Manifestation", "Protection", "Energy"],
+          isPastEvent: true,
+          averageRating: 4.7,
+          totalReviews: 24,
+          comments: 18
         }
       ],
       upcomingEvents: [
         {
+          eventId: "aria-1",
           title: "Crystal Healing Workshop for Beginners",
-          date: "April 2-4, 2024",
+          thought: "A comprehensive introduction to crystal healing, perfect for those starting their crystal journey.",
           image: crystalWorkshopEvent,
-          price: "$225",
-          description: "Learn to select, cleanse, and work with crystals for healing and growth."
+          dateRange: { start: "April 2", end: "April 4, 2024" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 18,
+          tags: ["Beginner", "Crystal Healing", "Workshop", "Foundation"],
+          connectionsGoing: ["Elena Moonchild", "Luna Sage"],
+          comments: 9
         },
         {
+          eventId: "aria-2",
           title: "Advanced Reiki Attunement",
-          date: "April 18, 2024",
+          thought: "Level 2 Reiki attunement featuring sacred symbols and distance healing techniques.",
           image: soundHealingEvent,
-          price: "$150",
-          description: "Level 2 Reiki attunement with sacred symbols and distance healing techniques."
+          dateRange: { start: "April 18, 2024" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 12,
+          tags: ["Reiki", "Attunement", "Sacred Symbols", "Distance Healing"],
+          connectionsGoing: ["River Flow"],
+          comments: 6
         },
         {
+          eventId: "aria-3",
           title: "Crystal Healing Certification",
-          date: "May 10-12, 2024",
+          thought: "Complete certification program in crystal healing therapy, techniques, and professional practice.",
           image: crystalWorkshopEvent,
-          price: "$350",
-          description: "Complete certification program in crystal healing therapy and techniques."
+          dateRange: { start: "May 10", end: "May 12, 2024" },
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          location: "Asheville, NC",
+          attendees: 15,
+          tags: ["Certification", "Crystal Therapy", "Professional", "Advanced"],
+          connectionsGoing: ["Phoenix Rising", "David Lightwalker"],
+          comments: 11
         }
       ],
       shares: [
         {
           title: "Choosing Your First Crystal",
-          content: "Trust your intuition when selecting crystals. The one that calls to you is often exactly what you need for your current journey.",
-          image: crystalWorkshopEvent,
-          likes: 52,
-          comments: 16,
-          timeAgo: "1 day ago"
+          thought: "Trust your intuition when selecting crystals - the universe guides us to what we need.",
+          description: "The crystal that calls to you is often exactly what you need for your current journey. Don't overthink it, feel the energy and trust your inner knowing. Your first crystal will be your teacher.",
+          tags: ["Crystal Selection", "Intuition", "Beginner", "Trust"],
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          comments: 16
         },
         {
           title: "Cleansing Crystal Energy",
-          content: "Full moon is the perfect time to cleanse your crystals. Place them under moonlight overnight to reset their energy and enhance their healing power.",
-          image: soundHealingEvent,
-          likes: 73,
-          comments: 22,
-          timeAgo: "4 days ago"
+          thought: "Full moon energy is the perfect time to cleanse and recharge your crystal collection.",
+          description: "Place your crystals under moonlight overnight to reset their energy and enhance their healing power. You can also use sage, selenite, or running water depending on the crystal type.",
+          tags: ["Crystal Cleansing", "Full Moon", "Energy Reset", "Maintenance"],
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          comments: 22
         },
         {
           title: "Reiki and Crystal Synergy",
-          content: "Combining Reiki energy with crystal healing amplifies the healing vibration. Each crystal acts as an energy amplifier for the universal life force.",
-          image: crystalWorkshopEvent,
-          likes: 41,
-          comments: 11,
-          timeAgo: "1 week ago"
+          thought: "Combining Reiki universal life force energy with crystal healing creates powerful amplification.",
+          description: "Each crystal acts as an energy amplifier for the universal life force. When we channel Reiki through crystals, we create a focused, intensified healing experience that works on all levels.",
+          tags: ["Reiki", "Crystal Healing", "Energy Amplification", "Synergy"],
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          comments: 11
         },
         {
           title: "Protection Crystal Grid",
-          content: "Black tourmaline, hematite, and obsidian create a powerful protection grid for your home. Place them at the four corners of your space.",
-          image: soundHealingEvent,
-          likes: 64,
-          comments: 19,
-          timeAgo: "2 weeks ago"
+          thought: "Black tourmaline, hematite, and obsidian create an incredibly powerful protection grid.",
+          description: "Place these grounding stones at the four corners of your space to create an energetic shield. This grid helps absorb negative energy and maintains a clear, protected environment for healing work.",
+          tags: ["Protection", "Crystal Grid", "Black Tourmaline", "Energy Shield"],
+          author: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer & Reiki Master" },
+          comments: 19
         }
       ]
     }
@@ -483,31 +605,11 @@ const HealerProfile = () => {
           <div className="relative">
             <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
               {healer.upcomingEvents.map((event, index) => (
-                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {event.date}
-                    </div>
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {event.title}
-                    </h3>
-                    <p className="text-base text-muted-foreground mb-4 leading-relaxed">
-                      {event.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-lg">{event.price}</span>
-                      <Badge>Upcoming</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CommunityEventCard
+                  key={index}
+                  {...event}
+                  isHorizontal={true}
+                />
               ))}
             </div>
           </div>
@@ -519,36 +621,11 @@ const HealerProfile = () => {
           <div className="relative">
             <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
               {healer.pastEvents.map((event, index) => (
-                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {event.date}
-                    </div>
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {event.title}
-                    </h3>
-                    <p className="text-base text-muted-foreground mb-4 leading-relaxed">
-                      {event.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star key={star} className="h-4 w-4 fill-primary text-primary" />
-                        ))}
-                        <span className="text-sm text-muted-foreground ml-1">({event.reviews})</span>
-                      </div>
-                      <Badge variant="secondary">Completed</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CommunityEventCard
+                  key={index}
+                  {...event}
+                  isHorizontal={true}
+                />
               ))}
             </div>
           </div>
@@ -560,36 +637,11 @@ const HealerProfile = () => {
           <div className="relative">
             <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
               {healer.shares?.map((share, index) => (
-                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={share.image}
-                      alt={share.title}
-                      className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {share.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {share.content}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                          <Heart className="h-4 w-4" />
-                          <span>{share.likes}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>{share.comments}</span>
-                        </div>
-                      </div>
-                      <span>{share.timeAgo}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CommunityShareCard
+                  key={index}
+                  {...share}
+                  isHorizontal={true}
+                />
               ))}
             </div>
           </div>
