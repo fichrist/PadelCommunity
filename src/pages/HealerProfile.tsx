@@ -232,7 +232,7 @@ const HealerProfile = () => {
                 </div>
               </div>
               
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+              <p className="text-muted-foreground text-xl leading-loose mb-8 max-w-none">
                 {healer.bio}
               </p>
             </div>
@@ -296,7 +296,7 @@ const HealerProfile = () => {
               <CardTitle>About {healer.name.split(' ')[0]}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground/90 leading-relaxed">
+              <p className="text-foreground/90 text-lg leading-loose max-w-none">
                 {healer.fullBio}
               </p>
             </CardContent>
@@ -324,7 +324,7 @@ const HealerProfile = () => {
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
                     {event.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-base text-muted-foreground mb-4 leading-relaxed">
                     {event.description}
                   </p>
                   <div className="flex items-center justify-between">
@@ -358,7 +358,7 @@ const HealerProfile = () => {
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
                     {event.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-base text-muted-foreground mb-4 leading-relaxed">
                     {event.description}
                   </p>
                   <div className="flex items-center justify-between">
