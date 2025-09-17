@@ -536,25 +536,6 @@ const People = () => {
                       </Select>
                     </div>
 
-                    {/* When Section - Availability */}
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">When</span>
-                      </div>
-                      <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Availability" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="now">Available Now</SelectItem>
-                          <SelectItem value="today">Today</SelectItem>
-                          <SelectItem value="this-week">This Week</SelectItem>
-                          <SelectItem value="next-week">Next Week</SelectItem>
-                          <SelectItem value="flexible">Flexible</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
 
                     {/* What Section - Specialties */}
                     <div className="space-y-2">
