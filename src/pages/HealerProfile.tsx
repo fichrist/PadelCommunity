@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search, Heart, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -51,6 +51,38 @@ const HealerProfile = () => {
           rating: 4.8,
           reviews: 25,
           description: "Celebrating the return of light with meditation and sound healing."
+        },
+        {
+          title: "Chakra Balancing Workshop",
+          date: "January 12, 2024",
+          image: soundHealingEvent,
+          rating: 4.9,
+          reviews: 31,
+          description: "A transformative journey through all seven chakras using sound frequencies."
+        },
+        {
+          title: "Crystal Bowl Meditation",
+          date: "December 8, 2023",
+          image: crystalWorkshopEvent,
+          rating: 4.7,
+          reviews: 22,
+          description: "Peaceful meditation session with Tibetan singing bowls and crystal bowls."
+        },
+        {
+          title: "Sacred Sound Healing Circle",
+          date: "November 23, 2023",
+          image: soundHealingEvent,
+          rating: 5.0,
+          reviews: 19,
+          description: "Community healing circle with group sound healing and sharing."
+        },
+        {
+          title: "Autumn Equinox Ceremony",
+          date: "September 22, 2023",
+          image: crystalWorkshopEvent,
+          rating: 4.8,
+          reviews: 27,
+          description: "Balancing mind, body, and spirit with the seasonal energy shift."
         }
       ],
       upcomingEvents: [
@@ -60,6 +92,76 @@ const HealerProfile = () => {
           image: soundHealingEvent,
           price: "$65",
           description: "Experience the healing power of crystal bowls, gongs, and ancient chants."
+        },
+        {
+          title: "Spring Awakening Workshop",
+          date: "March 28, 2024",
+          image: crystalWorkshopEvent,
+          price: "$85",
+          description: "Welcome spring with renewal energy work and sound healing techniques."
+        },
+        {
+          title: "Tibetan Gong Bath Experience",
+          date: "April 10, 2024",
+          image: soundHealingEvent,
+          price: "$55",
+          description: "Immersive sound journey with traditional Tibetan gongs and singing bowls."
+        },
+        {
+          title: "Heart Chakra Opening Circle",
+          date: "April 22, 2024",
+          image: crystalWorkshopEvent,
+          price: "$70",
+          description: "Focus on opening and balancing the heart chakra through sound and meditation."
+        },
+        {
+          title: "Crystal Bowl Intensive Weekend",
+          date: "May 4-5, 2024",
+          image: soundHealingEvent,
+          price: "$180",
+          description: "Two-day intensive workshop learning crystal bowl therapy techniques."
+        }
+      ],
+      shares: [
+        {
+          title: "Morning Meditation Practice",
+          content: "Starting each day with 20 minutes of silence has transformed my practice. The clarity that comes from this simple routine is profound.",
+          image: soundHealingEvent,
+          likes: 45,
+          comments: 12,
+          timeAgo: "2 days ago"
+        },
+        {
+          title: "Crystal Bowl Frequencies",
+          content: "Each crystal bowl resonates at a specific frequency that corresponds to our chakras. The 432Hz frequency is particularly healing for the heart center.",
+          image: crystalWorkshopEvent,
+          likes: 67,
+          comments: 18,
+          timeAgo: "5 days ago"
+        },
+        {
+          title: "Sacred Space Creation",
+          content: "Creating a sacred space in your home doesn't require expensive items. Sometimes a single candle and clear intention is all you need.",
+          image: soundHealingEvent,
+          likes: 32,
+          comments: 8,
+          timeAgo: "1 week ago"
+        },
+        {
+          title: "Full Moon Energy",
+          content: "Tonight's full moon is perfect for releasing what no longer serves you. Take a moment to write down what you want to let go of and burn it safely.",
+          image: crystalWorkshopEvent,
+          likes: 89,
+          comments: 24,
+          timeAgo: "2 weeks ago"
+        },
+        {
+          title: "Sound Healing Benefits",
+          content: "Research shows that sound healing can reduce stress hormones by up to 40%. The vibrations literally help our cells return to their natural frequency.",
+          image: soundHealingEvent,
+          likes: 56,
+          comments: 15,
+          timeAgo: "3 weeks ago"
         }
       ]
     },
@@ -83,6 +185,30 @@ const HealerProfile = () => {
           rating: 4.9,
           reviews: 22,
           description: "Balancing your energy with the seasonal shift using crystal healing."
+        },
+        {
+          title: "Rose Quartz Heart Healing",
+          date: "February 14, 2024",
+          image: crystalWorkshopEvent,
+          rating: 5.0,
+          reviews: 28,
+          description: "Opening the heart chakra with rose quartz and loving-kindness meditation."
+        },
+        {
+          title: "Amethyst Intuition Workshop",
+          date: "January 20, 2024",
+          image: soundHealingEvent,
+          rating: 4.8,
+          reviews: 19,
+          description: "Enhancing psychic abilities and intuition with amethyst crystal work."
+        },
+        {
+          title: "Crystal Grid Manifestation",
+          date: "December 1, 2023",
+          image: crystalWorkshopEvent,
+          rating: 4.7,
+          reviews: 24,
+          description: "Learn to create powerful crystal grids for manifestation and protection."
         }
       ],
       upcomingEvents: [
@@ -92,6 +218,54 @@ const HealerProfile = () => {
           image: crystalWorkshopEvent,
           price: "$225",
           description: "Learn to select, cleanse, and work with crystals for healing and growth."
+        },
+        {
+          title: "Advanced Reiki Attunement",
+          date: "April 18, 2024",
+          image: soundHealingEvent,
+          price: "$150",
+          description: "Level 2 Reiki attunement with sacred symbols and distance healing techniques."
+        },
+        {
+          title: "Crystal Healing Certification",
+          date: "May 10-12, 2024",
+          image: crystalWorkshopEvent,
+          price: "$350",
+          description: "Complete certification program in crystal healing therapy and techniques."
+        }
+      ],
+      shares: [
+        {
+          title: "Choosing Your First Crystal",
+          content: "Trust your intuition when selecting crystals. The one that calls to you is often exactly what you need for your current journey.",
+          image: crystalWorkshopEvent,
+          likes: 52,
+          comments: 16,
+          timeAgo: "1 day ago"
+        },
+        {
+          title: "Cleansing Crystal Energy",
+          content: "Full moon is the perfect time to cleanse your crystals. Place them under moonlight overnight to reset their energy and enhance their healing power.",
+          image: soundHealingEvent,
+          likes: 73,
+          comments: 22,
+          timeAgo: "4 days ago"
+        },
+        {
+          title: "Reiki and Crystal Synergy",
+          content: "Combining Reiki energy with crystal healing amplifies the healing vibration. Each crystal acts as an energy amplifier for the universal life force.",
+          image: crystalWorkshopEvent,
+          likes: 41,
+          comments: 11,
+          timeAgo: "1 week ago"
+        },
+        {
+          title: "Protection Crystal Grid",
+          content: "Black tourmaline, hematite, and obsidian create a powerful protection grid for your home. Place them at the four corners of your space.",
+          image: soundHealingEvent,
+          likes: 64,
+          comments: 19,
+          timeAgo: "2 weeks ago"
         }
       ]
     }
@@ -306,73 +480,118 @@ const HealerProfile = () => {
         {/* Upcoming Events */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {healer.upcomingEvents.map((event, index) => (
-              <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300">
-                <div className="relative overflow-hidden">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {event.date}
+          <div className="relative">
+            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+              {healer.upcomingEvents.map((event, index) => (
+                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                   </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-base text-muted-foreground mb-4 leading-relaxed">
-                    {event.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-lg">{event.price}</span>
-                    <Badge>Upcoming</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-4">
+                    <div className="flex items-center text-sm text-primary font-semibold mb-2">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {event.date}
+                    </div>
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-base text-muted-foreground mb-4 leading-relaxed">
+                      {event.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-lg">{event.price}</span>
+                      <Badge>Upcoming</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Past Events */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Past Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {healer.pastEvents.map((event, index) => (
-              <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300">
-                <div className="relative overflow-hidden">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-center text-sm text-primary font-semibold mb-2">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {event.date}
+          <div className="relative">
+            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+              {healer.pastEvents.map((event, index) => (
+                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                   </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-base text-muted-foreground mb-4 leading-relaxed">
-                    {event.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-primary text-primary" />
-                      ))}
-                      <span className="text-sm text-muted-foreground ml-1">({event.reviews})</span>
+                  <CardContent className="p-4">
+                    <div className="flex items-center text-sm text-primary font-semibold mb-2">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {event.date}
                     </div>
-                    <Badge variant="secondary">Completed</Badge>
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-base text-muted-foreground mb-4 leading-relaxed">
+                      {event.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-4 w-4 fill-primary text-primary" />
+                        ))}
+                        <span className="text-sm text-muted-foreground ml-1">({event.reviews})</span>
+                      </div>
+                      <Badge variant="secondary">Completed</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Shares Section */}
+        <div className="mt-12 mb-8">
+          <h2 className="text-2xl font-bold mb-6">Recent Shares</h2>
+          <div className="relative">
+            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+              {healer.shares?.map((share, index) => (
+                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-all duration-300 flex-shrink-0 w-80">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={share.image}
+                      alt={share.title}
+                      className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {share.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {share.content}
+                    </p>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-1">
+                          <Heart className="h-4 w-4" />
+                          <span>{share.likes}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{share.comments}</span>
+                        </div>
+                      </div>
+                      <span>{share.timeAgo}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
