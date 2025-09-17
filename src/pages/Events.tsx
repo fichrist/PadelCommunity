@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X, Heart, Repeat2, Share2, ExternalLink, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -31,6 +32,9 @@ const Events = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
+  const [resharedEvents, setResharedEvents] = useState<string[]>([]);
+  const [sharePopoverOpen, setSharePopoverOpen] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -502,30 +506,217 @@ const Events = () => {
               </div>
             </div>
 
-            {/* Main Content - Events Grid */}
-            <div className="lg:col-span-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event, index) => (
-                  <EventCard 
-                    key={index} 
-                    {...event} 
-                    isSaved={savedEvents.includes(event.eventId)}
-                    onSaveToggle={() => {
-                      if (savedEvents.includes(event.eventId)) {
-                        setSavedEvents(prev => prev.filter(id => id !== event.eventId));
-                        toast.success("Removed from saved");
-                      } else {
-                        setSavedEvents(prev => [...prev, event.eventId]);
-                        toast.success("Event saved!");
-                      }
-                    }}
-                    onJoinEvent={() => {
-                      setSelectedEvent(event);
-                      setEnrollmentModalOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
+            {/* Main Content - Events */}
+            <div className="lg:col-span-6 space-y-4">
+              {filteredEvents.map((event, index) => (
+                <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
+                  <CardContent className="p-0">
+                    {/* Event Image Header */}
+                    {event.image && (
+                      <div className="p-4">
+                        <div className="flex space-x-3">
+                          {/* Event Image - 4:3 Aspect Ratio - Clickable */}
+                          <div 
+                            className="w-48 h-36 flex-shrink-0 cursor-pointer"
+                            onClick={() => navigate(`/event/${event.eventId}`)}
+                          >
+                            <img 
+                              src={event.image} 
+                              alt={event.title}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          </div>
+                          
+                          {/* Event Details */}
+                          <div className="flex-1 min-w-0">
+                            <h2 
+                              className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => navigate(`/event/${event.eventId}`)}
+                            >
+                              {event.title}
+                            </h2>
+                            
+                            <div className="space-y-1 text-sm">
+                              <div className="mb-2">
+                                <span className="text-2xl font-bold text-primary">
+                                  {event.date}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={event.organizers[0]?.avatar} />
+                                  <AvatarFallback className="bg-primary/10 text-xs">
+                                    {event.organizers[0]?.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                     <span 
+                                       className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                       onClick={() => navigate(`/healer/${event.organizers[0]?.id}`)}
+                                     >
+                                       {event.organizers[0]?.name}
+                                     </span>
+                                    <span className="text-xs text-muted-foreground">•</span>
+                                    <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
+                                      Follow
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Event Organizer
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <MapPin className="h-4 w-4" />
+                                <span>{event.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="px-3">
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {event.tags?.map((tag, tagIndex) => (
+                          <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {/* Event Description */}
+                      <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                        {event.description}
+                      </p>
+
+                      {/* Event Details */}
+                      <div className="mb-3">
+                        <div className="flex items-center space-x-4 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{event.attendees} attending</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {event.category}
+                          </Badge>
+                        </div>
+
+                        {/* Past Event Ratings */}
+                        {event.isPastEvent && event.averageRating && (
+                          <div className="flex items-center space-x-2 mt-2">
+                            <div className="flex items-center space-x-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Heart
+                                  key={i}
+                                  className={`h-3 w-3 ${
+                                    i < Math.floor(event.averageRating!) ? 'fill-primary text-primary' : 'text-muted-foreground/30'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm font-medium">{event.averageRating.toFixed(1)}</span>
+                            <span className="text-sm text-primary">
+                              ({event.totalReviews} reviews)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="px-3 py-2 border-t border-border">
+                      <div className="flex items-center justify-between">
+                        <button 
+                          onClick={() => navigate(`/event/${event.eventId}`)}
+                          className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Comments</span>
+                        </button>
+                        <button 
+                          className={`flex items-center space-x-2 text-sm transition-colors ${
+                            resharedEvents.includes(event.eventId) 
+                              ? 'text-primary font-bold' 
+                              : 'text-muted-foreground hover:text-primary'
+                          }`}
+                          onClick={() => {
+                            if (resharedEvents.includes(event.eventId)) {
+                              setResharedEvents(prev => prev.filter(id => id !== event.eventId));
+                              toast.success("Reshare removed");
+                            } else {
+                              setResharedEvents(prev => [...prev, event.eventId]);
+                              toast.success("Event reshared!");
+                            }
+                          }}
+                        >
+                          <Repeat2 className="h-4 w-4" />
+                          <span>{resharedEvents.includes(event.eventId) ? 'Reshared' : 'Reshare'}</span>
+                        </button>
+                        
+                        <button 
+                          className={`flex items-center space-x-2 text-sm transition-colors ${
+                            savedEvents.includes(event.eventId) 
+                              ? 'text-primary font-bold' 
+                              : 'text-muted-foreground hover:text-primary'
+                          }`}
+                          onClick={() => {
+                            if (savedEvents.includes(event.eventId)) {
+                              setSavedEvents(prev => prev.filter(id => id !== event.eventId));
+                              toast.success("Removed from saved");
+                            } else {
+                              setSavedEvents(prev => [...prev, event.eventId]);
+                              toast.success("Event saved!");
+                            }
+                          }}
+                        >
+                          <BookOpen className={`h-4 w-4 ${savedEvents.includes(event.eventId) ? 'fill-current' : ''}`} />
+                          <span>Save</span>
+                        </button>
+                        
+                        <Popover open={sharePopoverOpen === event.eventId} onOpenChange={(open) => setSharePopoverOpen(open ? event.eventId : null)}>
+                          <PopoverTrigger asChild>
+                            <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                              <Share2 className="h-4 w-4" />
+                              <span>Share</span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2">
+                            <div className="space-y-2">
+                              <button 
+                                className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/event/${event.eventId}`);
+                                  setLinkCopied(true);
+                                  toast.success("Event link copied to clipboard!");
+                                  setTimeout(() => setLinkCopied(false), 2000);
+                                  setSharePopoverOpen(null);
+                                }}
+                              >
+                                {linkCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                <span>Copy Link</span>
+                              </button>
+                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Share on Twitter</span>
+                              </button>
+                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Share on Facebook</span>
+                              </button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
