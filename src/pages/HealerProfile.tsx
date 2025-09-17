@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search, Heart, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Share2, Repeat2 } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, Star, Play, MessageCircle, UserPlus, User, Plus, Search, Heart, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Share2, Repeat2, Phone, Mail, Facebook, Instagram } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -44,7 +44,12 @@ const HealerProfile = () => {
       bio: "Elena has been practicing sound healing for over 8 years, specializing in crystal bowl therapy and sacred chanting. She combines ancient healing traditions with modern therapeutic techniques to create transformative experiences for her clients.",
       fullBio: "Elena Moonchild is a certified sound healer and energy worker with over 8 years of experience in holistic healing practices. She discovered her calling during a spiritual journey through Tibet, where she studied with traditional healers and learned the ancient art of sound therapy. Elena specializes in crystal singing bowl therapy, Tibetan gong healing, and sacred chanting. She has facilitated over 200 healing sessions and workshops, helping individuals release trauma, reduce stress, and reconnect with their inner wisdom. Her approach combines traditional healing methods with modern understanding of sound frequencies and their effects on the human body and energy field.",
       location: "Sedona, AZ",
-      experience: "8+ years",
+      contact: {
+        phone: "+1 (555) 123-4567",
+        email: "elena@moonchild.com",
+        facebook: "ElenaHealer",
+        instagram: "@elena_moonchild"
+      },
       specialties: ["Sound Healing", "Crystal Bowl Therapy", "Chakra Alignment", "Energy Clearing"],
       rating: 4.9,
       reviewCount: 23,
@@ -258,7 +263,12 @@ const HealerProfile = () => {
       bio: "Aria is a certified crystal healer and Reiki Master with a decade of experience working with healing stones and energy healing modalities.",
       fullBio: "Aria Starseed has dedicated the last 10 years to mastering the ancient art of crystal healing and energy work. After experiencing a profound spiritual awakening, she left her corporate career to pursue her passion for healing. Aria is certified in multiple modalities including Reiki, crystal therapy, and chakra balancing. She has traveled extensively to source rare healing crystals and has built a reputation for her intuitive approach to crystal selection and placement. Her workshops have transformed hundreds of lives, teaching people how to harness the power of crystals for healing, protection, and spiritual growth.",
       location: "Asheville, NC",
-      experience: "10+ years",
+      contact: {
+        phone: "+1 (555) 987-6543",
+        email: "aria@starseed.com",
+        facebook: "AriaStarseedHealer",
+        instagram: "@aria_starseed"
+      },
       specialties: ["Crystal Healing", "Reiki", "Chakra Balancing", "Manifestation"],
       rating: 4.8,
       reviewCount: 31,
@@ -555,8 +565,25 @@ const HealerProfile = () => {
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-2">Experience</h3>
-                      <p className="text-muted-foreground">{healer.experience}</p>
+                      <h3 className="font-semibold mb-2">Contact</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          <span>{healer.contact.phone}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                          <span>{healer.contact.email}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Facebook className="h-4 w-4" />
+                          <span>{healer.contact.facebook}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Instagram className="h-4 w-4" />
+                          <span>{healer.contact.instagram}</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <h3 className="font-semibold mb-2">Specialties</h3>
