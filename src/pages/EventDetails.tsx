@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -570,6 +570,21 @@ const eventData = {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+        
+        {/* Report Event */}
+        <div className="mt-12 pt-8 border-t border-border">
+          <div className="flex justify-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground hover:text-destructive transition-colors"
+              onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Report this event
+            </Button>
           </div>
         </div>
       </div>
