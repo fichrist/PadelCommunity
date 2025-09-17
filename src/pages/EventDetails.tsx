@@ -408,35 +408,6 @@ const eventData = {
                   </div>
                 </div>
                 
-                {/* Previous Events by Organizers */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold mb-4">Previous Events by Organizers</h3>
-                  <div className="grid gap-4">
-                    {event.organizers.flatMap(organizer => 
-                      organizer.previousEvents?.map((prevEvent, eventIndex) => (
-                        <EventCard
-                          key={`${organizer.name}-${eventIndex}`}
-                          eventId={`prev-${organizer.name}-${eventIndex}`}
-                          title={prevEvent.title}
-                          description={`Past event organized by ${organizer.name}`}
-                          date={prevEvent.date}
-                          location={organizer.location}
-                          organizers={[{ 
-                            name: organizer.name, 
-                            avatar: organizer.avatar, 
-                            id: `organizer-${eventIndex}` 
-                          }]}
-                          attendees={prevEvent.attendees}
-                          category="Past Event"
-                          image={event.image}
-                          isPastEvent={true}
-                          averageRating={4.5}
-                          totalReviews={Math.floor(prevEvent.attendees * 0.6)}
-                        />
-                      )) || []
-                    )}
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
@@ -466,6 +437,93 @@ const eventData = {
                 </CardContent>
               </Card>
             )}
+          </div>
+
+          {/* Previous Events by Organizers - Separate Container */}
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>Previous Events by Organizers</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {event.organizers.flatMap(organizer => 
+                    organizer.previousEvents?.map((prevEvent, eventIndex) => (
+                      <div 
+                        key={`${organizer.name}-${eventIndex}`}
+                        className="group cursor-pointer border rounded-lg p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                        onClick={() => navigate(`/event/prev-${organizer.name}-${eventIndex}`)}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <Avatar className="h-10 w-10 flex-shrink-0">
+                            <AvatarImage src={organizer.avatar} />
+                            <AvatarFallback className="bg-primary/10">
+                              {organizer.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                              {prevEvent.title}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              by {organizer.name}
+                            </p>
+                            <div className="flex items-center text-xs text-muted-foreground space-x-3">
+                              <div className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {prevEvent.date}
+                              </div>
+                              <div className="flex items-center">
+                                <Users className="h-3 w-3 mr-1" />
+                                {prevEvent.attendees}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center text-xs">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
+                                  ))}
+                                </div>
+                                <span className="ml-1 text-muted-foreground">4.5</span>
+                              </div>
+                              <div className="flex space-x-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0 rounded-full hover:bg-primary/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/chat');
+                                    toast.success(`Opening chat with ${organizer.name}`);
+                                  }}
+                                >
+                                  <MessageCircle className="h-3 w-3 text-primary" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0 rounded-full hover:bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.success(`Connection request sent to ${organizer.name}`);
+                                  }}
+                                >
+                                  <Heart className="h-3 w-3 text-muted-foreground hover:text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )) || []
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
