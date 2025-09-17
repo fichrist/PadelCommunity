@@ -608,6 +608,21 @@ const Events = () => {
                       </div>
                     )}
 
+                    {/* Tags */}
+                    <div className="px-3 pt-3">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {event.tags.map((tag) => (
+                          <Badge 
+                            key={tag}
+                            variant="secondary" 
+                            className="text-xs px-2 py-1"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Content */}
                     <div className="px-3">
                       {/* Event Description */}
