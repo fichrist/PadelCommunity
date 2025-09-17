@@ -28,7 +28,8 @@ const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
-  const [stayAnonymous, setStayAnonymous] = useState(false);
+  const [allowVisible, setAllowVisible] = useState(true);
+  const [selectedPrice, setSelectedPrice] = useState("");
   const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -630,9 +631,30 @@ const eventData = {
                 
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">Price</p>
-                    <p className="text-sm text-muted-foreground">{event.price}</p>
+                  <div className="w-full">
+                    <p className="text-sm font-medium mb-2">Price Options</p>
+                    <div className="space-y-2">
+                      {event.priceOptions.map((option, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id={`price-${index}`}
+                            name="price"
+                            value={option.type}
+                            checked={selectedPrice === option.type}
+                            onChange={(e) => setSelectedPrice(e.target.value)}
+                            className="text-primary focus:ring-primary"
+                          />
+                          <label htmlFor={`price-${index}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{option.price}</span>
+                              <span className="text-xs text-muted-foreground">({option.type})</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{option.description}</p>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 
@@ -659,16 +681,16 @@ const eventData = {
               
               <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
                 <Checkbox 
-                  id="anonymous" 
-                  checked={stayAnonymous}
-                  onCheckedChange={(checked) => setStayAnonymous(checked === true)}
+                  id="visible" 
+                  checked={allowVisible}
+                  onCheckedChange={(checked) => setAllowVisible(checked === true)}
                 />
                 <div>
-                  <Label htmlFor="anonymous" className="text-sm font-medium">
-                    Stay anonymous
+                  <Label htmlFor="visible" className="text-sm font-medium">
+                    Allow others to see me attending
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Your name won't be visible to other attendees
+                    Your name will be visible to other attendees
                   </p>
                 </div>
               </div>
@@ -683,7 +705,12 @@ const eventData = {
                 </Button>
                 <Button 
                   className="flex-1"
+                  disabled={event.priceOptions.length > 1 && !selectedPrice}
                   onClick={() => {
+                    if (event.priceOptions.length > 1 && !selectedPrice) {
+                      toast.error("Please select a price option");
+                      return;
+                    }
                     toast.success("Successfully enrolled in the event!");
                     setEnrollmentModalOpen(false);
                   }}
