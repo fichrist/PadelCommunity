@@ -213,76 +213,64 @@ const eventData = {
                 />
               </div>
               
-              {/* Social buttons and tags at same height */}
-              <div className="flex justify-between items-start">
-                {/* Social Interaction Buttons */}
-                <div className="flex items-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="flex flex-col items-center space-y-1 p-3 h-auto"
-                  >
-                    <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                    <span className="text-xs text-muted-foreground">Comment</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
-                    onClick={() => setIsReshared(!isReshared)}
-                  >
-                    <Repeat2 className="h-5 w-5" />
-                    <span className="text-xs">Reshare</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                    onClick={() => setIsSaved(!isSaved)}
-                  >
-                    <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
-                    <span className="text-xs">Save</span>
-                  </Button>
-                  <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
-                    <PopoverTrigger asChild>
+              {/* Social buttons */}
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex flex-col items-center space-y-1 p-3 h-auto"
+                >
+                  <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <span className="text-xs text-muted-foreground">Comment</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
+                  onClick={() => setIsReshared(!isReshared)}
+                >
+                  <Repeat2 className="h-5 w-5" />
+                  <span className="text-xs">Reshare</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                  onClick={() => setIsSaved(!isSaved)}
+                >
+                  <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span className="text-xs">Save</span>
+                </Button>
+                <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Share2 className="h-5 w-5" />
+                      <span className="text-xs">Share</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2" align="end">
+                    <div className="space-y-1">
                       <Button 
                         variant="ghost" 
-                        size="sm" 
-                        className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
+                        className="w-full justify-start text-sm h-8"
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          setLinkCopied(true);
+                          setTimeout(() => setLinkCopied(false), 2000);
+                          toast.success("Link copied to clipboard!");
+                          setSharePopoverOpen(false);
+                        }}
                       >
-                        <Share2 className="h-5 w-5" />
-                        <span className="text-xs">Share</span>
+                        {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                        Copy Link
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="end">
-                      <div className="space-y-1">
-                        <Button 
-                          variant="ghost" 
-                          className="w-full justify-start text-sm h-8"
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            setLinkCopied(true);
-                            setTimeout(() => setLinkCopied(false), 2000);
-                            toast.success("Link copied to clipboard!");
-                            setSharePopoverOpen(false);
-                          }}
-                        >
-                          {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
-                          Copy Link
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                {/* Tags on the right */}
-                <div className="flex flex-wrap gap-1">
-                  {event.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             
@@ -326,6 +314,15 @@ const eventData = {
               >
                 Join Event
               </Button>
+              
+              {/* Tags under Join Event button */}
+              <div className="flex flex-wrap gap-1 justify-center">
+                {event.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
         </div>
