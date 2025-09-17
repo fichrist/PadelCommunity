@@ -35,28 +35,31 @@ const EventDetails = () => {
   const [isReshared, setIsReshared] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const eventData = {
+const eventData = {
     "1": {
       id: "1",
       title: "Full Moon Sound Healing Ceremony",
       description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony. This transformative sound healing session will align your chakras and restore inner peace under the powerful energy of the full moon.",
       fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening. The session begins with a guided meditation to help you connect with the lunar energy, followed by 90 minutes of immersive sound healing. You'll lie comfortably on yoga mats as the healing vibrations wash over you, releasing tension, clearing energy blocks, and promoting deep relaxation. Many participants report profound spiritual insights, emotional release, and a sense of renewal after these sessions.",
       image: soundHealingEvent,
-      organizer: { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer" },
+      organizers: [
+        { name: "Elena Moonchild", avatar: elenaProfile, role: "Sound Healer", location: "Sedona, AZ" },
+        { name: "David Peace", avatar: davidProfile, role: "Assistant Healer", location: "Sedona, AZ" }
+      ],
       date: "March 15, 2024",
       time: "7:00 PM - 9:30 PM",
       location: "Sacred Grove Sanctuary, Sedona AZ",
       price: "$65",
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
       attendees: [
-        { name: "Sarah Light", avatar: elenaProfile, isAnonymous: false },
-        { name: "David Peace", avatar: davidProfile, isAnonymous: false },
-        { name: "Luna Sage", avatar: ariaProfile, isAnonymous: false },
-        { name: "Anonymous", avatar: "", isAnonymous: true },
-        { name: "River Flow", avatar: phoenixProfile, isAnonymous: false },
-        { name: "Anonymous", avatar: "", isAnonymous: true },
-        { name: "Star Dreamer", avatar: elenaProfile, isAnonymous: false },
-        { name: "Anonymous", avatar: "", isAnonymous: true },
+        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
+        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
+        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ", isAnonymous: false },
+        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: false },
+        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ", isAnonymous: false },
+        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
       ]
     },
     "2": {
@@ -65,19 +68,21 @@ const EventDetails = () => {
       description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth in this hands-on workshop.",
       fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques. The workshop includes hands-on practice with crystal layouts, meditation with stones, and creating your own crystal grid for manifestation. Each participant will receive a starter crystal kit including clear quartz, amethyst, rose quartz, and black tourmaline, along with a detailed guidebook. Aria will share her decade of experience working with crystals, including personal stories of transformation and healing. The intimate class size ensures personalized attention and plenty of opportunity for questions.",
       image: crystalWorkshopEvent,
-      organizer: { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer" },
+      organizers: [
+        { name: "Aria Starseed", avatar: ariaProfile, role: "Crystal Healer", location: "Asheville, NC" }
+      ],
       date: "April 2-4, 2024",
       time: "10:00 AM - 4:00 PM",
       location: "Crystal Cave Studio, Asheville NC",
       price: "$225",
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
       attendees: [
-        { name: "Luna Sage", avatar: elenaProfile, isAnonymous: false },
-        { name: "Ocean Mystic", avatar: davidProfile, isAnonymous: false },
-        { name: "Anonymous", avatar: "", isAnonymous: true },
-        { name: "Forest Walker", avatar: ariaProfile, isAnonymous: false },
-        { name: "Anonymous", avatar: "", isAnonymous: true },
-        { name: "Crystal Dawn", avatar: phoenixProfile, isAnonymous: false },
+        { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
+        { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC", isAnonymous: false },
+        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC", isAnonymous: false },
+        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC", isAnonymous: false },
       ]
     }
   };
@@ -219,79 +224,75 @@ const EventDetails = () => {
               </Button>
               
               {/* Social Interaction Buttons */}
-              <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`p-2 h-auto transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
-                    onClick={() => setIsLiked(!isLiked)}
-                  >
-                    <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-2 h-auto text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`p-2 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
-                    onClick={() => setIsReshared(!isReshared)}
-                  >
-                    <Repeat2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`p-2 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                    onClick={() => setIsSaved(!isSaved)}
-                  >
-                    <BookOpen className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
-                    <PopoverTrigger asChild>
+              <div className="flex items-center justify-center space-x-6 mb-6">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex flex-col items-center space-y-1 p-3 h-auto"
+                >
+                  <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <span className="text-xs text-muted-foreground">Comment</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isReshared ? 'text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
+                  onClick={() => setIsReshared(!isReshared)}
+                >
+                  <Repeat2 className="h-5 w-5" />
+                  <span className="text-xs">Reshare</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex flex-col items-center space-y-1 p-3 h-auto transition-colors ${isSaved ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                  onClick={() => setIsSaved(!isSaved)}
+                >
+                  <BookOpen className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span className="text-xs">Save</span>
+                </Button>
+                <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex flex-col items-center space-y-1 p-3 h-auto text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Share2 className="h-5 w-5" />
+                      <span className="text-xs">Share</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2" align="end">
+                    <div className="space-y-1">
                       <Button 
                         variant="ghost" 
-                        size="sm" 
-                        className="p-2 h-auto text-muted-foreground hover:text-primary transition-colors"
+                        className="w-full justify-start text-sm h-8"
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          setLinkCopied(true);
+                          setTimeout(() => setLinkCopied(false), 2000);
+                          toast.success("Link copied to clipboard!");
+                          setSharePopoverOpen(false);
+                        }}
                       >
-                        <Share2 className="h-4 w-4" />
+                        {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
+                        Copy Link
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="end">
-                      <div className="space-y-1">
-                        <Button 
-                          variant="ghost" 
-                          className="w-full justify-start text-sm h-8"
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            setLinkCopied(true);
-                            setTimeout(() => setLinkCopied(false), 2000);
-                            toast.success("Link copied to clipboard!");
-                            setSharePopoverOpen(false);
-                          }}
-                        >
-                          {linkCopied ? <Check className="h-4 w-4 mr-2" /> : <Link className="h-4 w-4 mr-2" />}
-                          Copy Link
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {event.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="bg-accent/60 text-accent-foreground">
-                    {tag}
-                  </Badge>
-                ))}
+              {/* Tags with categorized layout */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Tags</p>
+                <div className="flex flex-wrap gap-1">
+                  {event.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
             
@@ -310,32 +311,51 @@ const EventDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Organizer Info */}
+            {/* Organizers Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Hosted by</CardTitle>
+                <CardTitle>Organized by</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-4">
-                  <Avatar 
-                    className="h-12 w-12 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
-                    onClick={() => navigate(`/healer/${event.organizer.name.toLowerCase().replace(' ', '-')}`)}
-                  >
-                    <AvatarImage src={event.organizer.avatar} />
-                    <AvatarFallback className="bg-primary/10">
-                      {event.organizer.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div 
-                    className="cursor-pointer" 
-                    onClick={() => navigate(`/healer/${event.organizer.name.toLowerCase().replace(' ', '-')}`)}
-                  >
-                    <h3 className="font-semibold hover:text-primary transition-colors">{event.organizer.name}</h3>
-                    <p className="text-sm text-muted-foreground">{event.organizer.role}</p>
-                  </div>
-                  <Button variant="outline" className="ml-auto">
-                    Follow
-                  </Button>
+                <div className="space-y-4">
+                  {event.organizers.map((organizer, index) => (
+                    <div key={index} className="flex items-center space-x-4">
+                      <Avatar 
+                        className="h-12 w-12 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
+                        onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                      >
+                        <AvatarImage src={organizer.avatar} />
+                        <AvatarFallback className="bg-primary/10">
+                          {organizer.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div 
+                        className="flex-1 cursor-pointer" 
+                        onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                      >
+                        <h3 className="font-semibold hover:text-primary transition-colors">{organizer.name}</h3>
+                        <p className="text-sm text-muted-foreground">{organizer.role}</p>
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {organizer.location}
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate('/chat')}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Chat
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Heart className="h-4 w-4 mr-1" />
+                          Follow
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -387,37 +407,35 @@ const EventDetails = () => {
                             {attendee.isAnonymous ? "?" : attendee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">
-                          {attendee.isAnonymous ? "Anonymous User" : attendee.name}
-                        </span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">
+                            {attendee.isAnonymous ? "Anonymous User" : attendee.name}
+                          </div>
+                          {!attendee.isAnonymous && attendee.location && (
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {attendee.location}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {!attendee.isAnonymous && (
                         <div className="flex space-x-1">
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => navigate('/chat')}
+                          >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <UserPlus className="h-4 w-4" />
+                            <Heart className="h-4 w-4" />
                           </Button>
                         </div>
                       )}
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Location Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Location</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="font-medium">{event.location}</p>
-                  <Button variant="outline" className="w-full">
-                    View on Map
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -428,7 +446,7 @@ const EventDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
           <Card>
             <CardHeader>
-              <CardTitle>Reviews for {event.organizer.name}</CardTitle>
+              <CardTitle>Reviews for {event.organizers[0].name}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -489,7 +507,7 @@ const EventDetails = () => {
 
         {/* Previous Events Section */}
         <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Previous Events by {event.organizer.name}</h2>
+          <h2 className="text-2xl font-bold mb-6">Previous Events by {event.organizers[0].name}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300">
               <div className="relative overflow-hidden">
@@ -585,15 +603,19 @@ const EventDetails = () => {
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <div>
-                    <p className="text-sm font-medium">Organizer</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={event.organizer.avatar} />
-                        <AvatarFallback className="text-xs">
-                          {event.organizer.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-muted-foreground">{event.organizer.name}</span>
+                    <p className="text-sm font-medium">Organizers</p>
+                    <div className="space-y-2 mt-1">
+                      {event.organizers.map((organizer, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={organizer.avatar} />
+                            <AvatarFallback className="text-xs">
+                              {organizer.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm text-muted-foreground">{organizer.name}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
