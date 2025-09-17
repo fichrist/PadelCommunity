@@ -458,33 +458,6 @@ const eventData = {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Add-ons Display */}
-            {event.addOns && event.addOns.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Available Add-ons</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4">
-                    {event.addOns.map((addon, index) => (
-                      <div key={addon.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{addon.name}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">{addon.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-primary">{addon.price}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Add-ons can be selected during registration to enhance your experience.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Event Community Sidebar */}
@@ -634,76 +607,29 @@ const eventData = {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {event.organizers.flatMap(organizer => 
                 organizer.previousEvents?.map((prevEvent, eventIndex) => (
-                  <div 
+                  <EventCard
                     key={`${organizer.name}-${eventIndex}`}
-                    className="group cursor-pointer border rounded-lg p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                    onClick={() => navigate(`/event/prev-${organizer.name}-${eventIndex}`)}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarImage src={organizer.avatar} />
-                        <AvatarFallback className="bg-primary/10">
-                          {organizer.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
-                          {prevEvent.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          by {organizer.name}
-                        </p>
-                        <div className="flex items-center text-xs text-muted-foreground space-x-3">
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {prevEvent.date}
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="h-3 w-3 mr-1" />
-                            {prevEvent.attendees}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center text-xs">
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star key={star} className="h-3 w-3 fill-current text-yellow-400" />
-                              ))}
-                            </div>
-                            <span className="ml-1 text-muted-foreground">4.5</span>
-                          </div>
-                          <div className="flex space-x-1">
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-6 w-6 p-0 rounded-full hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate('/chat');
-                                toast.success(`Opening chat with ${organizer.name}`);
-                              }}
-                            >
-                              <MessageCircle className="h-3 w-3 text-primary" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-6 w-6 p-0 rounded-full hover:bg-red-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toast.success(`Connection request sent to ${organizer.name}`);
-                              }}
-                            >
-                              <Heart className="h-3 w-3 text-muted-foreground hover:text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    eventId={`prev-${organizer.name}-${eventIndex}`}
+                    title={prevEvent.title}
+                    description="A past event by our experienced organizer"
+                    date={prevEvent.date}
+                    location={organizer.location}
+                    organizers={[{
+                      name: organizer.name,
+                      avatar: organizer.avatar,
+                      id: organizer.name.toLowerCase().replace(' ', '-')
+                    }]}
+                    attendees={prevEvent.attendees}
+                    category="Past Event"
+                    image={event.image}
+                    isPastEvent={true}
+                    averageRating={4.5}
+                    totalReviews={Math.floor(prevEvent.attendees * 0.6)}
+                    reviews={[]}
+                  />
                 )) || []
               )}
             </div>
