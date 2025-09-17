@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, Info } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -812,9 +812,39 @@ const People = () => {
                         )}
                         
                         {/* Followers */}
-                        <div className="flex items-center space-x-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
+                          </div>
+                          
+                          {/* Bottom right icons */}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-auto hover:bg-muted/50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Handle calendar click
+                                console.log('Calendar clicked for', healer.name);
+                              }}
+                            >
+                              <Calendar className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-auto hover:bg-muted/50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Handle info click
+                                console.log('Info clicked for', healer.name);
+                              }}
+                            >
+                              <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       
