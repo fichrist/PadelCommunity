@@ -31,6 +31,7 @@ const People = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean }>>({});
   const navigate = useNavigate();
 
   const healers = [
@@ -421,14 +422,22 @@ const People = () => {
                                variant="ghost"
                                size="sm"
                                className="p-2 h-auto ml-2"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 if (isFollowed) {
-                                   setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
-                                 } else {
-                                   setFollowedUsers(prev => [...prev, originalIndex]);
-                                 }
-                               }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isFollowed) {
+                                    setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
+                                    setSelectedIcons(prev => ({
+                                      ...prev,
+                                      [originalIndex]: { calendar: false, info: false }
+                                    }));
+                                  } else {
+                                    setFollowedUsers(prev => [...prev, originalIndex]);
+                                    setSelectedIcons(prev => ({
+                                      ...prev,
+                                      [originalIndex]: { calendar: true, info: true }
+                                    }));
+                                  }
+                                }}
                              >
                                <Heart className={`h-4 w-4 ${isFollowed ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
                              </Button>
@@ -746,12 +755,16 @@ const People = () => {
                                     navigate('/people');
                                   }}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction 
-                                    onClick={() => {
-                                      setFollowedUsers(prev => prev.filter(id => id !== index));
-                                      setUnfollowDialogOpen(false);
-                                      setUserToUnfollow(null);
-                                      navigate('/people');
-                                    }}
+                                     onClick={() => {
+                                       setFollowedUsers(prev => prev.filter(id => id !== index));
+                                       setSelectedIcons(prev => ({
+                                         ...prev,
+                                         [index]: { calendar: false, info: false }
+                                       }));
+                                       setUnfollowDialogOpen(false);
+                                       setUserToUnfollow(null);
+                                       navigate('/people');
+                                     }}
                                     className="bg-red-500 hover:bg-red-600"
                                   >
                                     Unfollow
@@ -764,10 +777,14 @@ const People = () => {
                               variant="ghost" 
                               size="sm" 
                               className="p-2 h-auto hover:bg-red-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFollowedUsers(prev => [...prev, index]);
-                              }}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setFollowedUsers(prev => [...prev, index]);
+                                 setSelectedIcons(prev => ({
+                                   ...prev,
+                                   [index]: { calendar: true, info: true }
+                                 }));
+                               }}
                             >
                               <Heart className="h-4 w-4 text-red-500" />
                             </Button>
@@ -826,11 +843,20 @@ const People = () => {
                               className="p-1 h-auto hover:bg-muted/50"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Handle calendar click
-                                console.log('Calendar clicked for', healer.name);
+                                setSelectedIcons(prev => ({
+                                  ...prev,
+                                  [index]: {
+                                    ...prev[index],
+                                    calendar: !prev[index]?.calendar
+                                  }
+                                }));
                               }}
                             >
-                              <Calendar className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                              <Calendar className={`h-4 w-4 transition-colors ${
+                                selectedIcons[index]?.calendar 
+                                  ? 'text-primary font-bold' 
+                                  : 'text-muted-foreground hover:text-primary'
+                              }`} />
                             </Button>
                             <Button
                               variant="ghost"
@@ -838,11 +864,20 @@ const People = () => {
                               className="p-1 h-auto hover:bg-muted/50"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Handle info click
-                                console.log('Info clicked for', healer.name);
+                                setSelectedIcons(prev => ({
+                                  ...prev,
+                                  [index]: {
+                                    ...prev[index],
+                                    info: !prev[index]?.info
+                                  }
+                                }));
                               }}
                             >
-                              <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                              <Info className={`h-4 w-4 transition-colors ${
+                                selectedIcons[index]?.info 
+                                  ? 'text-primary font-bold' 
+                                  : 'text-muted-foreground hover:text-primary'
+                              }`} />
                             </Button>
                           </div>
                         </div>
