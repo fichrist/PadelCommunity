@@ -553,7 +553,6 @@ const HealerProfile = () => {
               </p>
               
               <div className="mb-8">
-                <h3 className="font-semibold mb-3">Specialties</h3>
                 <div className="flex flex-wrap gap-2">
                   {healer.specialties.map((specialty, index) => (
                     <Badge key={index} variant="secondary">
