@@ -854,7 +854,7 @@ const People = () => {
                             >
                               <Calendar className={`h-4 w-4 transition-colors ${
                                 selectedIcons[index]?.calendar 
-                                  ? 'text-primary font-bold' 
+                                  ? 'text-blue-500 fill-blue-500' 
                                   : 'text-muted-foreground hover:text-primary'
                               }`} />
                             </Button>
@@ -875,7 +875,7 @@ const People = () => {
                             >
                               <Info className={`h-4 w-4 transition-colors ${
                                 selectedIcons[index]?.info 
-                                  ? 'text-primary font-bold' 
+                                  ? 'text-blue-500 fill-blue-500' 
                                   : 'text-muted-foreground hover:text-primary'
                               }`} />
                             </Button>
