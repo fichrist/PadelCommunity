@@ -738,7 +738,7 @@ const People = () => {
                       {/* Only show bio and specialties for healers */}
                       {healer.isHealer !== false && (
                         <>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-6">{healer.bio}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
                           
                           <div className="flex flex-wrap gap-1 mb-3">
                             {healer.tags.slice(0, 3).map((tag, idx) => (
