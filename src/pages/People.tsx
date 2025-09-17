@@ -30,6 +30,7 @@ const People = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
+  const [sortOrder, setSortOrder] = useState("asc");
   const navigate = useNavigate();
 
   const healers = [
@@ -289,12 +290,13 @@ const People = () => {
 
   // Sort users based on selected sort option
   const sortedUsers = [...filteredHealers].sort((a, b) => {
+    let comparison = 0;
     if (sortBy === "alphabetical") {
-      return a.name.localeCompare(b.name);
+      comparison = a.name.localeCompare(b.name);
     } else if (sortBy === "followers") {
-      return b.followers - a.followers;
+      comparison = a.followers - b.followers;
     }
-    return 0;
+    return sortOrder === "asc" ? comparison : -comparison;
   });
 
   const searchResults = searchQuery.length >= 3 
@@ -457,18 +459,33 @@ const People = () => {
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
               
-              {/* Sort By Dropdown */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 h-9">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="alphabetical">Alphabetical</SelectItem>
-                    <SelectItem value="followers">Followers</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Sort Options - Right Aligned */}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Sort by:</span>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-36 h-9">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alphabetical">Name</SelectItem>
+                      <SelectItem value="followers">Followers</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Order:</span>
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-32 h-9">
+                      <SelectValue placeholder="Order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascending</SelectItem>
+                      <SelectItem value="desc">Descending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               {/* Centered Filters */}
