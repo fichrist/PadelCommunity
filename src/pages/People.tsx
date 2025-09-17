@@ -760,9 +760,13 @@ const People = () => {
                           <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
                           
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {healer.specialties.slice(0, 3).map((specialty, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs bg-sage/20 text-sage-foreground">
-                                {specialty}
+                            {healer.tags.slice(0, 3).map((tag, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="secondary" 
+                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                              >
+                                {tag}
                               </Badge>
                             ))}
                           </div>
