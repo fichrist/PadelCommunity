@@ -639,112 +639,75 @@ const eventData = {
         
         {/* Enrollment Modal */}
         <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Join {event.title}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">Select your pricing option</p>
-                    <p className="text-xs text-muted-foreground">Choose the option that works best for you</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  {event.priceOptions.map((option, index) => (
-                    <label key={index} className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="grid grid-cols-2 gap-8">
+              {/* Left Column - Payment Options */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Payment Options</h3>
+                  <div className="space-y-3">
+                    {event.priceOptions.map((option, index) => (
+                      <label key={index} className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <input
+                          type="radio"
+                          name="priceOption"
+                          value={option.type}
+                          checked={selectedPrice === option.type}
+                          onChange={(e) => setSelectedPrice(e.target.value)}
+                          className="text-primary focus:ring-primary"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{option.type}</span>
+                            <span className="font-bold text-primary">{option.price}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{option.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                    {/* Pay at Entry Option */}
+                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                       <input
                         type="radio"
                         name="priceOption"
-                        value={option.type}
-                        checked={selectedPrice === option.type}
+                        value="Pay at Entry"
+                        checked={selectedPrice === "Pay at Entry"}
                         onChange={(e) => setSelectedPrice(e.target.value)}
                         className="text-primary focus:ring-primary"
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{option.type}</span>
-                          <span className="font-bold text-primary">{option.price}</span>
+                          <span className="font-medium">Pay at Entry</span>
+                          <span className="font-bold text-primary">{event.price}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                        <p className="text-sm text-muted-foreground">Pay when you arrive at the event location</p>
                       </div>
                     </label>
-                  ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Add-ons Section */}
-              {event.addOns && event.addOns.length > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <h3 className="text-lg font-semibold">Settings</h3>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <Checkbox 
+                      id="allow-visible" 
+                      checked={allowVisible}
+                      onCheckedChange={(checked) => setAllowVisible(checked === true)}
+                    />
                     <div>
-                      <p className="text-sm font-medium">Optional Add-ons</p>
-                      <p className="text-xs text-muted-foreground">Enhance your experience with these optional extras</p>
+                      <Label htmlFor="allow-visible" className="text-sm font-medium">
+                        Allow others to see me attending
+                      </Label>
+                      <p className="text-xs text-muted-foreground">Others will see you're attending this event</p>
                     </div>
                   </div>
-                  
-                  <div className="space-y-3">
-                    {event.addOns.map((addon, index) => (
-                      <label key={addon.id} className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                        <Checkbox
-                          checked={selectedAddOns.includes(addon.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedAddOns([...selectedAddOns, addon.id]);
-                            } else {
-                              setSelectedAddOns(selectedAddOns.filter(id => id !== addon.id));
-                            }
-                          }}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{addon.name}</span>
-                            <span className="font-bold text-primary text-sm">{addon.price}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">{addon.description}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
                 </div>
-              )}
 
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">Visibility Settings</p>
-                    <p className="text-xs text-muted-foreground">Control how others see your participation</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Checkbox 
-                    id="allow-visible" 
-                    checked={allowVisible}
-                    onCheckedChange={(checked) => setAllowVisible(checked === true)}
-                  />
-                  <Label htmlFor="allow-visible" className="text-sm">
-                    Allow others to see me attending
-                  </Label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm font-medium">What to Expect</p>
-                    <p className="text-xs text-muted-foreground">You'll receive confirmation details via email</p>
-                  </div>
-                </div>
-                
                 <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">What to Expect</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Confirmation email with event details</li>
                     <li>• Location and parking information</li>
@@ -754,29 +717,67 @@ const eventData = {
                 </div>
               </div>
 
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setEnrollmentModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  disabled={!selectedPrice}
-                  onClick={() => {
-                    const addOnNames = selectedAddOns.map(id => event.addOns?.find(addon => addon.id === id)?.name).filter(Boolean).join(', ');
-                    const message = addOnNames 
-                      ? `Successfully enrolled in ${event.title} with add-ons: ${addOnNames}! Check your email for confirmation.`
-                      : `Successfully enrolled in ${event.title}! Check your email for confirmation.`;
-                    toast.success(message);
-                    setEnrollmentModalOpen(false);
-                    setSelectedAddOns([]);
-                  }}
-                >
-                  Confirm Enrollment
-                </Button>
+              {/* Right Column - Add-ons */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Optional Add-ons</h3>
+                  {event.addOns && event.addOns.length > 0 ? (
+                    <div className="space-y-3">
+                      {event.addOns.map((addon, index) => (
+                        <label key={addon.id} className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                          <Checkbox
+                            checked={selectedAddOns.includes(addon.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedAddOns([...selectedAddOns, addon.id]);
+                              } else {
+                                setSelectedAddOns(selectedAddOns.filter(id => id !== addon.id));
+                              }
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">{addon.name}</span>
+                              <span className="font-bold text-primary text-sm">{addon.price}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{addon.description}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-8 border rounded-lg bg-muted/30">
+                      <p>No add-ons available for this event</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-3 mt-8">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setEnrollmentModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    disabled={!selectedPrice}
+                    onClick={() => {
+                      const paymentMethod = selectedPrice === "Pay at Entry" ? "Pay at Entry" : "Online Payment";
+                      const addOnNames = selectedAddOns.map(id => event.addOns?.find(addon => addon.id === id)?.name).filter(Boolean).join(', ');
+                      const message = addOnNames 
+                        ? `Successfully enrolled in ${event.title} with add-ons: ${addOnNames}! Payment method: ${paymentMethod}. Check your email for confirmation.`
+                        : `Successfully enrolled in ${event.title}! Payment method: ${paymentMethod}. Check your email for confirmation.`;
+                      toast.success(message);
+                      setEnrollmentModalOpen(false);
+                      setSelectedAddOns([]);
+                    }}
+                  >
+                    Confirm Enrollment
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogContent>
