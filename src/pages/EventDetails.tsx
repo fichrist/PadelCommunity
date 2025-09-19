@@ -335,104 +335,6 @@ const eventData = {
       </div>
 
       <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Event Details and Pricing Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Event Details Container */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <div>
-                    <span className="font-medium text-sm text-muted-foreground">Date</span>
-                    <p className="font-medium">{event.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-primary" />
-                  <div>
-                    <span className="font-medium text-sm text-muted-foreground">Time</span>
-                    <p className="font-medium">{event.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  <div>
-                    <span className="font-medium text-sm text-muted-foreground">Location</span>
-                    <p className="font-medium">{event.location}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons in Event Details */}
-              <div className="space-y-3">
-                <Button 
-                  size="lg" 
-                  className="w-full"
-                  onClick={() => setEnrollmentModalOpen(true)}
-                >
-                  Join Event
-                </Button>
-                
-                <div className="text-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
-                  >
-                    <Flag className="h-3 w-3 mr-1" />
-                    Report Event
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pricing Container */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing Options</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {event.priceOptions.map((option, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <span className="font-medium">{option.type}</span>
-                      <p className="text-sm text-muted-foreground">{option.description}</p>
-                    </div>
-                    <span className="font-bold text-primary text-lg">{option.price}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add-ons Preview */}
-              {event.addOns && event.addOns.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-medium mb-3">Optional Add-ons</h3>
-                  <div className="space-y-2">
-                    {event.addOns.slice(0, 2).map((addon) => (
-                      <div key={addon.id} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{addon.name}</span>
-                        <span className="font-medium text-primary">{addon.price}</span>
-                      </div>
-                    ))}
-                    {event.addOns.length > 2 && (
-                      <p className="text-xs text-muted-foreground">
-                        +{event.addOns.length - 2} more options available during registration
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Content - About Event and Event Community Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* About Event */}
@@ -460,8 +362,9 @@ const eventData = {
             </Card>
           </div>
 
-          {/* Event Community Sidebar */}
-          <div>
+          {/* Right Sidebar with Event Community, Pricing, and Event Details */}
+          <div className="space-y-6">
+            {/* Event Community */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -591,6 +494,104 @@ const eventData = {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pricing Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing Options</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {event.priceOptions.map((option, index) => (
+                    <div key={index} className={`flex items-center justify-between p-3 border rounded-lg ${option.soldOut ? 'opacity-50 bg-muted/30' : ''}`}>
+                      <div>
+                        <span className={`font-medium ${option.soldOut ? 'line-through' : ''}`}>{option.type}</span>
+                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                        {option.soldOut && (
+                          <p className="text-xs text-destructive font-medium">Sold Out</p>
+                        )}
+                      </div>
+                      <span className={`font-bold text-lg ${option.soldOut ? 'text-muted-foreground line-through' : 'text-primary'}`}>{option.price}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add-ons Preview */}
+                {event.addOns && event.addOns.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-medium mb-3">Optional Add-ons</h3>
+                    <div className="space-y-2">
+                      {event.addOns.slice(0, 2).map((addon) => (
+                        <div key={addon.id} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{addon.name}</span>
+                          <span className="font-medium text-primary">{addon.price}</span>
+                        </div>
+                      ))}
+                      {event.addOns.length > 2 && (
+                        <p className="text-xs text-muted-foreground">
+                          +{event.addOns.length - 2} more options available during registration
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Event Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Event Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <div>
+                      <span className="font-medium text-sm text-muted-foreground">Date</span>
+                      <p className="font-medium">{event.date}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <div>
+                      <span className="font-medium text-sm text-muted-foreground">Time</span>
+                      <p className="font-medium">{event.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <div>
+                      <span className="font-medium text-sm text-muted-foreground">Location</span>
+                      <p className="font-medium">{event.location}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons in Event Details */}
+                <div className="space-y-3">
+                  <Button 
+                    size="lg" 
+                    className="w-full"
+                    onClick={() => setEnrollmentModalOpen(true)}
+                  >
+                    Join Event
+                  </Button>
+                  
+                  <div className="text-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                      onClick={() => toast.success("Event reported. Thank you for helping keep our community safe.")}
+                    >
+                      <Flag className="h-3 w-3 mr-1" />
+                      Report Event
+                    </Button>
                   </div>
                 </div>
               </CardContent>
