@@ -18,6 +18,21 @@ export default {
 			}
 		},
 		extend: {
+			fontSize: {
+				'xs': ['0.875rem', { lineHeight: '1.25rem' }],     // was 0.75rem
+				'sm': ['1rem', { lineHeight: '1.375rem' }],        // was 0.875rem  
+				'base': ['1.125rem', { lineHeight: '1.625rem' }],  // was 1rem
+				'lg': ['1.25rem', { lineHeight: '1.75rem' }],      // was 1.125rem
+				'xl': ['1.375rem', { lineHeight: '1.875rem' }],    // was 1.25rem
+				'2xl': ['1.625rem', { lineHeight: '2rem' }],       // was 1.5rem
+				'3xl': ['2rem', { lineHeight: '2.25rem' }],        // was 1.875rem
+				'4xl': ['2.375rem', { lineHeight: '2.5rem' }],     // was 2.25rem
+				'5xl': ['3.125rem', { lineHeight: '1' }],          // was 3rem
+				'6xl': ['3.875rem', { lineHeight: '1' }],          // was 3.75rem
+				'7xl': ['4.625rem', { lineHeight: '1' }],          // was 4.5rem
+				'8xl': ['6.125rem', { lineHeight: '1' }],          // was 6rem
+				'9xl': ['8.125rem', { lineHeight: '1' }],          // was 8rem
+			},
 			fontFamily: {
 				'comfortaa': ['Comfortaa', 'cursive'],
 				'mystical': ['Inter', 'Comfortaa', 'system-ui', 'sans-serif'],
