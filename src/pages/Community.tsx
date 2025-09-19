@@ -410,65 +410,19 @@ const Community = () => {
                           </div>
                         </div>
                       ))}
-                    </div>
+                     </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => navigate('/chat')}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      More Talks
+                    </Button>
                   </CardContent>
                 </Card>
-
-                {/* Healers to Follow */}
-                <Card className="bg-card/90 backdrop-blur-sm border border-border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span>Healers to Follow</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0 max-h-[300px] overflow-y-auto">
-                    {featuredMembers.slice(0, 5).map((member, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                         <div className="flex items-center space-x-3">
-                           <Avatar 
-                             className="h-8 w-8 cursor-pointer"
-                             onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                           >
-                             <AvatarImage src={member.avatar} />
-                             <AvatarFallback className="bg-primary/10 text-xs">
-                               {member.name.split(' ').map(n => n[0]).join('')}
-                             </AvatarFallback>
-                           </Avatar>
-                           <div>
-                             <p 
-                               className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
-                               onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                             >
-                               {member.name}
-                             </p>
-                             <p className="text-xs text-muted-foreground">{member.role}</p>
-                             <p className="text-xs text-muted-foreground flex items-center">
-                               <MapPin className="h-3 w-3 mr-1" />
-                               {member.location}
-                             </p>
-                           </div>
-                         </div>
-                         <Button 
-                           variant="ghost" 
-                           size="sm" 
-                           className="p-2 h-auto hover:bg-red-50"
-                           onClick={() => {
-                             if (followedHealers.includes(member.name)) {
-                               setFollowedHealers(prev => prev.filter(name => name !== member.name));
-                               toast.success(`Unfollowed ${member.name}`);
-                             } else {
-                               setFollowedHealers(prev => [...prev, member.name]);
-                               toast.success(`Following ${member.name}`);
-                             }
-                           }}
-                         >
-                           <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
-                         </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                  </Card>
 
                 {/* People to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
@@ -478,51 +432,123 @@ const Community = () => {
                       <span>People to Follow</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0 max-h-[300px] overflow-y-auto">
-                    {featuredMembers.slice(5, 10).map((member, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                         <div className="flex items-center space-x-3">
-                           <Avatar 
-                             className="h-8 w-8 cursor-pointer"
-                             onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                           >
-                             <AvatarImage src={member.avatar} />
-                             <AvatarFallback className="bg-primary/10 text-xs">
-                               {member.name.split(' ').map(n => n[0]).join('')}
-                             </AvatarFallback>
-                           </Avatar>
-                           <div>
-                             <p 
-                               className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
-                               onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Healers Section */}
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        Healers
+                      </h4>
+                      <div className="space-y-3 max-h-[200px] overflow-y-auto">
+                        {featuredMembers.slice(0, 4).map((member, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                             <div className="flex items-center space-x-3">
+                               <Avatar 
+                                 className="h-8 w-8 cursor-pointer"
+                                 onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                               >
+                                 <AvatarImage src={member.avatar} />
+                                 <AvatarFallback className="bg-primary/10 text-xs">
+                                   {member.name.split(' ').map(n => n[0]).join('')}
+                                 </AvatarFallback>
+                               </Avatar>
+                               <div>
+                                 <p 
+                                   className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
+                                   onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                 >
+                                   {member.name}
+                                 </p>
+                                 <p className="text-xs text-muted-foreground">{member.role}</p>
+                                 <p className="text-xs text-muted-foreground flex items-center">
+                                   <MapPin className="h-3 w-3 mr-1" />
+                                   {member.location}
+                                 </p>
+                               </div>
+                             </div>
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               className="p-2 h-auto hover:bg-red-50"
+                               onClick={() => {
+                                 if (followedHealers.includes(member.name)) {
+                                   setFollowedHealers(prev => prev.filter(name => name !== member.name));
+                                   toast.success(`Unfollowed ${member.name}`);
+                                 } else {
+                                   setFollowedHealers(prev => [...prev, member.name]);
+                                   toast.success(`Following ${member.name}`);
+                                 }
+                               }}
                              >
-                               {member.name}
-                             </p>
-                             <p className="text-xs text-muted-foreground">{member.role}</p>
-                             <p className="text-xs text-muted-foreground flex items-center">
-                               <MapPin className="h-3 w-3 mr-1" />
-                               {member.location}
-                             </p>
-                           </div>
-                         </div>
-                         <Button 
-                           variant="ghost" 
-                           size="sm" 
-                           className="p-2 h-auto hover:bg-red-50"
-                           onClick={() => {
-                             if (followedHealers.includes(member.name)) {
-                               setFollowedHealers(prev => prev.filter(name => name !== member.name));
-                               toast.success(`Unfollowed ${member.name}`);
-                             } else {
-                               setFollowedHealers(prev => [...prev, member.name]);
-                               toast.success(`Following ${member.name}`);
-                             }
-                           }}
-                         >
-                           <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
-                         </Button>
+                               <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                             </Button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Participants Section */}
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
+                        <User className="h-3 w-3 mr-1" />
+                        Participants
+                      </h4>
+                      <div className="space-y-3 max-h-[150px] overflow-y-auto">
+                        {featuredMembers.slice(4, 8).map((member, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                             <div className="flex items-center space-x-3">
+                               <Avatar 
+                                 className="h-8 w-8 cursor-pointer"
+                                 onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                               >
+                                 <AvatarImage src={member.avatar} />
+                                 <AvatarFallback className="bg-primary/10 text-xs">
+                                   {member.name.split(' ').map(n => n[0]).join('')}
+                                 </AvatarFallback>
+                               </Avatar>
+                               <div>
+                                 <p 
+                                   className="font-medium text-sm leading-tight cursor-pointer hover:text-primary transition-colors"
+                                   onClick={() => navigate(`/healer/${member.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                 >
+                                   {member.name}
+                                 </p>
+                                 <p className="text-xs text-muted-foreground flex items-center">
+                                   <MapPin className="h-3 w-3 mr-1" />
+                                   {member.location}
+                                 </p>
+                               </div>
+                             </div>
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               className="p-2 h-auto hover:bg-red-50"
+                               onClick={() => {
+                                 if (followedHealers.includes(member.name)) {
+                                   setFollowedHealers(prev => prev.filter(name => name !== member.name));
+                                   toast.success(`Unfollowed ${member.name}`);
+                                 } else {
+                                   setFollowedHealers(prev => [...prev, member.name]);
+                                   toast.success(`Following ${member.name}`);
+                                 }
+                               }}
+                             >
+                               <Heart className={`h-4 w-4 ${followedHealers.includes(member.name) ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+                             </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => navigate('/people')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Look for More
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -1195,15 +1221,15 @@ const Community = () => {
                       </div>
                     </div>
                     
-                    <Button 
-                      variant="outline" 
-                      size="lg" 
-                      className="w-full"
-                      onClick={() => navigate('/events')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View All Events
-                    </Button>
+                     <Button 
+                       variant="outline" 
+                       size="lg" 
+                       className="w-full"
+                       onClick={() => navigate('/events')}
+                     >
+                       <Calendar className="h-4 w-4 mr-2" />
+                       More Events
+                     </Button>
                   </CardContent>
                 </Card>
               </div>
