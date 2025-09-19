@@ -76,9 +76,9 @@ const eventData = {
       location: "Sacred Grove Sanctuary, Sedona AZ",
       price: "$65",
       priceOptions: [
-        { type: "Early Bird", price: "$55", description: "Limited time offer" },
-        { type: "Regular", price: "$65", description: "Standard price" },
-        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony" }
+        { type: "Early Bird", price: "$55", description: "Limited time offer", soldOut: true },
+        { type: "Regular", price: "$65", description: "Standard price", soldOut: false },
+        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony", soldOut: false }
       ],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
       addOns: [
@@ -122,9 +122,9 @@ const eventData = {
       location: "Crystal Cave Studio, Asheville NC",
       price: "$225",
       priceOptions: [
-        { type: "Workshop Only", price: "$195", description: "3-day workshop access" },
-        { type: "Workshop + Kit", price: "$225", description: "Includes crystal starter kit" },
-        { type: "Premium Package", price: "$295", description: "Workshop, kit & private session" }
+        { type: "Workshop Only", price: "$195", description: "3-day workshop access", soldOut: false },
+        { type: "Workshop + Kit", price: "$225", description: "Includes crystal starter kit", soldOut: false },
+        { type: "Premium Package", price: "$295", description: "Workshop, kit & private session", soldOut: true }
       ],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
       addOns: [
@@ -638,33 +638,66 @@ const eventData = {
       </div>
         
         {/* Enrollment Modal */}
-        <Dialog open={enrollmentModalOpen} onOpenChange={setEnrollmentModalOpen}>
+        <Dialog open={enrollmentModalOpen} onOpenChange={(open) => {
+          setEnrollmentModalOpen(open);
+          if (open) {
+            // Auto-select pricing option if only one available
+            const availableOptions = event.priceOptions.filter(option => !option.soldOut);
+            if (availableOptions.length === 1) {
+              setSelectedPrice(availableOptions[0].type);
+            } else if (availableOptions.length === 0) {
+              // Also check if "Pay at Entry" is the only option
+              setSelectedPrice("Pay at Entry");
+            }
+          }
+        }}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Join {event.title}</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-8">
-              {/* Left Column - Payment Options */}
+              {/* Left Column - Pricing Options */}
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Payment Options</h3>
+                  <h3 className="text-lg font-semibold mb-4">Pricing Options</h3>
                   <div className="space-y-3">
                     {event.priceOptions.map((option, index) => (
-                      <label key={index} className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <label 
+                        key={index} 
+                        className={`flex items-center space-x-3 p-4 border rounded-lg transition-colors ${
+                          option.soldOut 
+                            ? 'cursor-not-allowed opacity-60 bg-muted/30' 
+                            : 'cursor-pointer hover:bg-muted/50'
+                        }`}
+                      >
                         <input
                           type="radio"
                           name="priceOption"
                           value={option.type}
                           checked={selectedPrice === option.type}
                           onChange={(e) => setSelectedPrice(e.target.value)}
-                          className="text-primary focus:ring-primary"
+                          disabled={option.soldOut}
+                          className="text-primary focus:ring-primary disabled:opacity-50"
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium">{option.type}</span>
-                            <span className="font-bold text-primary">{option.price}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className={`font-medium ${option.soldOut ? 'text-muted-foreground' : ''}`}>
+                                {option.type}
+                              </span>
+                              {option.soldOut && (
+                                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                                  SOLD OUT
+                                </span>
+                              )}
+                            </div>
+                            <span className={`font-bold ${option.soldOut ? 'text-muted-foreground' : 'text-primary'}`}>
+                              {option.price}
+                            </span>
                           </div>
-                          <p className="text-sm text-muted-foreground">{option.description}</p>
+                          <p className={`text-sm ${option.soldOut ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                            {option.description}
+                          </p>
                         </div>
                       </label>
                     ))}
