@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, Info } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, Info, Ban } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -32,7 +32,7 @@ const People = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean }>>({});
+  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean; block: boolean }>>({});
   const navigate = useNavigate();
 
   const healers = [
@@ -430,16 +430,16 @@ const People = () => {
                                        e.stopPropagation();
                                        if (isFollowed) {
                                          setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
-                                         setSelectedIcons(prev => ({
-                                           ...prev,
-                                           [originalIndex]: { calendar: false, info: false }
-                                         }));
+                                          setSelectedIcons(prev => ({
+                                            ...prev,
+                                            [originalIndex]: { calendar: false, info: false, block: false }
+                                          }));
                                        } else {
                                          setFollowedUsers(prev => [...prev, originalIndex]);
-                                         setSelectedIcons(prev => ({
-                                           ...prev,
-                                           [originalIndex]: { calendar: true, info: true }
-                                         }));
+                                          setSelectedIcons(prev => ({
+                                            ...prev,
+                                            [originalIndex]: { calendar: true, info: true, block: false }
+                                          }));
                                        }
                                      }}
                                   >
@@ -773,10 +773,10 @@ const People = () => {
                                   <AlertDialogAction 
                                      onClick={() => {
                                        setFollowedUsers(prev => prev.filter(id => id !== index));
-                                       setSelectedIcons(prev => ({
-                                         ...prev,
-                                         [index]: { calendar: false, info: false }
-                                       }));
+                                        setSelectedIcons(prev => ({
+                                          ...prev,
+                                          [index]: { calendar: false, info: false, block: false }
+                                        }));
                                        setUnfollowDialogOpen(false);
                                        setUserToUnfollow(null);
                                        navigate('/people');
@@ -798,10 +798,10 @@ const People = () => {
                                    onClick={(e) => {
                                      e.stopPropagation();
                                      setFollowedUsers(prev => [...prev, index]);
-                                     setSelectedIcons(prev => ({
-                                       ...prev,
-                                       [index]: { calendar: true, info: true }
-                                     }));
+                                      setSelectedIcons(prev => ({
+                                        ...prev,
+                                        [index]: { calendar: true, info: true, block: false }
+                                      }));
                                    }}
                                  >
                                    <Heart className="h-4 w-4 text-red-500" />
@@ -881,6 +881,29 @@ const People = () => {
                                   : 'text-muted-foreground hover:text-primary'
                               }`} />
                             </Button>
+                            {filter === "following" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-1 h-auto hover:bg-muted/50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedIcons(prev => ({
+                                    ...prev,
+                                    [index]: {
+                                      ...prev[index],
+                                      block: !prev[index]?.block
+                                    }
+                                  }));
+                                }}
+                              >
+                                <Ban className={`h-4 w-4 transition-colors ${
+                                  selectedIcons[index]?.block 
+                                    ? 'text-red-500 fill-red-500' 
+                                    : 'text-muted-foreground hover:text-primary'
+                                }`} />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
