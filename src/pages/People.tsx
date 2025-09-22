@@ -881,29 +881,34 @@ const People = () => {
                                   : 'text-muted-foreground hover:text-primary'
                               }`} />
                             </Button>
-                            {filter === "following" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="p-1 h-auto hover:bg-muted/50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedIcons(prev => ({
-                                    ...prev,
-                                    [index]: {
-                                      ...prev[index],
-                                      block: !prev[index]?.block
-                                    }
-                                  }));
-                                }}
-                              >
-                                <Ban className={`h-4 w-4 transition-colors ${
-                                  selectedIcons[index]?.block 
-                                    ? 'text-red-500 fill-red-500' 
-                                    : 'text-muted-foreground hover:text-primary'
-                                }`} />
-                              </Button>
-                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-auto hover:bg-muted/50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedIcons(prev => ({
+                                      ...prev,
+                                      [index]: {
+                                        ...prev[index],
+                                        block: !prev[index]?.block
+                                      }
+                                    }));
+                                  }}
+                                >
+                                  <Ban className={`h-4 w-4 transition-colors ${
+                                    selectedIcons[index]?.block 
+                                      ? 'text-red-500 fill-red-500' 
+                                      : 'text-muted-foreground hover:text-primary'
+                                  }`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{selectedIcons[index]?.block ? 'Unblock' : 'Block'}</p>
+                              </TooltipContent>
+                            </Tooltip>
                             <Button
                               variant="ghost"
                               size="sm"
