@@ -10,6 +10,7 @@ import Community from "./pages/Community";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import EventDetails from "./pages/EventDetails";
+import EditableEventDetails from "./pages/EditableEventDetails";
 import HealerProfile from "./pages/HealerProfile";
 import CreateEvent from "./pages/CreateEvent";
 import Settings from "./pages/Settings";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/" element={<Community />} />
           <Route path="/events" element={<Events />} />
           <Route path="/people" element={<People />} />
+          <Route path="/event/1" element={<EditableEventDetails />} />
           <Route path="/event/:eventId" element={<EventDetails />} />
           <Route path="/healer/:healerId" element={<HealerProfile />} />
           <Route path="/home" element={<Index />} />
