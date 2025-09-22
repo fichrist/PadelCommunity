@@ -495,6 +495,24 @@ const eventData = {
                       ))}
                     </div>
                   </div>
+
+                  {/* Group Chat Section */}
+                  <div className="pt-4 border-t border-border">
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        navigate('/chat');
+                        toast.success(`Started group chat: "${event.title} - ${event.date}"`);
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Start Group Chat
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Chat with all organizers and attendees
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
