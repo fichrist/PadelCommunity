@@ -567,7 +567,7 @@ const Community = () => {
                            {/* Event Image - 4:3 Aspect Ratio - Clickable */}
                            <div 
                              className="w-48 h-36 flex-shrink-0 cursor-pointer"
-                             onClick={() => navigate(`/event/${post.eventId}`)}
+                             onClick={() => navigate(post.eventId === "1" ? `/event/1` : `/event/${post.eventId}`)}
                            >
                              <img 
                                src={post.image} 
@@ -580,7 +580,7 @@ const Community = () => {
                            <div className="flex-1 min-w-0">
                              <h2 
                                className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
-                               onClick={() => navigate(`/event/${post.eventId}`)}
+                               onClick={() => navigate(post.eventId === "1" ? `/event/1` : `/event/${post.eventId}`)}
                              >
                                {post.title}
                              </h2>
@@ -915,7 +915,7 @@ const Community = () => {
                   <CardContent className="space-y-6 pt-0 h-[calc(100%-80px)] overflow-y-auto">
                     <div 
                       className="relative overflow-hidden rounded-xl cursor-pointer group shadow-md hover:shadow-lg transition-all"
-                      onClick={() => navigate('/events/1')}
+                      onClick={() => navigate('/event/1')}
                     >
                       <img 
                         src={soundHealingEvent} 
