@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag, Send } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
 
@@ -40,6 +41,31 @@ const EventDetails = () => {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+  const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+
+  const handleBroadcastMessage = async () => {
+    if (!broadcastMessage.trim()) {
+      toast.error("Please enter a message to send");
+      return;
+    }
+
+    const nonAnonymousAttendees = event.attendees.filter(a => !a.isAnonymous);
+    setBroadcastModalOpen(false);
+    
+    // Send message to each attendee individually with a delay between each
+    for (let i = 0; i < nonAnonymousAttendees.length; i++) {
+      const attendee = nonAnonymousAttendees[i];
+      setTimeout(() => {
+        toast.success(`Message sent to ${attendee.name}`, {
+          description: `"${broadcastMessage.substring(0, 50)}${broadcastMessage.length > 50 ? '...' : ''}"`
+        });
+      }, i * 500); // 500ms delay between each popup
+    }
+    
+    setBroadcastMessage("");
+    toast.success(`Broadcasting to ${nonAnonymousAttendees.length} attendees`);
+  };
 
 const eventData = {
     "1": {
@@ -497,7 +523,7 @@ const eventData = {
                   </div>
 
                   {/* Group Chat Section */}
-                  <div className="pt-4 border-t border-border">
+                  <div className="pt-4 border-t border-border space-y-2">
                     <Button 
                       size="sm" 
                       className="w-full"
@@ -509,8 +535,19 @@ const eventData = {
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Start Group Chat
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Chat with all organizers and attendees
+                    
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setBroadcastModalOpen(true)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Message to All
+                    </Button>
+                    
+                    <p className="text-xs text-muted-foreground text-center">
+                      Chat with organizers and attendees
                     </p>
                   </div>
                 </div>
@@ -965,6 +1002,45 @@ const eventData = {
           </DialogContent>
         </Dialog>
         </div>
+
+        {/* Broadcast Message Modal */}
+        <Dialog open={broadcastModalOpen} onOpenChange={setBroadcastModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Message to All Attendees</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="broadcast-message" className="text-sm font-medium">
+                  Message
+                </Label>
+                <Textarea
+                  id="broadcast-message"
+                  placeholder="Type your message here..."
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  className="min-h-[100px] mt-2"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                This message will be sent individually to {event.attendees.filter(a => !a.isAnonymous).length} attendees 
+                (anonymous attendees will not receive the message)
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBroadcastModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleBroadcastMessage}>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send to All
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
