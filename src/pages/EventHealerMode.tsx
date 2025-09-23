@@ -46,6 +46,7 @@ const EventHealerMode = () => {
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [attendeesStates, setAttendeesStates] = useState<Record<number, string>>({});
   const [userSearchModalOpen, setUserSearchModalOpen] = useState(false);
+  const [isHealerMode, setIsHealerMode] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const mockUsers = [
@@ -324,12 +325,36 @@ const EventHealerMode = () => {
               Back
             </Button>
             
-            {/* Healer Mode Badge */}
+            {/* Mode Toggle */}
             <div className="flex justify-center mb-4">
-              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                Healer Mode - Full Attendee Visibility
-              </Badge>
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <Button
+                  variant={!isHealerMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => navigate(`/eventdetails/${eventId}`)}
+                  className={`px-4 py-2 rounded-md transition-colors ${!isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Reader
+                </Button>
+                <Button
+                  variant={isHealerMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setIsHealerMode(true)}
+                  className={`px-4 py-2 rounded-md transition-colors ${isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Healer
+                </Button>
+              </div>
             </div>
+
+            {/* Healer Mode Badge */}
+            {isHealerMode && (
+              <div className="flex justify-center mb-4">
+                <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
+                  Healer Mode - Full Attendee Visibility
+                </Badge>
+              </div>
+            )}
             
             {/* Title with Edit Button */}
             <div className="flex items-center justify-center mb-8 relative">
@@ -361,6 +386,11 @@ const EventHealerMode = () => {
                   alt={event.title}
                   className="w-full h-64 object-cover"
                 />
+                <CardContent className="p-4">
+                  <p className="text-muted-foreground leading-relaxed">
+                    {event.description}
+                  </p>
+                </CardContent>
               </Card>
 
               {/* Event Details */}
