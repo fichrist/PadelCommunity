@@ -39,7 +39,7 @@ const Navigation = () => {
               >
                 <Link to={path} className="flex items-center space-x-2">
                   <Icon className="h-8 w-8" />
-                  <span className="hidden sm:inline">{label}</span>
+                  <span>{label}</span>
                 </Link>
               </Button>
             ))}
