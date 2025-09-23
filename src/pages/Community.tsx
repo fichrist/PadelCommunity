@@ -17,6 +17,7 @@ import ImageModal from "@/components/ImageModal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import SignupCard from "@/components/SignupCard";
 
 // Import images
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -588,6 +589,9 @@ const Community = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-4 space-y-4">
+              {/* Signup Card for new users */}
+              <SignupCard />
+              
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
                   
