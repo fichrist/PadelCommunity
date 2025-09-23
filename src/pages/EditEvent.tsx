@@ -32,6 +32,7 @@ const EditEvent = () => {
   const [fullDescription, setFullDescription] = useState("");
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [time, setTime] = useState("");
   const [prices, setPrices] = useState<{text: string, amount: string}[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -47,6 +48,7 @@ const EditEvent = () => {
       fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening.",
       image: soundHealingEvent,
       date: "March 15, 2024",
+      dateTo: "",
       time: "7:00 PM - 9:30 PM",
       location: "Sacred Grove Sanctuary, Sedona AZ",
       prices: [{text: "Regular", amount: "65"}, {text: "Early Bird", amount: "55"}],
@@ -59,6 +61,7 @@ const EditEvent = () => {
       fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques.",
       image: crystalWorkshopEvent,
       date: "April 2-4, 2024",
+      dateTo: "",
       time: "10:00 AM - 4:00 PM",
       location: "Crystal Cave Studio, Asheville NC",
       prices: [{text: "3-Day Workshop", amount: "225"}],
@@ -76,6 +79,7 @@ const EditEvent = () => {
       setFullDescription(event.fullDescription);
       setLocation(event.location);
       setDate(event.date);
+      setDateTo(event.dateTo || "");
       setTime(event.time);
       setPrices(event.prices || []);
       setTags(event.tags);
@@ -152,6 +156,7 @@ const EditEvent = () => {
       fullDescription,
       location,
       date,
+      dateTo,
       time,
       prices,
       tags,
@@ -327,6 +332,20 @@ const EditEvent = () => {
                       placeholder="Event date..."
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      className="pl-10 bg-background/50"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="dateTo">Date To (Optional)</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="dateTo"
+                      placeholder="End date (optional)..."
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
                       className="pl-10 bg-background/50"
                     />
                   </div>
