@@ -45,12 +45,21 @@ const EventHealerMode = () => {
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [attendeesStates, setAttendeesStates] = useState<Record<number, string>>({});
-  const [editingDate, setEditingDate] = useState(false);
-  const [editingLocation, setEditingLocation] = useState(false);
-  const [editingPrice, setEditingPrice] = useState(false);
-  const [tempDate, setTempDate] = useState("");
-  const [tempLocation, setTempLocation] = useState("");
-  const [tempPrice, setTempPrice] = useState("");
+  const [userSearchModalOpen, setUserSearchModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const mockUsers = [
+    { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", role: "Crystal Healer" },
+    { name: "Michael Earth", avatar: davidProfile, location: "Sedona, AZ", role: "Energy Worker" },
+    { name: "Luna Wisdom", avatar: ariaProfile, location: "Tucson, AZ", role: "Sound Healer" },
+    { name: "River Stone", avatar: phoenixProfile, location: "Flagstaff, AZ", role: "Reiki Master" },
+  ];
+
+  const filteredUsers = mockUsers.filter(user => 
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -193,15 +202,21 @@ const EventHealerMode = () => {
   };
 
   const handleAddOrganizer = () => {
+    setUserSearchModalOpen(true);
+  };
+
+  const handleSelectUser = (user: typeof mockUsers[0]) => {
     const newOrganizer = {
-      name: "New Organizer",
-      avatar: elenaProfile,
-      role: "Organizer",
-      location: "Location TBD",
+      name: user.name,
+      avatar: user.avatar,
+      role: user.role,
+      location: user.location,
       previousEvents: []
     };
     setOrganizers(prev => [...prev, newOrganizer]);
-    toast.success("New organizer added");
+    setUserSearchModalOpen(false);
+    setSearchQuery("");
+    toast.success(`${user.name} added as organizer`);
   };
 
   const handleAttendeeStateChange = (attendeeIndex: number, newState: string) => {
@@ -211,34 +226,18 @@ const EventHealerMode = () => {
     }));
   };
 
-  const handleEditDate = () => {
-    setTempDate(event.date);
-    setEditingDate(true);
-  };
-
-  const handleSaveDate = () => {
-    setEditingDate(false);
-    toast.success("Date updated");
-  };
-
-  const handleEditLocation = () => {
-    setTempLocation(event.location);
-    setEditingLocation(true);
-  };
-
-  const handleSaveLocation = () => {
-    setEditingLocation(false);
-    toast.success("Location updated");
-  };
-
-  const handleEditPrice = () => {
-    setTempPrice(event.price);
-    setEditingPrice(true);
-  };
-
-  const handleSavePrice = () => {
-    setEditingPrice(false);
-    toast.success("Price updated");
+  const handleEditEvent = () => {
+    // Navigate to create event page with prefilled data
+    const eventParams = new URLSearchParams({
+      edit: 'true',
+      eventId: eventId || '',
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      location: event.location,
+      price: event.price
+    });
+    navigate(`/createevent?${eventParams.toString()}`);
   };
 
   return (
@@ -349,7 +348,7 @@ const EventHealerMode = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/eventhealermodeedit/${eventId}`)}
+                onClick={handleEditEvent}
                 className="ml-4 border-primary/30 text-primary hover:bg-primary/10"
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -394,86 +393,21 @@ const EventHealerMode = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-primary" />
-                      <div className="flex items-center space-x-2">
-                        {editingDate ? (
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              value={tempDate}
-                              onChange={(e) => setTempDate(e.target.value)}
-                              className="text-sm"
-                            />
-                            <Button size="sm" onClick={handleSaveDate}>
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingDate(false)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <div>
-                              <p className="font-medium">{event.date}</p>
-                              <p className="text-sm text-muted-foreground">{event.time}</p>
-                            </div>
-                            <Button size="sm" variant="ghost" onClick={handleEditDate}>
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
+                      <div>
+                        <p className="font-medium">{event.date}</p>
+                        <p className="text-sm text-muted-foreground">{event.time}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-5 w-5 text-primary" />
-                      <div className="flex items-center space-x-2">
-                        {editingLocation ? (
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              value={tempLocation}
-                              onChange={(e) => setTempLocation(e.target.value)}
-                              className="text-sm"
-                            />
-                            <Button size="sm" onClick={handleSaveLocation}>
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingLocation(false)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <p className="font-medium">{event.location}</p>
-                            <Button size="sm" variant="ghost" onClick={handleEditLocation}>
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
+                      <div>
+                        <p className="font-medium">{event.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <DollarSign className="h-5 w-5 text-primary" />
-                      <div className="flex items-center space-x-2">
-                        {editingPrice ? (
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              value={tempPrice}
-                              onChange={(e) => setTempPrice(e.target.value)}
-                              className="text-sm w-20"
-                            />
-                            <Button size="sm" onClick={handleSavePrice}>
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingPrice(false)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <p className="font-medium">{event.price}</p>
-                            <Button size="sm" variant="ghost" onClick={handleEditPrice}>
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
+                      <div>
+                        <p className="font-medium">{event.price}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -607,6 +541,53 @@ const EventHealerMode = () => {
             </div>
           </div>
         </div>
+
+        {/* User Search Modal */}
+        <Dialog open={userSearchModalOpen} onOpenChange={setUserSearchModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Search Users to Add as Organizer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="user-search">Search Users</Label>
+                <Input
+                  id="user-search"
+                  placeholder="Search by name, location, or role..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {filteredUsers.map((user, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center space-x-3 p-3 hover:bg-muted rounded-lg cursor-pointer"
+                    onClick={() => handleSelectUser(user)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>{user.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-muted-foreground">{user.role}</p>
+                      <p className="text-xs text-muted-foreground">{user.location}</p>
+                    </div>
+                  </div>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No users found</p>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setUserSearchModalOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Broadcast Modal */}
         <Dialog open={broadcastModalOpen} onOpenChange={setBroadcastModalOpen}>

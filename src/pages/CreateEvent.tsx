@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,11 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  
+  const isEditMode = searchParams.get('edit') === 'true';
+  const eventId = searchParams.get('eventId');
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -29,6 +33,27 @@ const CreateEvent = () => {
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+
+  // Prefill data when editing
+  useEffect(() => {
+    if (isEditMode) {
+      const titleParam = searchParams.get('title');
+      const descriptionParam = searchParams.get('description');
+      const dateParam = searchParams.get('date');
+      const locationParam = searchParams.get('location');
+      const priceParam = searchParams.get('price');
+
+      if (titleParam) setTitle(titleParam);
+      if (descriptionParam) setDescription(descriptionParam);
+      if (locationParam) setLocation(locationParam);
+      if (dateParam) {
+        // Convert date string to datetime-local format
+        const date = new Date(dateParam);
+        const localDateTime = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+        setStartDate(localDateTime);
+      }
+    }
+  }, [searchParams, isEditMode]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -80,11 +105,15 @@ const CreateEvent = () => {
     });
     
     toast({
-      title: "Event Created",
-      description: "Your event has been created successfully.",
+      title: isEditMode ? "Event Updated" : "Event Created",
+      description: isEditMode ? "Your event has been updated successfully." : "Your event has been created successfully.",
     });
 
-    navigate('/');
+    if (isEditMode && eventId) {
+      navigate(`/eventhealermode/${eventId}`);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -171,18 +200,20 @@ const CreateEvent = () => {
         {/* Page Title */}
         <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Create Event</h1>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
-              </Button>
-            </div>
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-foreground font-comfortaa">
+                  {isEditMode ? "Edit Event" : "Create Event"}
+                </h1>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => isEditMode && eventId ? navigate(`/eventhealermode/${eventId}`) : navigate('/')}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </Button>
+              </div>
           </div>
         </div>
 
@@ -190,7 +221,9 @@ const CreateEvent = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="bg-card/90 backdrop-blur-sm border border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Event Details</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                {isEditMode ? "Edit Event Details" : "Event Details"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Basic Information */}
@@ -343,11 +376,14 @@ const CreateEvent = () => {
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => navigate('/')}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => isEditMode && eventId ? navigate(`/eventhealermode/${eventId}`) : navigate('/')}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSubmit} className="min-w-32">
-                  Create Event
+                  {isEditMode ? "Update Event" : "Create Event"}
                 </Button>
               </div>
             </CardContent>
