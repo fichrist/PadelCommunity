@@ -32,7 +32,7 @@ const People = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean; block: boolean }>>({});
+  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
   const navigate = useNavigate();
 
   const healers = [
@@ -434,16 +434,16 @@ const People = () => {
                                        e.stopPropagation();
                                        if (isFollowed) {
                                          setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
-                                          setSelectedIcons(prev => ({
-                                            ...prev,
-                                            [originalIndex]: { calendar: false, info: false, block: false }
-                                          }));
+                                           setSelectedIcons(prev => ({
+                                             ...prev,
+                                             [originalIndex]: { calendar: false, info: false, block: false, notification: false }
+                                           }));
                                        } else {
                                          setFollowedUsers(prev => [...prev, originalIndex]);
-                                          setSelectedIcons(prev => ({
-                                            ...prev,
-                                            [originalIndex]: { calendar: true, info: true, block: false }
-                                          }));
+                                           setSelectedIcons(prev => ({
+                                             ...prev,
+                                             [originalIndex]: { calendar: true, info: true, block: false, notification: false }
+                                           }));
                                        }
                                      }}
                                   >
@@ -754,24 +754,6 @@ const People = () => {
                           </div>
                         </div>
                         <div className="relative flex items-center space-x-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="p-2 h-auto hover:bg-muted/50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Notification functionality can be added here
-                                }}
-                              >
-                                <Bell className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Notifications</p>
-                            </TooltipContent>
-                          </Tooltip>
                            {followedUsers.includes(index) ? (
                              <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
                                <AlertDialogTrigger asChild>
@@ -812,7 +794,7 @@ const People = () => {
                                        setFollowedUsers(prev => prev.filter(id => id !== index));
                                         setSelectedIcons(prev => ({
                                           ...prev,
-                                          [index]: { calendar: false, info: false, block: false }
+                                          [index]: { calendar: false, info: false, block: false, notification: false }
                                         }));
                                        setUnfollowDialogOpen(false);
                                        setUserToUnfollow(null);
@@ -845,6 +827,34 @@ const People = () => {
                                </TooltipContent>
                              </Tooltip>
                            )}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 h-auto hover:bg-muted/50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedIcons(prev => ({
+                                    ...prev,
+                                    [index]: {
+                                      ...prev[index],
+                                      notification: !prev[index]?.notification
+                                    }
+                                  }));
+                                }}
+                              >
+                                <Bell className={`h-4 w-4 transition-colors ${
+                                  selectedIcons[index]?.notification 
+                                    ? 'text-blue-500 fill-blue-500' 
+                                    : 'text-muted-foreground hover:text-primary'
+                                }`} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Notifications</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     </CardHeader>
