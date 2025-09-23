@@ -273,14 +273,6 @@ const eventData = {
                     className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
                   />
                 </div>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/healer-event/${eventId}`)}
-                  className="border-primary/30 text-primary hover:bg-primary/10"
-                >
-                  Healer Mode
-                </Button>
                 <CreateDropdown onCreateShare={() => {}} />
                 <NotificationDropdown />
                 <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
