@@ -33,13 +33,11 @@ const EditEvent = () => {
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [price, setPrice] = useState("");
+  const [prices, setPrices] = useState<{text: string, amount: string}[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventVideo, setEventVideo] = useState<string | null>(null);
-  const [comments, setComments] = useState("");
-  const [reshareText, setReshareText] = useState("");
 
   const eventData = {
     "1": {
@@ -51,10 +49,8 @@ const EditEvent = () => {
       date: "March 15, 2024",
       time: "7:00 PM - 9:30 PM",
       location: "Sacred Grove Sanctuary, Sedona AZ",
-      price: "$65",
+      prices: [{text: "Regular", amount: "65"}, {text: "Early Bird", amount: "55"}],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      comments: "Please bring your own yoga mat and blanket. Water will be provided. Arrive 15 minutes early for check-in.",
-      reshareText: "Join us for this magical full moon ceremony! 🌕✨ Limited spots available.",
     },
     "2": {
       id: "2",
@@ -65,10 +61,8 @@ const EditEvent = () => {
       date: "April 2-4, 2024",
       time: "10:00 AM - 4:00 PM",
       location: "Crystal Cave Studio, Asheville NC",
-      price: "$225",
+      prices: [{text: "3-Day Workshop", amount: "225"}],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      comments: "All materials provided. Comfortable clothing recommended. Lunch included on all three days.",
-      reshareText: "Perfect for beginners! Learn the art of crystal healing in beautiful Asheville 💎🌿",
     }
   };
 
@@ -83,11 +77,9 @@ const EditEvent = () => {
       setLocation(event.location);
       setDate(event.date);
       setTime(event.time);
-      setPrice(event.price);
+      setPrices(event.prices || []);
       setTags(event.tags);
       setEventImage(event.image);
-      setComments(event.comments);
-      setReshareText(event.reshareText);
       // No default video
       setEventVideo(null);
     }
@@ -106,6 +98,21 @@ const EditEvent = () => {
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleAddPrice = () => {
+    setPrices([...prices, {text: "", amount: ""}]);
+  };
+
+  const handleRemovePrice = (index: number) => {
+    setPrices(prices.filter((_, i) => i !== index));
+  };
+
+  const handlePriceChange = (index: number, field: 'text' | 'amount', value: string) => {
+    const updatedPrices = prices.map((price, i) => 
+      i === index ? { ...price, [field]: value } : price
+    );
+    setPrices(updatedPrices);
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,12 +153,10 @@ const EditEvent = () => {
       location,
       date,
       time,
-      price,
+      prices,
       tags,
       eventImage,
-      eventVideo,
-      comments,
-      reshareText
+      eventVideo
     });
     
     toast.success("Event updated successfully!");
@@ -338,15 +343,48 @@ const EditEvent = () => {
                   />
                 </div>
                 
-                <div>
-                  <Label htmlFor="price">Price</Label>
-                  <Input
-                    id="price"
-                    placeholder="Event price..."
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="bg-background/50"
-                  />
+                <div className="md:col-span-2">
+                  <Label>Prices (€)</Label>
+                  <div className="space-y-2 mt-2">
+                    {prices.map((price, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          placeholder="Description (e.g., Regular, Early Bird)..."
+                          value={price.text}
+                          onChange={(e) => handlePriceChange(index, 'text', e.target.value)}
+                          className="flex-1 bg-background/50"
+                        />
+                        <div className="flex items-center">
+                          <span className="text-sm text-muted-foreground mr-2">€</span>
+                          <Input
+                            placeholder="0.00"
+                            value={price.amount}
+                            onChange={(e) => handlePriceChange(index, 'amount', e.target.value)}
+                            className="w-24 bg-background/50"
+                            type="number"
+                            step="0.01"
+                          />
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemovePrice(index)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddPrice}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Price Option
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -428,31 +466,6 @@ const EditEvent = () => {
                       />
                     </Badge>
                   ))}
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="comments">Comments & Instructions</Label>
-                  <Textarea
-                    id="comments"
-                    placeholder="Special instructions, what to bring, etc."
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    className="min-h-[100px] bg-background/50"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="reshareText">Reshare Text</Label>
-                  <Textarea
-                    id="reshareText"
-                    placeholder="Text that will be used when others share this event"
-                    value={reshareText}
-                    onChange={(e) => setReshareText(e.target.value)}
-                    className="min-h-[80px] bg-background/50"
-                  />
                 </div>
               </div>
 
