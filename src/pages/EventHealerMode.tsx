@@ -331,7 +331,7 @@ const EventHealerMode = () => {
                 <Button
                   variant={!isHealerMode ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => navigate(`/eventdetails/${eventId}`)}
+                  onClick={() => navigate(`/event/${eventId}`)}
                   className={`px-4 py-2 rounded-md transition-colors ${!isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Reader
