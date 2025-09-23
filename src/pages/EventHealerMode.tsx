@@ -48,6 +48,7 @@ const EventHealerMode = () => {
   const [userSearchModalOpen, setUserSearchModalOpen] = useState(false);
   const [isHealerMode, setIsHealerMode] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<'organizer' | 'attendee'>('organizer');
 
   const mockUsers = [
     { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", role: "Crystal Healer" },
@@ -203,21 +204,33 @@ const EventHealerMode = () => {
   };
 
   const handleAddOrganizer = () => {
+    setSearchMode('organizer');
+    setUserSearchModalOpen(true);
+  };
+
+  const handleAddAttendee = () => {
+    setSearchMode('attendee');
     setUserSearchModalOpen(true);
   };
 
   const handleSelectUser = (user: typeof mockUsers[0]) => {
-    const newOrganizer = {
-      name: user.name,
-      avatar: user.avatar,
-      role: user.role,
-      location: user.location,
-      previousEvents: []
-    };
-    setOrganizers(prev => [...prev, newOrganizer]);
+    if (searchMode === 'organizer') {
+      const newOrganizer = {
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+        location: user.location,
+        previousEvents: []
+      };
+      setOrganizers(prev => [...prev, newOrganizer]);
+      toast.success(`${user.name} added as organizer`);
+    } else {
+      // Add as attendee to the event data (in real app, this would update the backend)
+      toast.success(`${user.name} added as attendee`);
+    }
+    
     setUserSearchModalOpen(false);
     setSearchQuery("");
-    toast.success(`${user.name} added as organizer`);
   };
 
   const handleAttendeeStateChange = (attendeeIndex: number, newState: string) => {
@@ -506,6 +519,18 @@ const EventHealerMode = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Attendees ({event.attendees.length})</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddAttendee}
+                      className="border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Attendee
+                    </Button>
+                  </div>
                   <div className="space-y-3">
                     {event.attendees.map((attendee, index) => (
                       <div key={index} className="flex items-center space-x-3">
@@ -567,7 +592,9 @@ const EventHealerMode = () => {
         <Dialog open={userSearchModalOpen} onOpenChange={setUserSearchModalOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Search Users to Add as Organizer</DialogTitle>
+              <DialogTitle>
+                {searchMode === 'organizer' ? 'Add Organizer' : 'Add Attendee'}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
