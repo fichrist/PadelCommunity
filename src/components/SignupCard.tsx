@@ -18,6 +18,11 @@ const SignupCard = () => {
     setLoading(true);
 
     try {
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error("Authentication is not configured yet. Please connect your Supabase project first.");
+      }
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -42,6 +47,11 @@ const SignupCard = () => {
 
   const handleSocialAuth = async (provider: 'google' | 'facebook') => {
     try {
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error("Authentication is not configured yet. Please connect your Supabase project first.");
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
