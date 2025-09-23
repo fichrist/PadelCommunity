@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag, Send, Edit, Save, X } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag, Send, Edit, Save, X, Trash2 } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 // Import images
@@ -43,6 +44,13 @@ const EventHealerMode = () => {
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [attendeesStates, setAttendeesStates] = useState<Record<number, string>>({});
+  const [editingDate, setEditingDate] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [tempDate, setTempDate] = useState("");
+  const [tempLocation, setTempLocation] = useState("");
+  const [tempPrice, setTempPrice] = useState("");
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -113,14 +121,14 @@ const EventHealerMode = () => {
         { id: "recording", name: "Session Recording", price: "$20", description: "Audio recording of the healing session for home practice" }
       ],
       attendees: [
-        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
-        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
-        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ", isAnonymous: false },
-        { name: "Emma Wilson", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: true },
-        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: false },
-        { name: "Mark Thompson", avatar: davidProfile, location: "Mesa, AZ", isAnonymous: true },
-        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ", isAnonymous: false },
-        { name: "Jessica Chen", avatar: ariaProfile, location: "Phoenix, AZ", isAnonymous: true },
+        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ" },
+        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ" },
+        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ" },
+        { name: "Emma Wilson", avatar: phoenixProfile, location: "Scottsdale, AZ" },
+        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ" },
+        { name: "Mark Thompson", avatar: davidProfile, location: "Mesa, AZ" },
+        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ" },
+        { name: "Jessica Chen", avatar: ariaProfile, location: "Phoenix, AZ" },
       ]
     },
     "2": {
@@ -158,21 +166,80 @@ const EventHealerMode = () => {
         { id: "guidebook", name: "Comprehensive Guidebook", price: "$28", description: "Detailed crystal healing reference book" }
       ],
       attendees: [
-        { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
-        { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC", isAnonymous: false },
-        { name: "Alex Johnson", avatar: phoenixProfile, location: "Raleigh, NC", isAnonymous: true },
-        { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC", isAnonymous: false },
-        { name: "Maya Patel", avatar: elenaProfile, location: "Charlotte, NC", isAnonymous: true },
-        { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC", isAnonymous: false },
+        { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC" },
+        { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC" },
+        { name: "Alex Johnson", avatar: phoenixProfile, location: "Raleigh, NC" },
+        { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC" },
+        { name: "Maya Patel", avatar: elenaProfile, location: "Charlotte, NC" },
+        { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC" },
       ]
     }
   };
 
   const event = eventData[eventId as keyof typeof eventData];
+  const [organizers, setOrganizers] = useState(event?.organizers || []);
 
   if (!event) {
     return <div>Event not found</div>;
   }
+
+  const handleRemoveOrganizer = (index: number) => {
+    if (organizers.length > 1) {
+      setOrganizers(prev => prev.filter((_, i) => i !== index));
+      toast.success("Organizer removed");
+    } else {
+      toast.error("At least one organizer is required");
+    }
+  };
+
+  const handleAddOrganizer = () => {
+    const newOrganizer = {
+      name: "New Organizer",
+      avatar: elenaProfile,
+      role: "Organizer",
+      location: "Location TBD",
+      previousEvents: []
+    };
+    setOrganizers(prev => [...prev, newOrganizer]);
+    toast.success("New organizer added");
+  };
+
+  const handleAttendeeStateChange = (attendeeIndex: number, newState: string) => {
+    setAttendeesStates(prev => ({
+      ...prev,
+      [attendeeIndex]: newState
+    }));
+  };
+
+  const handleEditDate = () => {
+    setTempDate(event.date);
+    setEditingDate(true);
+  };
+
+  const handleSaveDate = () => {
+    setEditingDate(false);
+    toast.success("Date updated");
+  };
+
+  const handleEditLocation = () => {
+    setTempLocation(event.location);
+    setEditingLocation(true);
+  };
+
+  const handleSaveLocation = () => {
+    setEditingLocation(false);
+    toast.success("Location updated");
+  };
+
+  const handleEditPrice = () => {
+    setTempPrice(event.price);
+    setEditingPrice(true);
+  };
+
+  const handleSavePrice = () => {
+    setEditingPrice(false);
+    toast.success("Price updated");
+  };
 
   return (
     <div 
@@ -327,21 +394,86 @@ const EventHealerMode = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{event.date}</p>
-                        <p className="text-sm text-muted-foreground">{event.time}</p>
+                      <div className="flex items-center space-x-2">
+                        {editingDate ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              value={tempDate}
+                              onChange={(e) => setTempDate(e.target.value)}
+                              className="text-sm"
+                            />
+                            <Button size="sm" onClick={handleSaveDate}>
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingDate(false)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div>
+                              <p className="font-medium">{event.date}</p>
+                              <p className="text-sm text-muted-foreground">{event.time}</p>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={handleEditDate}>
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{event.location}</p>
+                      <div className="flex items-center space-x-2">
+                        {editingLocation ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              value={tempLocation}
+                              onChange={(e) => setTempLocation(e.target.value)}
+                              className="text-sm"
+                            />
+                            <Button size="sm" onClick={handleSaveLocation}>
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingLocation(false)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium">{event.location}</p>
+                            <Button size="sm" variant="ghost" onClick={handleEditLocation}>
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <DollarSign className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{event.price}</p>
+                      <div className="flex items-center space-x-2">
+                        {editingPrice ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              value={tempPrice}
+                              onChange={(e) => setTempPrice(e.target.value)}
+                              className="text-sm w-20"
+                            />
+                            <Button size="sm" onClick={handleSavePrice}>
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPrice(false)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium">{event.price}</p>
+                            <Button size="sm" variant="ghost" onClick={handleEditPrice}>
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -357,11 +489,22 @@ const EventHealerMode = () => {
               {/* Organizers */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Organizers</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Organizers</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddOrganizer}
+                      className="border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Organizer
+                    </Button>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {event.organizers.map((organizer, index) => (
+                    {organizers.map((organizer, index) => (
                       <div key={index} className="flex items-center space-x-4">
                         <Avatar className="h-12 w-12">
                           <AvatarImage src={organizer.avatar} />
@@ -372,6 +515,16 @@ const EventHealerMode = () => {
                           <p className="text-sm text-muted-foreground">{organizer.role}</p>
                           <p className="text-sm text-muted-foreground">{organizer.location}</p>
                         </div>
+                        {organizers.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveOrganizer(index)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -408,17 +561,27 @@ const EventHealerMode = () => {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
                             {attendee.name}
-                            {attendee.isAnonymous && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                Private
-                              </Badge>
-                            )}
                           </p>
                           {attendee.location && (
                             <p className="text-xs text-muted-foreground truncate">
                               {attendee.location}
                             </p>
                           )}
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Select
+                            value={attendeesStates[index] || "Waiting for payment"}
+                            onValueChange={(value) => handleAttendeeStateChange(index, value)}
+                          >
+                            <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Paid">Paid</SelectItem>
+                              <SelectItem value="Payment at entry">Payment at entry</SelectItem>
+                              <SelectItem value="Waiting for payment">Waiting for payment</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     ))}
