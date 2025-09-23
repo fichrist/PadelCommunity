@@ -311,7 +311,7 @@ const eventData = {
                 <Button
                   variant={isHealerMode ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setIsHealerMode(true)}
+                  onClick={() => navigate(`/eventhealermode/${eventId}`)}
                   className={`px-4 py-2 rounded-md transition-colors ${isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Healer
