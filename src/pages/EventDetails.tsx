@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag, Send } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Clock, DollarSign, Star, MessageCircle, UserPlus, Play, User, Plus, Search, Heart, Repeat2, BookOpen, Share2, Link, Copy, Check, Flag, Send, Edit, Save, X } from "lucide-react";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
 
@@ -43,6 +44,9 @@ const EventDetails = () => {
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [isHealerMode, setIsHealerMode] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedEvent, setEditedEvent] = useState<any>(null);
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -50,21 +54,41 @@ const EventDetails = () => {
       return;
     }
 
-    const nonAnonymousAttendees = event.attendees.filter(a => !a.isAnonymous);
+    // In healer mode, show all attendees; in reader mode, filter out anonymous
+    const targetAttendees = isHealerMode ? event.attendees : event.attendees.filter(a => !a.isAnonymous);
     setBroadcastModalOpen(false);
     
     // Send message to each attendee individually with a delay between each
-    for (let i = 0; i < nonAnonymousAttendees.length; i++) {
-      const attendee = nonAnonymousAttendees[i];
+    for (let i = 0; i < targetAttendees.length; i++) {
+      const attendee = targetAttendees[i];
+      const displayName = attendee.isAnonymous && isHealerMode ? attendee.name : attendee.isAnonymous ? `Anonymous User ${i + 1}` : attendee.name;
       setTimeout(() => {
-        toast.success(`Message sent to ${attendee.name}`, {
+        toast.success(`Message sent to ${displayName}`, {
           description: `"${broadcastMessage.substring(0, 50)}${broadcastMessage.length > 50 ? '...' : ''}"`
         });
       }, i * 500); // 500ms delay between each popup
     }
     
     setBroadcastMessage("");
-    toast.success(`Broadcasting to ${nonAnonymousAttendees.length} attendees`);
+    toast.success(`Broadcasting to ${targetAttendees.length} attendees`);
+  };
+
+  const handleSave = () => {
+    // Here you would normally save to a backend
+    toast.success("Event updated successfully!");
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedEvent(null);
+    setIsEditing(false);
+  };
+
+  const handleEditChange = (field: string, value: any) => {
+    setEditedEvent((prev: any) => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
 const eventData = {
@@ -117,11 +141,11 @@ const eventData = {
         { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
         { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
         { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: isHealerMode ? "Emma Wilson" : "Anonymous", avatar: isHealerMode ? phoenixProfile : "", location: isHealerMode ? "Scottsdale, AZ" : "", isAnonymous: true },
         { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: isHealerMode ? "Mark Thompson" : "Anonymous", avatar: isHealerMode ? davidProfile : "", location: isHealerMode ? "Mesa, AZ" : "", isAnonymous: true },
         { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: isHealerMode ? "Jessica Chen" : "Anonymous", avatar: isHealerMode ? ariaProfile : "", location: isHealerMode ? "Phoenix, AZ" : "", isAnonymous: true },
       ]
     },
     "2": {
@@ -161,15 +185,16 @@ const eventData = {
       attendees: [
         { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
         { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: isHealerMode ? "Alex Johnson" : "Anonymous", avatar: isHealerMode ? phoenixProfile : "", location: isHealerMode ? "Raleigh, NC" : "", isAnonymous: true },
         { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
+        { name: isHealerMode ? "Maya Patel" : "Anonymous", avatar: isHealerMode ? elenaProfile : "", location: isHealerMode ? "Charlotte, NC" : "", isAnonymous: true },
         { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC", isAnonymous: false },
       ]
     }
   };
 
   const event = eventData[eventId as keyof typeof eventData];
+  const displayEvent = editedEvent || event;
 
   if (!event) {
     return <div>Event not found</div>;
@@ -276,17 +301,102 @@ const eventData = {
               Back
             </Button>
             
-            {/* Full width title */}
-            <h1 className="text-4xl font-bold mb-8 text-foreground text-center">
-              {event.title}
-            </h1>
+            {/* Mode Toggle */}
+            <div className="flex justify-center mb-4">
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <Button
+                  variant={!isHealerMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setIsHealerMode(false);
+                    setIsEditing(false);
+                    setEditedEvent(null);
+                  }}
+                  className={`px-4 py-2 rounded-md transition-colors ${!isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Reader
+                </Button>
+                <Button
+                  variant={isHealerMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setIsHealerMode(true)}
+                  className={`px-4 py-2 rounded-md transition-colors ${isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Healer
+                </Button>
+              </div>
+            </div>
+
+            {/* Healer Mode Badge */}
+            {isHealerMode && (
+              <div className="flex justify-center mb-4">
+                <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
+                  Healer Mode - Full Attendee Visibility
+                </Badge>
+              </div>
+            )}
+            
+            {/* Title with Edit Controls */}
+            <div className="flex items-center justify-center mb-8 relative">
+              {isEditing && isHealerMode ? (
+                <Input
+                  value={displayEvent.title}
+                  onChange={(e) => handleEditChange('title', e.target.value)}
+                  className="text-4xl font-bold text-center border-2 border-primary/30 max-w-4xl"
+                />
+              ) : (
+                <h1 className="text-4xl font-bold text-foreground text-center">
+                  {displayEvent.title}
+                </h1>
+              )}
+              
+              {/* Edit Controls positioned to the right of title */}
+              {isHealerMode && (
+                <div className="absolute right-0 flex items-center space-x-2">
+                  {isEditing ? (
+                    <>
+                      <Button 
+                        variant="default"
+                        size="sm"
+                        onClick={handleSave}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditedEvent({ ...event });
+                        setIsEditing(true);
+                      }}
+                      className="border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Event
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           
           {/* Large Event Image */}
           <div className="flex justify-center mb-8">
             <div className="relative">
               <img
-                src={event.image}
-                alt={event.title}
+                src={displayEvent.image}
+                alt={displayEvent.title}
                 className="w-[900px] h-[580px] object-cover rounded-lg shadow-lg"
               />
             </div>
@@ -294,7 +404,7 @@ const eventData = {
 
           {/* Tags under image */}
           <div className="flex flex-wrap gap-2 justify-center mb-8">
-            {event.tags.map((tag, index) => (
+            {displayEvent.tags.map((tag, index) => (
               <Badge key={index} variant="secondary" className="text-sm cursor-pointer hover:bg-primary/20 transition-colors px-3 py-1">
                 {tag}
               </Badge>
@@ -377,10 +487,18 @@ const eventData = {
               <CardHeader>
                 <CardTitle>About this Event</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-foreground/90 leading-relaxed mb-6">
-                  {event.fullDescription}
-                </p>
+               <CardContent>
+                 {isEditing && isHealerMode ? (
+                   <Textarea
+                     value={displayEvent.fullDescription}
+                     onChange={(e) => handleEditChange('fullDescription', e.target.value)}
+                     className="min-h-[200px] border-2 border-primary/30"
+                   />
+                 ) : (
+                   <p className="text-foreground/90 leading-relaxed mb-6">
+                     {displayEvent.fullDescription}
+                   </p>
+                 )}
                 
                  {/* Event Video */}
                 <div className="relative aspect-video bg-muted rounded-lg flex items-center justify-center mb-6">
@@ -410,9 +528,9 @@ const eventData = {
                 <div className="space-y-6">
                   {/* Organizers */}
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3">Organizers ({event.organizers.length})</h3>
-                    <div className="space-y-3">
-                      {event.organizers.map((organizer, index) => (
+                     <h3 className="text-sm font-medium text-muted-foreground mb-3">Organizers ({displayEvent.organizers.length})</h3>
+                     <div className="space-y-3">
+                       {displayEvent.organizers.map((organizer, index) => (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Avatar 
@@ -467,41 +585,46 @@ const eventData = {
 
                   {/* Attendees */}
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                      Attendees ({event.attendees.filter(a => !a.isAnonymous).length + event.attendees.filter(a => a.isAnonymous).length})
-                    </h3>
-                    <div className="space-y-3">
-                      {event.attendees.map((attendee, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              {attendee.isAnonymous ? (
-                                <AvatarFallback className="bg-muted">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                </AvatarFallback>
-                              ) : (
-                                <>
-                                  <AvatarImage src={attendee.avatar} />
-                                  <AvatarFallback className="bg-primary/10">
-                                    {attendee.name.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </>
-                              )}
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">
-                                {attendee.isAnonymous ? "Anonymous" : attendee.name}
-                              </div>
-                              {!attendee.isAnonymous && (
-                                <div className="flex items-center text-xs text-muted-foreground">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {attendee.location}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {!attendee.isAnonymous && (
-                            <div className="flex space-x-1">
+                     <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                       Attendees ({displayEvent.attendees.length})
+                     </h3>
+                     <div className="space-y-3">
+                       {displayEvent.attendees.map((attendee, index) => (
+                         <div key={index} className="flex items-center justify-between">
+                           <div className="flex items-center space-x-3">
+                             <Avatar className="h-8 w-8">
+                               {attendee.isAnonymous && !isHealerMode ? (
+                                 <AvatarFallback className="bg-muted">
+                                   <User className="h-4 w-4 text-muted-foreground" />
+                                 </AvatarFallback>
+                               ) : (
+                                 <>
+                                   <AvatarImage src={attendee.avatar} />
+                                   <AvatarFallback className="bg-primary/10">
+                                     {attendee.name.split(' ').map(n => n[0]).join('')}
+                                   </AvatarFallback>
+                                 </>
+                               )}
+                             </Avatar>
+                             <div className="flex-1">
+                               <div className="text-sm font-medium">
+                                 {attendee.name}
+                               </div>
+                               {attendee.isAnonymous && isHealerMode && (
+                                 <div className="text-xs text-muted-foreground">
+                                   (was anonymous)
+                                 </div>
+                               )}
+                               {attendee.location && (
+                                 <div className="flex items-center text-xs text-muted-foreground">
+                                   <MapPin className="h-3 w-3 mr-1" />
+                                   {attendee.location}
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                           {(attendee.name !== "Anonymous" || isHealerMode) && (
+                             <div className="flex space-x-1">
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
@@ -1030,10 +1153,9 @@ const eventData = {
                   className="min-h-[100px] mt-2"
                 />
               </div>
-              <div className="text-sm text-muted-foreground">
-                This message will be sent individually to {event.attendees.filter(a => !a.isAnonymous).length} attendees 
-                (anonymous attendees will not receive the message)
-              </div>
+              <p className="text-sm text-muted-foreground">
+                This message will be sent individually to all {displayEvent.attendees.length} attendees.
+              </p>
               <div className="flex justify-end space-x-2">
                 <Button 
                   variant="outline" 
