@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Upload, Link, Image, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,13 +20,27 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
   const [image, setImage] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
   const { toast } = useToast();
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag("");
+  // Predefined list of available tags
+  const availableTags = [
+    "Meditation", "Spirituality", "Healing", "Mindfulness", "Yoga",
+    "Crystals", "Energy Work", "Chakras", "Sound Healing", "Reiki",
+    "Tarot", "Astrology", "Manifestation", "Wisdom", "Growth",
+    "Community", "Nature", "Peace", "Love", "Light"
+  ];
+
+  const handleAddTag = (tagToAdd: string) => {
+    if (tagToAdd && !tags.includes(tagToAdd)) {
+      setTags([...tags, tagToAdd]);
+      setSelectedTag("");
+    }
+  };
+
+  const handleAddSelectedTag = () => {
+    if (selectedTag) {
+      handleAddTag(selectedTag);
     }
   };
 
@@ -58,7 +73,7 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
     setImage(null);
     setVideo(null);
     setTags([]);
-    setNewTag("");
+    setSelectedTag("");
     onOpenChange(false);
   };
 
@@ -140,14 +155,19 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
           
           <div>
             <div className="flex items-center space-x-2 mb-2">
-              <Input
-                placeholder="Add tag..."
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                className="flex-1 bg-background/50"
-              />
-              <Button onClick={handleAddTag} size="sm" variant="outline">
+              <Select value={selectedTag} onValueChange={setSelectedTag}>
+                <SelectTrigger className="flex-1 bg-background/50">
+                  <SelectValue placeholder="Select a tag..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTags.filter(tag => !tags.includes(tag)).map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddSelectedTag} size="sm" variant="outline" disabled={!selectedTag}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
