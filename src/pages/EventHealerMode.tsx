@@ -49,6 +49,8 @@ const EventHealerMode = () => {
   const [isHealerMode, setIsHealerMode] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<'organizer' | 'attendee'>('organizer');
+  const [cancelEventModalOpen, setCancelEventModalOpen] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState("");
 
   const mockUsers = [
     { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", role: "Crystal Healer" },
@@ -245,6 +247,33 @@ const EventHealerMode = () => {
     navigate(`/editevent/${eventId}`);
   };
 
+  const handleCancelEvent = async () => {
+    if (!cancelMessage.trim()) {
+      toast.error("Please enter a cancellation message");
+      return;
+    }
+
+    setCancelEventModalOpen(false);
+    
+    // Send cancellation message to each attendee individually with a delay between each
+    for (let i = 0; i < event.attendees.length; i++) {
+      const attendee = event.attendees[i];
+      setTimeout(() => {
+        toast.success(`Cancellation notice sent to ${attendee.name}`, {
+          description: `"${cancelMessage.substring(0, 50)}${cancelMessage.length > 50 ? '...' : ''}"`
+        });
+      }, i * 500); // 500ms delay between each popup
+    }
+    
+    setCancelMessage("");
+    toast.success(`Event cancelled and notifications sent to ${event.attendees.length} attendees`);
+    
+    // Navigate back to events page
+    setTimeout(() => {
+      navigate('/events');
+    }, 2000);
+  };
+
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed"
@@ -369,20 +398,31 @@ const EventHealerMode = () => {
               </div>
             )}
             
-            {/* Title with Edit Button */}
+            {/* Title with Edit and Cancel Buttons */}
             <div className="flex items-center justify-center mb-8 relative">
               <h1 className="text-4xl font-bold text-foreground text-center">
                 {event.title}
               </h1>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEditEvent}
-                className="ml-4 border-primary/30 text-primary hover:bg-primary/10"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Event
-              </Button>
+              <div className="ml-4 flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditEvent}
+                  className="border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Event
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelEventModalOpen(true)}
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel Event
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -587,6 +627,48 @@ const EventHealerMode = () => {
             </div>
           </div>
         </div>
+
+        {/* Cancel Event Modal */}
+        <Dialog open={cancelEventModalOpen} onOpenChange={setCancelEventModalOpen}>
+          <DialogContent className="bg-card/95 backdrop-blur-md border border-border max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Cancel Event</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to cancel this event? This action cannot be undone.
+              </p>
+              <div>
+                <Label htmlFor="cancel-message">Cancellation Message *</Label>
+                <Textarea
+                  id="cancel-message"
+                  placeholder="Enter a message to send to all attendees explaining the cancellation..."
+                  value={cancelMessage}
+                  onChange={(e) => setCancelMessage(e.target.value)}
+                  className="min-h-[100px] bg-background/50 mt-2"
+                />
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setCancelEventModalOpen(false);
+                    setCancelMessage("");
+                  }}
+                >
+                  Keep Event
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleCancelEvent}
+                  disabled={!cancelMessage.trim()}
+                >
+                  Cancel Event
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* User Search Modal */}
         <Dialog open={userSearchModalOpen} onOpenChange={setUserSearchModalOpen}>
