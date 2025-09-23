@@ -39,6 +39,7 @@ const EditEvent = () => {
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventVideo, setEventVideo] = useState<string | null>(null);
+  const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
 
   const eventData = {
     "1": {
@@ -53,6 +54,10 @@ const EditEvent = () => {
       location: "Sacred Grove Sanctuary, Sedona AZ",
       prices: [{text: "Regular", amount: "65"}, {text: "Early Bird", amount: "55"}],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
+      additionalOptions: [
+        {name: "Sacred Cacao Ceremony", price: "25", description: "Ceremonial cacao drink to open the heart chakra"},
+        {name: "Personal Crystal Set", price: "35", description: "Take home your own set of charged healing crystals"}
+      ],
     },
     "2": {
       id: "2",
@@ -66,6 +71,9 @@ const EditEvent = () => {
       location: "Crystal Cave Studio, Asheville NC",
       prices: [{text: "3-Day Workshop", amount: "225"}],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
+      additionalOptions: [
+        {name: "Advanced Crystal Kit", price: "45", description: "Premium crystals including rare healing stones"}
+      ],
     }
   };
 
@@ -83,6 +91,7 @@ const EditEvent = () => {
       setTime(event.time);
       setPrices(event.prices || []);
       setTags(event.tags);
+      setAdditionalOptions(event.additionalOptions || []);
       setEventImage(event.image);
       // No default video
       setEventVideo(null);
@@ -117,6 +126,21 @@ const EditEvent = () => {
       i === index ? { ...price, [field]: value } : price
     );
     setPrices(updatedPrices);
+  };
+
+  const handleAddOption = () => {
+    setAdditionalOptions([...additionalOptions, {name: "", price: "", description: ""}]);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    setAdditionalOptions(additionalOptions.filter((_, i) => i !== index));
+  };
+
+  const handleOptionChange = (index: number, field: 'name' | 'price' | 'description', value: string) => {
+    const updatedOptions = additionalOptions.map((option, i) => 
+      i === index ? { ...option, [field]: value } : option
+    );
+    setAdditionalOptions(updatedOptions);
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,6 +184,7 @@ const EditEvent = () => {
       time,
       prices,
       tags,
+      additionalOptions,
       eventImage,
       eventVideo
     });
@@ -404,6 +429,61 @@ const EditEvent = () => {
                       Add Price Option
                     </Button>
                   </div>
+                </div>
+              </div>
+
+              {/* Additional Options */}
+              <div className="md:col-span-2">
+                <Label>Additional Options</Label>
+                <div className="space-y-3 mt-2">
+                  {additionalOptions.map((option, index) => (
+                    <div key={index} className="border border-border rounded-lg p-4 bg-background/30">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Input
+                          placeholder="Option name..."
+                          value={option.name}
+                          onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
+                          className="bg-background/50"
+                        />
+                        <div className="flex items-center">
+                          <span className="text-sm text-muted-foreground mr-2">€</span>
+                          <Input
+                            placeholder="0.00"
+                            value={option.price}
+                            onChange={(e) => handleOptionChange(index, 'price', e.target.value)}
+                            className="bg-background/50"
+                            type="number"
+                            step="0.01"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            placeholder="Description..."
+                            value={option.description}
+                            onChange={(e) => handleOptionChange(index, 'description', e.target.value)}
+                            className="flex-1 bg-background/50"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveOption(index)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddOption}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Additional Option
+                  </Button>
                 </div>
               </div>
 
