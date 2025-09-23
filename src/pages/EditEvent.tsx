@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search, Video } from "lucide-react";
 import { toast } from "sonner";
@@ -34,12 +35,12 @@ const EditEvent = () => {
   const [date, setDate] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [time, setTime] = useState("");
-  const [prices, setPrices] = useState<{text: string, amount: string}[]>([]);
+  const [prices, setPrices] = useState<{text: string, amount: string, soldOut: boolean}[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventVideo, setEventVideo] = useState<string | null>(null);
-  const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
+  const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string, soldOut: boolean}[]>([]);
 
   const eventData = {
     "1": {
@@ -52,11 +53,11 @@ const EditEvent = () => {
       dateTo: "",
       time: "7:00 PM - 9:30 PM",
       location: "Sacred Grove Sanctuary, Sedona AZ",
-      prices: [{text: "Regular", amount: "65"}, {text: "Early Bird", amount: "55"}],
+      prices: [{text: "Regular", amount: "65", soldOut: false}, {text: "Early Bird", amount: "55", soldOut: true}],
       tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
       additionalOptions: [
-        {name: "Sacred Cacao Ceremony", price: "25", description: "Ceremonial cacao drink to open the heart chakra"},
-        {name: "Personal Crystal Set", price: "35", description: "Take home your own set of charged healing crystals"}
+        {name: "Sacred Cacao Ceremony", price: "25", description: "Ceremonial cacao drink to open the heart chakra", soldOut: false},
+        {name: "Personal Crystal Set", price: "35", description: "Take home your own set of charged healing crystals", soldOut: true}
       ],
     },
     "2": {
@@ -72,7 +73,7 @@ const EditEvent = () => {
       prices: [{text: "3-Day Workshop", amount: "225"}],
       tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
       additionalOptions: [
-        {name: "Advanced Crystal Kit", price: "45", description: "Premium crystals including rare healing stones"}
+        {name: "Advanced Crystal Kit", price: "45", description: "Premium crystals including rare healing stones", soldOut: false}
       ],
     }
   };
@@ -89,9 +90,18 @@ const EditEvent = () => {
       setDate(event.date);
       setDateTo(event.dateTo || "");
       setTime(event.time);
-      setPrices(event.prices || []);
+      setPrices((event.prices || []).map((price: any) => ({
+        text: price.text || "",
+        amount: price.amount || "",
+        soldOut: price.soldOut || false
+      })));
       setTags(event.tags);
-      setAdditionalOptions(event.additionalOptions || []);
+      setAdditionalOptions((event.additionalOptions || []).map((option: any) => ({
+        name: option.name || "",
+        price: option.price || "",
+        description: option.description || "",
+        soldOut: option.soldOut || false
+      })));
       setEventImage(event.image);
       // No default video
       setEventVideo(null);
@@ -114,14 +124,14 @@ const EditEvent = () => {
   };
 
   const handleAddPrice = () => {
-    setPrices([...prices, {text: "", amount: ""}]);
+    setPrices([...prices, {text: "", amount: "", soldOut: false}]);
   };
 
   const handleRemovePrice = (index: number) => {
     setPrices(prices.filter((_, i) => i !== index));
   };
 
-  const handlePriceChange = (index: number, field: 'text' | 'amount', value: string) => {
+  const handlePriceChange = (index: number, field: 'text' | 'amount' | 'soldOut', value: string | boolean) => {
     const updatedPrices = prices.map((price, i) => 
       i === index ? { ...price, [field]: value } : price
     );
@@ -129,14 +139,14 @@ const EditEvent = () => {
   };
 
   const handleAddOption = () => {
-    setAdditionalOptions([...additionalOptions, {name: "", price: "", description: ""}]);
+    setAdditionalOptions([...additionalOptions, {name: "", price: "", description: "", soldOut: false}]);
   };
 
   const handleRemoveOption = (index: number) => {
     setAdditionalOptions(additionalOptions.filter((_, i) => i !== index));
   };
 
-  const handleOptionChange = (index: number, field: 'name' | 'price' | 'description', value: string) => {
+  const handleOptionChange = (index: number, field: 'name' | 'price' | 'description' | 'soldOut', value: string | boolean) => {
     const updatedOptions = additionalOptions.map((option, i) => 
       i === index ? { ...option, [field]: value } : option
     );
@@ -391,32 +401,44 @@ const EditEvent = () => {
                   <Label>Prices (€)</Label>
                   <div className="space-y-2 mt-2">
                     {prices.map((price, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <Input
-                          placeholder="Description (e.g., Regular, Early Bird)..."
-                          value={price.text}
-                          onChange={(e) => handlePriceChange(index, 'text', e.target.value)}
-                          className="flex-1 bg-background/50"
-                        />
-                        <div className="flex items-center">
-                          <span className="text-sm text-muted-foreground mr-2">€</span>
+                      <div key={index} className="border border-border rounded-lg p-3 bg-background/30">
+                        <div className="flex items-center space-x-2">
                           <Input
-                            placeholder="0.00"
-                            value={price.amount}
-                            onChange={(e) => handlePriceChange(index, 'amount', e.target.value)}
-                            className="w-24 bg-background/50"
-                            type="number"
-                            step="0.01"
+                            placeholder="Description (e.g., Regular, Early Bird)..."
+                            value={price.text}
+                            onChange={(e) => handlePriceChange(index, 'text', e.target.value)}
+                            className="flex-1 bg-background/50"
                           />
+                          <div className="flex items-center">
+                            <span className="text-sm text-muted-foreground mr-2">€</span>
+                            <Input
+                              placeholder="0.00"
+                              value={price.amount}
+                              onChange={(e) => handlePriceChange(index, 'amount', e.target.value)}
+                              className="w-24 bg-background/50"
+                              type="number"
+                              step="0.01"
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemovePrice(index)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemovePrice(index)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center mt-2">
+                          <Checkbox
+                            id={`price-soldout-${index}`}
+                            checked={price.soldOut}
+                            onCheckedChange={(checked) => handlePriceChange(index, 'soldOut', checked as boolean)}
+                          />
+                          <Label htmlFor={`price-soldout-${index}`} className="ml-2 text-sm">
+                            Sold Out
+                          </Label>
+                        </div>
                       </div>
                     ))}
                     <Button
@@ -438,7 +460,7 @@ const EditEvent = () => {
                 <div className="space-y-3 mt-2">
                   {additionalOptions.map((option, index) => (
                     <div key={index} className="border border-border rounded-lg p-4 bg-background/30">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <Input
                           placeholder="Option name..."
                           value={option.name}
@@ -472,6 +494,16 @@ const EditEvent = () => {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Checkbox
+                          id={`option-soldout-${index}`}
+                          checked={option.soldOut}
+                          onCheckedChange={(checked) => handleOptionChange(index, 'soldOut', checked as boolean)}
+                        />
+                        <Label htmlFor={`option-soldout-${index}`} className="ml-2 text-sm">
+                          Sold Out
+                        </Label>
                       </div>
                     </div>
                   ))}
