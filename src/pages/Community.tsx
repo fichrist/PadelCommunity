@@ -365,97 +365,6 @@ const Community = () => {
             {/* Left Sidebar - Fixed */}
             <div className="lg:col-span-2 sticky top-0 h-[calc(100vh-130px)]">
               <div className="space-y-4">
-                {/* Talk Sidebar - Clickable */}
-                <Card 
-                  className="bg-card/90 backdrop-blur-sm border border-border cursor-pointer hover:shadow-lg transition-all duration-200"
-                  onClick={() => navigate('/chat')}
-                >
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                      <MessageCircle className="h-4 w-4 text-primary" />
-                      <span>Talk</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 h-[400px] overflow-hidden">
-                    <div className="space-y-2">
-                      {[
-                        {
-                          name: "Elena Moonchild",
-                          lastMessage: "Looking forward to the sound healing session tonight! 🌙",
-                          timestamp: "2 min ago",
-                          avatar: elenaProfile,
-                          isGroup: false
-                        },
-                        {
-                          name: "Sacred Circle",
-                          lastMessage: "David: The energy work was incredible today",
-                          timestamp: "5 min ago",
-                          avatar: davidProfile,
-                          isGroup: true
-                        },
-                        {
-                          name: "Aria Starseed",
-                          lastMessage: "Thank you for joining the crystal workshop! ✨",
-                          timestamp: "1 hour ago",
-                          avatar: ariaProfile,
-                          isGroup: false
-                        },
-                        {
-                          name: "Phoenix Rising",
-                          lastMessage: "Movement meditation tomorrow at sunrise?",
-                          timestamp: "2 hours ago",
-                          avatar: phoenixProfile,
-                          isGroup: false
-                        },
-                        {
-                          name: "Healing Hearts",
-                          lastMessage: "Luna: Beautiful sharing today everyone 💚",
-                          timestamp: "3 hours ago",
-                          avatar: elenaProfile,
-                          isGroup: true
-                        }
-                      ].map((chat, index) => (
-                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={chat.avatar} />
-                              <AvatarFallback className="bg-primary/10 text-xs">
-                                {chat.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            {chat.isGroup && (
-                              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
-                                <Users className="h-2 w-2 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm leading-tight truncate">
-                              {chat.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {chat.lastMessage}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {chat.timestamp}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                     </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-3"
-                      onClick={() => navigate('/chat')}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      More Talks
-                    </Button>
-                  </CardContent>
-                </Card>
-
                 {/* People to Follow */}
                 <Card className="bg-card/90 backdrop-blur-sm border border-border">
                   <CardHeader className="pb-2">
@@ -580,6 +489,97 @@ const Community = () => {
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Look for More
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Talk Sidebar - Clickable */}
+                <Card 
+                  className="bg-card/90 backdrop-blur-sm border border-border cursor-pointer hover:shadow-lg transition-all duration-200"
+                  onClick={() => navigate('/chat')}
+                >
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                      <span>Talk</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 h-[400px] overflow-hidden">
+                    <div className="space-y-2">
+                      {[
+                        {
+                          name: "Elena Moonchild",
+                          lastMessage: "Looking forward to the sound healing session tonight! 🌙",
+                          timestamp: "2 min ago",
+                          avatar: elenaProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Sacred Circle",
+                          lastMessage: "David: The energy work was incredible today",
+                          timestamp: "5 min ago",
+                          avatar: davidProfile,
+                          isGroup: true
+                        },
+                        {
+                          name: "Aria Starseed",
+                          lastMessage: "Thank you for joining the crystal workshop! ✨",
+                          timestamp: "1 hour ago",
+                          avatar: ariaProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Phoenix Rising",
+                          lastMessage: "Movement meditation tomorrow at sunrise?",
+                          timestamp: "2 hours ago",
+                          avatar: phoenixProfile,
+                          isGroup: false
+                        },
+                        {
+                          name: "Healing Hearts",
+                          lastMessage: "Luna: Beautiful sharing today everyone 💚",
+                          timestamp: "3 hours ago",
+                          avatar: elenaProfile,
+                          isGroup: true
+                        }
+                      ].map((chat, index) => (
+                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={chat.avatar} />
+                              <AvatarFallback className="bg-primary/10 text-xs">
+                                {chat.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            {chat.isGroup && (
+                              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
+                                <Users className="h-2 w-2 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm leading-tight truncate">
+                              {chat.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {chat.lastMessage}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {chat.timestamp}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                     </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => navigate('/chat')}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      More Talks
                     </Button>
                   </CardContent>
                 </Card>
