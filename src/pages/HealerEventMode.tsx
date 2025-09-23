@@ -261,8 +261,51 @@ const eventData = {
                 </div>
               </div>
               
-              {/* Right: Edit Controls + Navigation */}
+              {/* Right: Navigation */}
               <div className="flex items-center space-x-3">
+                <CreateDropdown onCreateShare={() => {}} />
+                <NotificationDropdown />
+                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
+          <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(`/event/${eventId}`)}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Event
+            </Button>
+            
+            {/* Badge for Healer Mode */}
+            <div className="flex justify-center mb-4">
+              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
+                Healer Mode - Full Attendee Visibility
+              </Badge>
+            </div>
+            
+            {/* Title with Edit Controls */}
+            <div className="flex items-center justify-center mb-8 relative">
+              {isEditing ? (
+                <Input
+                  value={displayEvent.title}
+                  onChange={(e) => handleEditChange('title', e.target.value)}
+                  className="text-4xl font-bold text-center border-2 border-primary/30 max-w-4xl"
+                />
+              ) : (
+                <h1 className="text-4xl font-bold text-foreground text-center">
+                  {displayEvent.title}
+                </h1>
+              )}
+              
+              {/* Edit Controls positioned to the right of title */}
+              <div className="absolute right-0 flex items-center space-x-2">
                 {isEditing ? (
                   <>
                     <Button 
@@ -294,50 +337,11 @@ const eventData = {
                     className="border-primary/30 text-primary hover:bg-primary/10"
                   >
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    Edit Event
                   </Button>
                 )}
-                <CreateDropdown onCreateShare={() => {}} />
-                <NotificationDropdown />
-                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Header */}
-        <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
-          <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(`/event/${eventId}`)}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Event
-            </Button>
-            
-            {/* Badge for Healer Mode */}
-            <div className="flex justify-center mb-4">
-              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                Healer Mode - Full Attendee Visibility
-              </Badge>
-            </div>
-            
-            {/* Full width title */}
-            {isEditing ? (
-              <div className="mb-8">
-                <Input
-                  value={displayEvent.title}
-                  onChange={(e) => handleEditChange('title', e.target.value)}
-                  className="text-4xl font-bold text-center border-2 border-primary/30"
-                />
-              </div>
-            ) : (
-              <h1 className="text-4xl font-bold mb-8 text-foreground text-center">
-                {displayEvent.title}
-              </h1>
-            )}
           
           {/* Large Event Image */}
           <div className="flex justify-center mb-8">
