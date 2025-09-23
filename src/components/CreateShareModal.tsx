@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Upload, Link, Image, Video } from "lucide-react";
+import { X, Plus, Link, Image, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreateShareModalProps {
@@ -31,16 +31,10 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
     "Community", "Nature", "Peace", "Love", "Light"
   ];
 
-  const handleAddTag = (tagToAdd: string) => {
-    if (tagToAdd && !tags.includes(tagToAdd)) {
-      setTags([...tags, tagToAdd]);
-      setSelectedTag("");
-    }
-  };
-
   const handleAddSelectedTag = () => {
-    if (selectedTag) {
-      handleAddTag(selectedTag);
+    if (selectedTag && !tags.includes(selectedTag)) {
+      setTags([...tags, selectedTag]);
+      setSelectedTag("");
     }
   };
 
