@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, Star, Heart, Info, Ban } from "lucide-react";
+import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Bell } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -354,7 +354,7 @@ const People = () => {
                     className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
                     onClick={() => navigate('/events')}
                   >
-                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
+                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
                   </Button>
                 </div>
                 <div className="relative">
@@ -753,7 +753,25 @@ const People = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="relative">
+                        <div className="relative flex items-center space-x-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 h-auto hover:bg-muted/50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Notification functionality can be added here
+                                }}
+                              >
+                                <Bell className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Notifications</p>
+                            </TooltipContent>
+                          </Tooltip>
                            {followedUsers.includes(index) ? (
                              <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
                                <AlertDialogTrigger asChild>
@@ -817,10 +835,6 @@ const People = () => {
                                    onClick={(e) => {
                                      e.stopPropagation();
                                      setFollowedUsers(prev => [...prev, index]);
-                                      setSelectedIcons(prev => ({
-                                        ...prev,
-                                        [index]: { calendar: true, info: true, block: false }
-                                      }));
                                    }}
                                  >
                                    <Heart className="h-4 w-4 text-red-500" />
@@ -877,29 +891,8 @@ const People = () => {
                             <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
                           </div>
                           
-                          {/* Bottom right icons */}
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-auto hover:bg-muted/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedIcons(prev => ({
-                                  ...prev,
-                                  [index]: {
-                                    ...prev[index],
-                                    calendar: !prev[index]?.calendar
-                                  }
-                                }));
-                              }}
-                            >
-                              <Calendar className={`h-4 w-4 transition-colors ${
-                                selectedIcons[index]?.calendar 
-                                  ? 'text-blue-500 fill-blue-500' 
-                                  : 'text-muted-foreground hover:text-primary'
-                              }`} />
-                            </Button>
+                          {/* Bottom right block icon */}
+                          <div className="flex justify-end">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -928,27 +921,6 @@ const People = () => {
                                 <p>{selectedIcons[index]?.block ? 'Unblock' : 'Block'}</p>
                               </TooltipContent>
                             </Tooltip>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-auto hover:bg-muted/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedIcons(prev => ({
-                                  ...prev,
-                                  [index]: {
-                                    ...prev[index],
-                                    info: !prev[index]?.info
-                                  }
-                                }));
-                              }}
-                            >
-                              <Info className={`h-4 w-4 transition-colors ${
-                                selectedIcons[index]?.info 
-                                  ? 'text-blue-500 fill-blue-500' 
-                                  : 'text-muted-foreground hover:text-primary'
-                              }`} />
-                            </Button>
                           </div>
                         </div>
                       </div>
