@@ -2,12 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
+import EditShareModal from "@/components/EditShareModal";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ThoughtsModal from "@/components/ThoughtsModal";
@@ -31,6 +32,8 @@ import spiritualBackground from "@/assets/spiritual-background.jpg";
 const Community = () => {
   const [filter, setFilter] = useState("all");
   const [createShareModalOpen, setCreateShareModalOpen] = useState(false);
+  const [editShareModalOpen, setEditShareModalOpen] = useState(false);
+  const [editingShare, setEditingShare] = useState<any>(null);
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -46,7 +49,7 @@ const Community = () => {
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
-  const posts = [
+  const [posts, setPosts] = useState([
     {
       type: "event",
       author: { name: "Elena Moonchild", avatar: elenaProfile, followers: 234, role: "Sound Healer" },
@@ -125,7 +128,36 @@ const Community = () => {
       shares: 6,
       youtubeUrl: "https://www.youtube.com/embed/abc123xyz"
     }
-  ];
+  ]);
+
+  const handleEditShare = (post: any, index: number) => {
+    setEditingShare({ ...post, index });
+    setEditShareModalOpen(true);
+  };
+
+  const handleUpdateShare = (updatedShare: any) => {
+    if (editingShare) {
+      const updatedPosts = [...posts];
+      updatedPosts[editingShare.index] = {
+        ...updatedPosts[editingShare.index],
+        title: updatedShare.title,
+        thought: updatedShare.thought,
+        description: updatedShare.description,
+        tags: updatedShare.tags,
+        ...(updatedShare.url && { youtubeUrl: updatedShare.url })
+      };
+      setPosts(updatedPosts);
+      setEditingShare(null);
+    }
+  };
+
+  const handleDeleteShare = () => {
+    if (editingShare) {
+      const updatedPosts = posts.filter((_, index) => index !== editingShare.index);
+      setPosts(updatedPosts);
+      setEditingShare(null);
+    }
+  };
 
   const filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
 
@@ -636,10 +668,18 @@ const Community = () => {
 
                     {/* Share Title Header for Shares */}
                     {post.type === 'share' && (
-                      <div className="p-3 pb-2">
-                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight">
+                      <div className="p-3 pb-2 relative">
+                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight pr-8">
                           {post.title}
                         </h2>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditShare(post, index)}
+                          className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-muted/70"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
                       </div>
                     )}
 
@@ -1242,6 +1282,15 @@ const Community = () => {
       <CreateShareModal 
         open={createShareModalOpen} 
         onOpenChange={setCreateShareModalOpen} 
+      />
+
+      {/* Edit Share Modal */}
+      <EditShareModal 
+        open={editShareModalOpen} 
+        onOpenChange={setEditShareModalOpen}
+        share={editingShare}
+        onUpdate={handleUpdateShare}
+        onDelete={handleDeleteShare}
       />
 
       {/* Thoughts Modal */}

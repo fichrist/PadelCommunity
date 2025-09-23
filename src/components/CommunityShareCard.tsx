@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Repeat2, BookOpen, Share2 } from "lucide-react";
+import { MessageCircle, Repeat2, BookOpen, Share2, Edit3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,6 +28,8 @@ interface CommunityShareCardProps {
   isSaved?: boolean;
   onToggleSave?: () => void;
   onShare?: () => void;
+  onEdit?: () => void;
+  showEditButton?: boolean;
 }
 
 const CommunityShareCard = ({
@@ -45,7 +47,9 @@ const CommunityShareCard = ({
   onToggleReshare,
   isSaved = false,
   onToggleSave,
-  onShare
+  onShare,
+  onEdit,
+  showEditButton = false
 }: CommunityShareCardProps) => {
   const navigate = useNavigate();
   const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
@@ -55,10 +59,20 @@ const CommunityShareCard = ({
     <Card className={`bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative ${isHorizontal ? 'flex-shrink-0 w-[32rem]' : ''}`}>
       <CardContent className="p-0">
         {/* Share Title Header */}
-        <div className="p-3 pb-2">
-          <h2 className="text-lg font-bold text-foreground mb-1 leading-tight">
+        <div className="p-3 pb-2 relative">
+          <h2 className="text-lg font-bold text-foreground mb-1 leading-tight pr-8">
             {title}
           </h2>
+          {showEditButton && onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-muted/70"
+            >
+              <Edit3 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Content */}
