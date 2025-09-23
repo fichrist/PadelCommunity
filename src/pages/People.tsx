@@ -521,6 +521,21 @@ const People = () => {
                   Healers
                 </Button>
                 <Button
+                  variant={filter === "contacts" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setFilter("contacts");
+                    // Clear other filters when contacts is selected
+                    setSelectedLocation("");
+                    setSelectedRadius("");
+                    setSelectedSpecialty("");
+                    setSelectedTags([]);
+                  }}
+                  className="px-3 py-1 rounded-full h-7 text-xs"
+                >
+                  Contacts
+                </Button>
+                <Button
                   variant={filter === "following" ? "default" : "ghost"}
                   size="sm"  
                   onClick={() => setFilter("following")}
@@ -535,21 +550,6 @@ const People = () => {
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
                   Followers
-                </Button>
-                <Button
-                  variant={filter === "contacts" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setFilter("contacts");
-                    // Clear other filters when contacts is selected
-                    setSelectedLocation("");
-                    setSelectedRadius("");
-                    setSelectedSpecialty("");
-                    setSelectedTags([]);
-                  }}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Contacts
                 </Button>
               </div>
               
