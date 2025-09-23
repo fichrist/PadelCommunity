@@ -15,6 +15,7 @@ import HealerProfile from "./pages/HealerProfile";
 import CreateEvent from "./pages/CreateEvent";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import EditEvent from "./pages/EditEvent";
 import EventHealerMode from "./pages/EventHealerMode";
 import EventHealerModeEdit from "./pages/EventHealerModeEdit";
 
@@ -31,6 +32,8 @@ const App = () => (
           <Route path="/events" element={<Events />} />
           <Route path="/people" element={<People />} />
           <Route path="/event/:eventId" element={<EventDetails />} />
+          <Route path="/createevent" element={<CreateEvent />} />
+          <Route path="/editevent/:eventId" element={<EditEvent />} />
           <Route path="/eventhealermode/:eventId" element={<EventHealerMode />} />
           <Route path="/eventhealermodeedit/:eventId" element={<EventHealerModeEdit />} />
           <Route path="/healer/:healerId" element={<HealerProfile />} />

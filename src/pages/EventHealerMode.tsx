@@ -227,17 +227,8 @@ const EventHealerMode = () => {
   };
 
   const handleEditEvent = () => {
-    // Navigate to create event page with prefilled data
-    const eventParams = new URLSearchParams({
-      edit: 'true',
-      eventId: eventId || '',
-      title: event.title,
-      description: event.description,
-      date: event.date,
-      location: event.location,
-      price: event.price
-    });
-    navigate(`/createevent?${eventParams.toString()}`);
+    // Navigate to dedicated edit event page
+    navigate(`/editevent/${eventId}`);
   };
 
   return (
