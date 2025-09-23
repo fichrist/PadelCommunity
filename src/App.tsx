@@ -28,7 +28,6 @@ const App = () => (
           <Route path="/" element={<Community />} />
           <Route path="/events" element={<Events />} />
           <Route path="/people" element={<People />} />
-          <Route path="/event/1" element={<EditableEventDetails />} />
           <Route path="/event/:eventId" element={<EventDetails />} />
           <Route path="/healer/:healerId" element={<HealerProfile />} />
           <Route path="/home" element={<Index />} />

@@ -567,7 +567,7 @@ const Community = () => {
                            {/* Event Image - 4:3 Aspect Ratio - Clickable */}
                            <div 
                              className="w-48 h-36 flex-shrink-0 cursor-pointer"
-                             onClick={() => navigate(post.eventId === "1" ? `/event/1` : `/event/${post.eventId}`)}
+                             onClick={() => navigate(`/event/${post.eventId}`)}
                            >
                              <img 
                                src={post.image} 
@@ -580,7 +580,7 @@ const Community = () => {
                            <div className="flex-1 min-w-0">
                              <h2 
                                className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
-                               onClick={() => navigate(post.eventId === "1" ? `/event/1` : `/event/${post.eventId}`)}
+                               onClick={() => navigate(`/event/${post.eventId}`)}
                              >
                                {post.title}
                              </h2>

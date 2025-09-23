@@ -57,7 +57,7 @@ const EventCard = ({
   const navigate = useNavigate();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer" onClick={() => navigate(eventId === "1" ? `/event/1` : `/event/${eventId}`)}>
+    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer" onClick={() => navigate(`/event/${eventId}`)}>
       {image && (
         <div className="relative h-48 bg-gradient-to-br from-sage/20 to-celestial/20 overflow-hidden">
           <img 
