@@ -285,9 +285,13 @@ const People = () => {
 
   const allUsers = [...healers, ...simpleUsers];
 
+  // Mock contact list - users in your contact list
+  const contactUsers = [0, 2, 6, 8]; // indices of users who are in contact list
+
   const filteredHealers = filter === "healers" ? healers.filter(person => person.isHealer) : 
     filter === "following" ? [...healers.filter((_, index) => followedUsers.includes(index)), ...simpleUsers.slice(0, 3)] :
     filter === "followers" ? [...healers.filter(healer => healer.followers > 1000), ...simpleUsers] :
+    filter === "contacts" ? [...healers.filter((_, index) => contactUsers.includes(index)), ...simpleUsers.filter((_, index) => contactUsers.includes(healers.length + index))] :
     healers;
 
   // Sort users based on selected sort option
@@ -531,6 +535,21 @@ const People = () => {
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
                   Followers
+                </Button>
+                <Button
+                  variant={filter === "contacts" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setFilter("contacts");
+                    // Clear other filters when contacts is selected
+                    setSelectedLocation("");
+                    setSelectedRadius("");
+                    setSelectedSpecialty("");
+                    setSelectedTags([]);
+                  }}
+                  className="px-3 py-1 rounded-full h-7 text-xs"
+                >
+                  Contacts
                 </Button>
               </div>
               
