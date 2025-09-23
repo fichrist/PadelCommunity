@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search } from "lucide-react";
+import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search, Video } from "lucide-react";
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
@@ -37,7 +37,7 @@ const EditEvent = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [eventVideo, setEventVideo] = useState<string | null>(null);
   const [comments, setComments] = useState("");
   const [reshareText, setReshareText] = useState("");
 
@@ -88,8 +88,8 @@ const EditEvent = () => {
       setEventImage(event.image);
       setComments(event.comments);
       setReshareText(event.reshareText);
-      // Set the background to the colorful sky by default
-      setBackgroundImage(colorfulSkyBackground);
+      // No default video
+      setEventVideo(null);
     }
   }, [event]);
 
@@ -108,17 +108,25 @@ const EditEvent = () => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'event' | 'background') => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        if (type === 'event') {
-          setEventImage(result);
-        } else {
-          setBackgroundImage(result);
-        }
+        setEventImage(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setEventVideo(result);
       };
       reader.readAsDataURL(file);
     }
@@ -141,7 +149,7 @@ const EditEvent = () => {
       price,
       tags,
       eventImage,
-      backgroundImage,
+      eventVideo,
       comments,
       reshareText
     });
@@ -342,7 +350,7 @@ const EditEvent = () => {
                 </div>
               </div>
 
-              {/* Image Uploads */}
+              {/* Image and Video Uploads */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Event Image</Label>
@@ -350,7 +358,7 @@ const EditEvent = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'event')}
+                      onChange={handleImageUpload}
                       className="hidden"
                       id="event-image"
                     />
@@ -370,23 +378,23 @@ const EditEvent = () => {
                 </div>
 
                 <div>
-                  <Label>Background Image</Label>
+                  <Label>Event Video</Label>
                   <div className="mt-2">
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'background')}
+                      accept="video/*"
+                      onChange={handleVideoUpload}
                       className="hidden"
-                      id="background-image"
+                      id="event-video"
                     />
-                    <label htmlFor="background-image" className="cursor-pointer">
+                    <label htmlFor="event-video" className="cursor-pointer">
                       <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors bg-background/30">
-                        {backgroundImage ? (
-                          <img src={backgroundImage} alt="Background" className="w-full h-32 object-cover rounded-lg" />
+                        {eventVideo ? (
+                          <video src={eventVideo} className="w-full h-32 object-cover rounded-lg" controls />
                         ) : (
                           <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                            <ImageIcon className="h-8 w-8 mb-2" />
-                            <span className="text-sm">Upload background image</span>
+                            <Video className="h-8 w-8 mb-2" />
+                            <span className="text-sm">Upload event video</span>
                           </div>
                         )}
                       </div>
