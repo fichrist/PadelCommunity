@@ -324,7 +324,7 @@ const Community = () => {
         <div className="bg-transparent sticky top-[73px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Community</h1>
+              <h1 className="text-2xl font-bold text-foreground font-comfortaa">We grow together</h1>
               
               {/* Centered Filters */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
