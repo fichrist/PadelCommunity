@@ -16,6 +16,7 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import CommunityShareCard from "@/components/CommunityShareCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
+import PersonalCalendar from "@/components/PersonalCalendar";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -248,6 +249,11 @@ const Profile = () => {
       </div>
 
       <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Personal Calendar */}
+        <div className="mb-12">
+          <PersonalCalendar />
+        </div>
+
         {/* Spiritual Interests */}
         <div className="mb-12">
           <Card className="border-border/50">
