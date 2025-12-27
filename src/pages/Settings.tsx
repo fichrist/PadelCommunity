@@ -16,13 +16,9 @@ const Settings = () => {
   const [privateProfile, setPrivateProfile] = useState(false);
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
+    <>
         {/* Header */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-[57px] z-40">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -160,8 +156,7 @@ const Settings = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 

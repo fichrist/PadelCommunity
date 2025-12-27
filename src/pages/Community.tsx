@@ -193,135 +193,9 @@ const Community = () => {
     .slice(0, 5); // Limit to 5 results
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
-      {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
-        {/* Facebook-style Header */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
-              </div>
-              
-              {/* Center: Navigation Icons */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-                <div className="relative">
-                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110">
-                    <Users className="h-9 w-9 text-primary" />
-                    <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/people')}
-                  >
-                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/chat')}
-                  >
-                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Right: Search Bar + Create Button + Profile */}
-              <div className="flex items-center space-x-3">
-                {/* Search Bar with Dropdown */}
-                <div className="hidden md:block relative">
-                  <Popover open={searchDropdownOpen} onOpenChange={setSearchDropdownOpen}>
-                    <PopoverTrigger asChild>
-                      <div className="flex items-center bg-muted rounded-full px-3 py-2 w-64 cursor-pointer">
-                        <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                        <input 
-                          type="text" 
-                          placeholder="search shares..." 
-                          value={searchQuery}
-                          onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setSearchDropdownOpen(true);
-                          }}
-                          className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                        />
-                        <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-2 mt-1" align="start">
-                      <div className="space-y-1">
-                        {filteredShareTitles.length > 0 ? (
-                          filteredShareTitles.map((share, index) => (
-                            <div 
-                              key={index}
-                              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer transition-colors"
-                              onClick={() => {
-                                setSearchQuery(share.title);
-                                setSearchDropdownOpen(false);
-                              }}
-                            >
-                               <Avatar 
-                                 className="h-6 w-6 cursor-pointer"
-                                 onClick={() => navigate(`/healer/${share.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                               >
-                                <AvatarImage src={share.author.avatar} />
-                                <AvatarFallback className="text-xs">
-                                  {share.author.name.split(' ').map((n: string) => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{share.title}</p>
-                                <p className="text-xs text-muted-foreground">by {share.author.name}</p>
-                              </div>
-                            </div>
-                          ))
-                        ) : searchQuery ? (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            No shares found
-                          </div>
-                        ) : (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            Start typing to search shares...
-                          </div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <CreateDropdown onCreateShare={() => setCreateShareModalOpen(true)} />
-                <NotificationDropdown />
-                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+    <>
         {/* Community Filters - Sticky */}
-        <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">We grow together</h1>
@@ -1280,7 +1154,6 @@ const Community = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Create Share Modal */}
       <CreateShareModal 
@@ -1329,7 +1202,7 @@ const Community = () => {
           title={selectedImage.title}
         />
       )}
-    </div>
+    </>
   );
 };
 
