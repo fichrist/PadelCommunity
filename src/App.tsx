@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import Events from "./pages/Events";
 import People from "./pages/People";
@@ -28,20 +29,20 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Community />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/people" element={<People />} />
-          <Route path="/event/:eventId" element={<EventDetails />} />
-          <Route path="/createevent" element={<CreateEvent />} />
-          <Route path="/editevent/:eventId" element={<EditEvent />} />
-          <Route path="/eventhealermode/:eventId" element={<EventHealerMode />} />
-          <Route path="/eventhealermodeedit/:eventId" element={<EventHealerModeEdit />} />
-          <Route path="/healer/:healerId" element={<HealerProfile />} />
-          <Route path="/home" element={<Index />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/create-event" element={<CreateEvent />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<AppLayout><Community /></AppLayout>} />
+          <Route path="/events" element={<AppLayout><Events /></AppLayout>} />
+          <Route path="/people" element={<AppLayout><People /></AppLayout>} />
+          <Route path="/event/:eventId" element={<AppLayout><EventDetails /></AppLayout>} />
+          <Route path="/createevent" element={<AppLayout><CreateEvent /></AppLayout>} />
+          <Route path="/editevent/:eventId" element={<AppLayout><EditEvent /></AppLayout>} />
+          <Route path="/eventhealermode/:eventId" element={<AppLayout><EventHealerMode /></AppLayout>} />
+          <Route path="/eventhealermodeedit/:eventId" element={<AppLayout><EventHealerModeEdit /></AppLayout>} />
+          <Route path="/healer/:healerId" element={<AppLayout><HealerProfile /></AppLayout>} />
+          <Route path="/home" element={<AppLayout><Index /></AppLayout>} />
+          <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
+          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+          <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

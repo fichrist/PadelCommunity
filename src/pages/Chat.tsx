@@ -165,83 +165,9 @@ const Chat = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
-      {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
-        {/* Top Navigation Bar */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
-              </div>
-              
-              {/* Center: Navigation Icons */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/')}
-                  >
-                    <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/people')}
-                  >
-                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110">
-                    <MessageCircle className="h-9 w-9 text-primary" />
-                    <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Right: Create Button + Profile */}
-              <div className="flex items-center space-x-3">
-                <Button
-                  size="sm"
-                  className="rounded-full h-10 w-10 p-0"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-                <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                  <AvatarImage src={elenaProfile} />
-                  <AvatarFallback className="text-sm">ME</AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
-          </div>
-        </div>
-
+    <>
         {/* Chat Section Title - Sticky */}
-        <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <h1 className="text-2xl font-bold text-foreground font-comfortaa">Talk</h1>
           </div>
@@ -449,8 +375,7 @@ const Chat = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </div>
+    </>
   );
 };
 

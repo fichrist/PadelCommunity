@@ -172,88 +172,9 @@ const CreateEvent = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
-        {/* Top Navigation Bar */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
-              </div>
-              
-              {/* Center: Navigation Icons */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/')}
-                  >
-                    <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/people')}
-                  >
-                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/chat')}
-                  >
-                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Right: Search Bar + Create Button + Profile */}
-              <div className="flex items-center space-x-3">
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                  <input 
-                    type="text" 
-                    placeholder="search..." 
-                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                  />
-                </div>
-                <CreateDropdown onCreateShare={() => {}} />
-                <NotificationDropdown />
-                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+    <>
         {/* Page Title */}
-        <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-foreground font-comfortaa">
@@ -565,8 +486,7 @@ const CreateEvent = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 

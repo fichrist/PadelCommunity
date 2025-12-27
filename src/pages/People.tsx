@@ -317,166 +317,9 @@ const People = () => {
 
   return (
     <TooltipProvider>
-      <div 
-        className="min-h-screen bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-      >
-      {/* Background Overlay */}
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm pt-0">
-        {/* Top Navigation Bar - Same as Community */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
-              </div>
-              
-              {/* Center: Navigation Icons */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/')}
-                  >
-                    <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button variant="ghost" size="lg" className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110">
-                    <User className="h-9 w-9 text-primary" />
-                    <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/chat')}
-                  >
-                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-              </div>
-              
-               {/* Right: Search Bar + Create Button + Profile */}
-               <div className="flex items-center space-x-3">
-                 {/* Search Bar with Dropdown */}
-                 <div className="hidden md:block relative w-64">
-                   <div className="flex items-center bg-muted rounded-full px-3 py-2">
-                     <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                     <input 
-                       type="text" 
-                       placeholder="search souls..." 
-                       value={searchQuery}
-                       onChange={(e) => {
-                         setSearchQuery(e.target.value);
-                         setShowSearchDropdown(e.target.value.length >= 3);
-                       }}
-                       onFocus={() => setShowSearchDropdown(searchQuery.length >= 3)}
-                       onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
-                       className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                     />
-                   </div>
-                   
-                   {/* Search Dropdown */}
-                   {showSearchDropdown && searchResults.length > 0 && (
-                     <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
-                       {searchResults.map((user, index) => {
-                         const originalIndex = allUsers.findIndex(u => u.name === user.name);
-                         const isFollowed = followedUsers.includes(originalIndex);
-                         
-                         return (
-                           <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/50 border-b border-border last:border-b-0">
-                             <div 
-                               className="flex items-center space-x-3 flex-1 cursor-pointer"
-                               onClick={() => {
-                                 navigate(`/${user.isHealer ? 'healer' : 'profile'}/${originalIndex + 1}`);
-                                 setShowSearchDropdown(false);
-                               }}
-                             >
-                               <Avatar className="h-8 w-8">
-                                 <AvatarImage src={user.avatar} />
-                                 <AvatarFallback className="text-xs">
-                                   {user.name.split(' ').map(n => n[0]).join('')}
-                                 </AvatarFallback>
-                               </Avatar>
-                               <div className="flex-1 min-w-0">
-                                 <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                                 <p className="text-xs text-muted-foreground truncate">{user.role}</p>
-                                 <p className="text-xs text-muted-foreground truncate">{user.location}</p>
-                               </div>
-                             </div>
-                             
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="p-2 h-auto ml-2"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       if (isFollowed) {
-                                         setFollowedUsers(prev => prev.filter(id => id !== originalIndex));
-                                           setSelectedIcons(prev => ({
-                                             ...prev,
-                                             [originalIndex]: { calendar: false, info: false, block: false, notification: false }
-                                           }));
-                                       } else {
-                                         setFollowedUsers(prev => [...prev, originalIndex]);
-                                           setSelectedIcons(prev => ({
-                                             ...prev,
-                                             [originalIndex]: { calendar: true, info: true, block: false, notification: false }
-                                           }));
-                                       }
-                                     }}
-                                  >
-                                    <Heart className={`h-4 w-4 ${isFollowed ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Follow</p>
-                                </TooltipContent>
-                              </Tooltip>
-                           </div>
-                         );
-                       })}
-                     </div>
-                   )}
-                 </div>
-                <Button
-                  size="sm"
-                  className="rounded-full h-10 w-10 p-0"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-                <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                  <AvatarImage src={elenaProfile} />
-                  <AvatarFallback className="text-sm">ME</AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
-          </div>
-        </div>
-
+    <>
         {/* People Filters - Sticky */}
-        <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
@@ -942,8 +785,7 @@ const People = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </>
     </TooltipProvider>
   );
 };
