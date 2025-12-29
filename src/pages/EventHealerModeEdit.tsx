@@ -11,45 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-// Import images
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
-import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
+// Import centralized events data
+import { getEventById } from "@/data/events";
 
 const EventHealerModeEdit = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
 
-  const eventData = {
-    "1": {
-      id: "1",
-      title: "Full Moon Sound Healing Ceremony",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony.",
-      fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening.",
-      image: soundHealingEvent,
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      comments: "Please bring your own yoga mat and blanket. Water will be provided. Arrive 15 minutes early for check-in.",
-      reshareText: "Join us for this magical full moon ceremony! 🌕✨ Limited spots available.",
-    },
-    "2": {
-      id: "2",
-      title: "Crystal Healing Workshop for Beginners",
-      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth.",
-      fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques.",
-      image: crystalWorkshopEvent,
-      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      comments: "All materials provided. Comfortable clothing recommended. Lunch included on all three days.",
-      reshareText: "Perfect for beginners! Learn the art of crystal healing in beautiful Asheville 💎🌿",
-    }
-  };
-
-  const event = eventData[eventId as keyof typeof eventData];
+  // Get event from centralized data
+  const event = getEventById(eventId || "");
   
   const [editedEvent, setEditedEvent] = useState({
     title: event?.title || "",
     description: event?.description || "",
     fullDescription: event?.fullDescription || "",
     tags: event?.tags || [],
-    comments: event?.comments || "",
+    comments: event?.commentsInstructions || "",
     reshareText: event?.reshareText || "",
   });
 
