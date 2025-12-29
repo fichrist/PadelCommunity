@@ -12,17 +12,12 @@ import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
 
-// Import images
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
-import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
+// Import centralized events data
+import { getEventById, elenaProfile } from "@/data/events";
 
 const EditEvent = () => {
   const navigate = useNavigate();
@@ -42,54 +37,19 @@ const EditEvent = () => {
   const [eventVideo, setEventVideo] = useState<string | null>(null);
   const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string, soldOut: boolean}[]>([]);
 
-  const eventData = {
-    "1": {
-      id: "1",
-      title: "Full Moon Sound Healing Ceremony",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony.",
-      fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening.",
-      image: soundHealingEvent,
-      date: "March 15, 2024",
-      dateTo: "",
-      time: "7:00 PM - 9:30 PM",
-      location: "Sacred Grove Sanctuary, Sedona AZ",
-      prices: [{text: "Regular", amount: "65", soldOut: false}, {text: "Early Bird", amount: "55", soldOut: true}],
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      additionalOptions: [
-        {name: "Sacred Cacao Ceremony", price: "25", description: "Ceremonial cacao drink to open the heart chakra", soldOut: false},
-        {name: "Personal Crystal Set", price: "35", description: "Take home your own set of charged healing crystals", soldOut: true}
-      ],
-    },
-    "2": {
-      id: "2",
-      title: "Crystal Healing Workshop for Beginners",
-      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth.",
-      fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques.",
-      image: crystalWorkshopEvent,
-      date: "April 2-4, 2024",
-      dateTo: "",
-      time: "10:00 AM - 4:00 PM",
-      location: "Crystal Cave Studio, Asheville NC",
-      prices: [{text: "3-Day Workshop", amount: "225"}],
-      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      additionalOptions: [
-        {name: "Advanced Crystal Kit", price: "45", description: "Premium crystals including rare healing stones", soldOut: false}
-      ],
-    }
-  };
-
-  const event = eventData[eventId as keyof typeof eventData];
+  // Get event from centralized data
+  const event = getEventById(eventId || "");
 
   // Prefill data when component loads
   useEffect(() => {
     if (event) {
       setTitle(event.title);
       setDescription(event.description);
-      setFullDescription(event.fullDescription);
+      setFullDescription(event.fullDescription || "");
       setLocation(event.location);
       setDate(event.date);
       setDateTo(event.dateTo || "");
-      setTime(event.time);
+      setTime(event.time || "");
       setPrices((event.prices || []).map((price: any) => ({
         text: price.text || "",
         amount: price.amount || "",
@@ -103,7 +63,6 @@ const EditEvent = () => {
         soldOut: option.soldOut || false
       })));
       setEventImage(event.image);
-      // No default video
       setEventVideo(null);
     }
   }, [event]);

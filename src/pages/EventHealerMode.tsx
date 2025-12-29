@@ -19,13 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-// Import images
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
-import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
+// Import centralized events data
+import { getEventById, formatEventForDetail, elenaProfile, davidProfile, ariaProfile, phoenixProfile } from "@/data/events";
 
 const EventHealerMode = () => {
   const { eventId } = useParams();
@@ -65,6 +60,11 @@ const EventHealerMode = () => {
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Get event from centralized data
+  const rawEvent = getEventById(eventId || "");
+  const event = rawEvent ? formatEventForDetail(rawEvent, true) : null;
+  const [organizers, setOrganizers] = useState(event?.organizers || []);
+
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
       toast.error("Please enter a message to send");
@@ -72,125 +72,20 @@ const EventHealerMode = () => {
     }
 
     setBroadcastModalOpen(false);
+    const attendeesArray = Array.isArray(event?.attendees) ? event.attendees : [];
     
-    // Send message to each attendee individually with a delay between each
-    for (let i = 0; i < event.attendees.length; i++) {
-      const attendee = event.attendees[i];
+    for (let i = 0; i < attendeesArray.length; i++) {
+      const attendee = attendeesArray[i];
       setTimeout(() => {
         toast.success(`Message sent to ${attendee.name}`, {
           description: `"${broadcastMessage.substring(0, 50)}${broadcastMessage.length > 50 ? '...' : ''}"`
         });
-      }, i * 500); // 500ms delay between each popup
+      }, i * 500);
     }
     
     setBroadcastMessage("");
-    toast.success(`Broadcasting to ${event.attendees.length} attendees`);
+    toast.success(`Broadcasting to ${attendeesArray.length} attendees`);
   };
-
-  const eventData = {
-    "1": {
-      id: "1",
-      title: "Full Moon Sound Healing Ceremony",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony. This transformative sound healing session will align your chakras and restore inner peace under the powerful energy of the full moon.",
-      fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening. The session begins with a guided meditation to help you connect with the lunar energy, followed by 90 minutes of immersive sound healing. You'll lie comfortably on yoga mats as the healing vibrations wash over you, releasing tension, clearing energy blocks, and promoting deep relaxation. Many participants report profound spiritual insights, emotional release, and a sense of renewal after these sessions.",
-      image: soundHealingEvent,
-      organizers: [
-        { 
-          name: "Elena Moonchild", 
-          avatar: elenaProfile, 
-          role: "Sound Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "New Moon Meditation Circle", date: "Feb 28, 2024", attendees: 18 },
-            { title: "Chakra Balancing Workshop", date: "Feb 14, 2024", attendees: 24 },
-            { title: "Sound Bath Experience", date: "Jan 30, 2024", attendees: 32 }
-          ]
-        },
-        { 
-          name: "David Peace", 
-          avatar: davidProfile, 
-          role: "Assistant Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "Mindfulness Retreat", date: "Mar 1, 2024", attendees: 15 },
-            { title: "Healing Touch Workshop", date: "Feb 20, 2024", attendees: 20 }
-          ]
-        }
-      ],
-      date: "March 15, 2024",
-      time: "7:00 PM - 9:30 PM",
-      location: "Sacred Grove Sanctuary, Sedona AZ",
-      price: "$65",
-      priceOptions: [
-        { type: "Early Bird", price: "$55", description: "Limited time offer", soldOut: true },
-        { type: "Regular", price: "$65", description: "Standard price", soldOut: false },
-        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony", soldOut: false }
-      ],
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      addOns: [
-        { id: "cacao", name: "Sacred Cacao Ceremony", price: "$25", description: "Ceremonial cacao drink to open the heart chakra" },
-        { id: "crystals", name: "Personal Crystal Set", price: "$35", description: "Take home your own set of charged healing crystals" },
-        { id: "sage", name: "Sage Cleansing Kit", price: "$15", description: "White sage bundle and palo santo for home cleansing" },
-        { id: "recording", name: "Session Recording", price: "$20", description: "Audio recording of the healing session for home practice" }
-      ],
-      attendees: [
-        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ" },
-        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ" },
-        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ" },
-        { name: "Emma Wilson", avatar: phoenixProfile, location: "Scottsdale, AZ" },
-        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ" },
-        { name: "Mark Thompson", avatar: davidProfile, location: "Mesa, AZ" },
-        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ" },
-        { name: "Jessica Chen", avatar: ariaProfile, location: "Phoenix, AZ" },
-      ]
-    },
-    "2": {
-      id: "2",
-      title: "Crystal Healing Workshop for Beginners",
-      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth in this hands-on workshop.",
-      fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques. The workshop includes hands-on practice with crystal layouts, meditation with stones, and creating your own crystal grid for manifestation. Each participant will receive a starter crystal kit including clear quartz, amethyst, rose quartz, and black tourmaline, along with a detailed guidebook. Aria will share her decade of experience working with crystals, including personal stories of transformation and healing. The intimate class size ensures personalized attention and plenty of opportunity for questions.",
-      image: crystalWorkshopEvent,
-      organizers: [
-        { 
-          name: "Aria Starseed", 
-          avatar: ariaProfile, 
-          role: "Crystal Healer", 
-          location: "Asheville, NC",
-          previousEvents: [
-            { title: "Crystal Grid Mastery", date: "Mar 5, 2024", attendees: 12 },
-            { title: "Gemstone Healing Circle", date: "Feb 22, 2024", attendees: 16 },
-            { title: "Advanced Crystal Workshop", date: "Feb 8, 2024", attendees: 14 }
-          ]
-        }
-      ],
-      date: "April 2-4, 2024",
-      time: "10:00 AM - 4:00 PM",
-      location: "Crystal Cave Studio, Asheville NC",
-      price: "$225",
-      priceOptions: [
-        { type: "Workshop Only", price: "$195", description: "3-day workshop access", soldOut: false },
-        { type: "Workshop + Kit", price: "$225", description: "Includes crystal starter kit", soldOut: false },
-        { type: "Premium Package", price: "$295", description: "Workshop, kit & private session", soldOut: true }
-      ],
-      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      addOns: [
-        { id: "advanced-kit", name: "Advanced Crystal Kit", price: "$45", description: "Premium crystals including rare healing stones" },
-        { id: "private-session", name: "Private Consultation", price: "$75", description: "30-minute one-on-one crystal healing session" },
-        { id: "guidebook", name: "Comprehensive Guidebook", price: "$28", description: "Detailed crystal healing reference book" }
-      ],
-      attendees: [
-        { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC" },
-        { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC" },
-        { name: "Alex Johnson", avatar: phoenixProfile, location: "Raleigh, NC" },
-        { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC" },
-        { name: "Maya Patel", avatar: elenaProfile, location: "Charlotte, NC" },
-        { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC" },
-      ]
-    }
-  };
-
-  const event = eventData[eventId as keyof typeof eventData];
-  const [organizers, setOrganizers] = useState(event?.organizers || []);
 
   if (!event) {
     return <div>Event not found</div>;
