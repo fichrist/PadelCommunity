@@ -5,48 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Users, Heart, MessageCircle, ArrowRight, Sparkles, User, Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import CreateDropdown from "@/components/CreateDropdown";
-import NotificationDropdown from "@/components/NotificationDropdown";
-import ProfileDropdown from "@/components/ProfileDropdown";
+
+// Import centralized events data
+import { getFeaturedEvents, formatEventForList } from "@/data/events";
 
 const Index = () => {
   const navigate = useNavigate();
   
-  const featuredEvents = [
-    {
-      eventId: "1",
-      title: "Morning Meditation Circle",
-      description: "Start your day with peaceful meditation in our beautiful garden sanctuary.",
-      date: "Tomorrow, 7:00 AM",
-      location: "Zen Garden Center", 
-      organizers: [{ name: "Sarah Chen", avatar: "", id: "healer-1" }],
-      attendees: 12,
-      category: "Meditation"
-    },
-    {
-      eventId: "2",
-      title: "Full Moon Healing Ceremony",
-      description: "Join us for a transformative healing circle under the full moon's energy.",
-      date: "This Friday, 8:00 PM",
-      location: "Sacred Grove",
-      organizers: [{ name: "Marcus Rivera", avatar: "", id: "healer-2" }],
-      attendees: 28,
-      category: "Ceremony"
-    },
-    {
-      eventId: "3",
-      title: "Yoga & Sound Bath",
-      description: "Gentle yoga flow followed by immersive crystal singing bowl meditation.",
-      date: "Saturday, 10:00 AM", 
-      location: "Harmony Studio",
-      organizers: [{ name: "Luna Wise", avatar: "", id: "healer-3" }],
-      attendees: 15,
-      category: "Yoga"
-    }
-  ];
+  // Get featured events from centralized data
+  const featuredEvents = getFeaturedEvents(3).map(formatEventForList);
 
   const features = [
     {

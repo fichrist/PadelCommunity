@@ -19,13 +19,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
 
-// Import images
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
-import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
+// Import centralized events data
+import { getEventById, formatEventForDetail, elenaProfile } from "@/data/events";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -91,109 +86,9 @@ const EventDetails = () => {
     }));
   };
 
-const eventData = {
-    "1": {
-      id: "1",
-      title: "Full Moon Sound Healing Ceremony",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony. This transformative sound healing session will align your chakras and restore inner peace under the powerful energy of the full moon.",
-      fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening. The session begins with a guided meditation to help you connect with the lunar energy, followed by 90 minutes of immersive sound healing. You'll lie comfortably on yoga mats as the healing vibrations wash over you, releasing tension, clearing energy blocks, and promoting deep relaxation. Many participants report profound spiritual insights, emotional release, and a sense of renewal after these sessions.",
-      image: soundHealingEvent,
-      organizers: [
-        { 
-          name: "Elena Moonchild", 
-          avatar: elenaProfile, 
-          role: "Sound Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "New Moon Meditation Circle", date: "Feb 28, 2024", attendees: 18 },
-            { title: "Chakra Balancing Workshop", date: "Feb 14, 2024", attendees: 24 },
-            { title: "Sound Bath Experience", date: "Jan 30, 2024", attendees: 32 }
-          ]
-        },
-        { 
-          name: "David Peace", 
-          avatar: davidProfile, 
-          role: "Assistant Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "Mindfulness Retreat", date: "Mar 1, 2024", attendees: 15 },
-            { title: "Healing Touch Workshop", date: "Feb 20, 2024", attendees: 20 }
-          ]
-        }
-      ],
-      date: "March 15, 2024",
-      time: "7:00 PM - 9:30 PM",
-      location: "Sacred Grove Sanctuary, Sedona AZ",
-      price: "$65",
-      priceOptions: [
-        { type: "Early Bird", price: "$55", description: "Limited time offer", soldOut: true },
-        { type: "Regular", price: "$65", description: "Standard price", soldOut: false },
-        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony", soldOut: false }
-      ],
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      addOns: [
-        { id: "cacao", name: "Sacred Cacao Ceremony", price: "$25", description: "Ceremonial cacao drink to open the heart chakra" },
-        { id: "crystals", name: "Personal Crystal Set", price: "$35", description: "Take home your own set of charged healing crystals" },
-        { id: "sage", name: "Sage Cleansing Kit", price: "$15", description: "White sage bundle and palo santo for home cleansing" },
-        { id: "recording", name: "Session Recording", price: "$20", description: "Audio recording of the healing session for home practice" }
-      ],
-      attendees: [
-        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
-        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
-        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ", isAnonymous: false },
-        { name: isHealerMode ? "Emma Wilson" : "Anonymous", avatar: isHealerMode ? phoenixProfile : "", location: isHealerMode ? "Scottsdale, AZ" : "", isAnonymous: true },
-        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: false },
-        { name: isHealerMode ? "Mark Thompson" : "Anonymous", avatar: isHealerMode ? davidProfile : "", location: isHealerMode ? "Mesa, AZ" : "", isAnonymous: true },
-        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ", isAnonymous: false },
-        { name: isHealerMode ? "Jessica Chen" : "Anonymous", avatar: isHealerMode ? ariaProfile : "", location: isHealerMode ? "Phoenix, AZ" : "", isAnonymous: true },
-      ]
-    },
-    "2": {
-      id: "2",
-      title: "Crystal Healing Workshop for Beginners",
-      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth in this hands-on workshop.",
-      fullDescription: "Discover the ancient art of crystal healing in this comprehensive beginner's workshop. You'll learn about the metaphysical properties of different crystals, how to choose the right stones for your needs, and various cleansing and charging techniques. The workshop includes hands-on practice with crystal layouts, meditation with stones, and creating your own crystal grid for manifestation. Each participant will receive a starter crystal kit including clear quartz, amethyst, rose quartz, and black tourmaline, along with a detailed guidebook. Aria will share her decade of experience working with crystals, including personal stories of transformation and healing. The intimate class size ensures personalized attention and plenty of opportunity for questions.",
-      image: crystalWorkshopEvent,
-      organizers: [
-        { 
-          name: "Aria Starseed", 
-          avatar: ariaProfile, 
-          role: "Crystal Healer", 
-          location: "Asheville, NC",
-          previousEvents: [
-            { title: "Crystal Grid Mastery", date: "Mar 5, 2024", attendees: 12 },
-            { title: "Gemstone Healing Circle", date: "Feb 22, 2024", attendees: 16 },
-            { title: "Advanced Crystal Workshop", date: "Feb 8, 2024", attendees: 14 }
-          ]
-        }
-      ],
-      date: "April 2-4, 2024",
-      time: "10:00 AM - 4:00 PM",
-      location: "Crystal Cave Studio, Asheville NC",
-      price: "$225",
-      priceOptions: [
-        { type: "Workshop Only", price: "$195", description: "3-day workshop access", soldOut: false },
-        { type: "Workshop + Kit", price: "$225", description: "Includes crystal starter kit", soldOut: false },
-        { type: "Premium Package", price: "$295", description: "Workshop, kit & private session", soldOut: true }
-      ],
-      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      addOns: [
-        { id: "advanced-kit", name: "Advanced Crystal Kit", price: "$45", description: "Premium crystals including rare healing stones" },
-        { id: "private-session", name: "Private Consultation", price: "$75", description: "30-minute one-on-one crystal healing session" },
-        { id: "guidebook", name: "Comprehensive Guidebook", price: "$28", description: "Detailed crystal healing reference book" }
-      ],
-      attendees: [
-        { name: "Luna Sage", avatar: elenaProfile, location: "Asheville, NC", isAnonymous: false },
-        { name: "Ocean Mystic", avatar: davidProfile, location: "Charlotte, NC", isAnonymous: false },
-        { name: isHealerMode ? "Alex Johnson" : "Anonymous", avatar: isHealerMode ? phoenixProfile : "", location: isHealerMode ? "Raleigh, NC" : "", isAnonymous: true },
-        { name: "Forest Walker", avatar: ariaProfile, location: "Boone, NC", isAnonymous: false },
-        { name: isHealerMode ? "Maya Patel" : "Anonymous", avatar: isHealerMode ? elenaProfile : "", location: isHealerMode ? "Charlotte, NC" : "", isAnonymous: true },
-        { name: "Crystal Dawn", avatar: phoenixProfile, location: "Durham, NC", isAnonymous: false },
-      ]
-    }
-  };
-
-  const event = eventData[eventId as keyof typeof eventData];
+  // Get event from centralized data
+  const rawEvent = getEventById(eventId || "");
+  const event = rawEvent ? formatEventForDetail(rawEvent, isHealerMode) : null;
   const displayEvent = editedEvent || event;
 
   if (!event) {

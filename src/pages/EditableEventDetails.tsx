@@ -20,13 +20,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
 
-// Import images
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
+// Import centralized events data
+import { getEventById, formatEventForDetail, elenaProfile, ariaProfile } from "@/data/events";
 import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
 
 const EditableEventDetails = () => {
   const { eventId } = useParams();
@@ -51,66 +47,9 @@ const EditableEventDetails = () => {
 
   const { register, handleSubmit, watch, setValue, reset } = useForm();
 
-const eventData = {
-    "1": {
-      id: "1",
-      title: "Full Moon Sound Healing Ceremony",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony. This transformative sound healing session will align your chakras and restore inner peace under the powerful energy of the full moon.",
-      fullDescription: "Join us for a deeply transformative sound healing experience that combines the mystical energy of the full moon with ancient healing frequencies. This ceremony features crystal singing bowls tuned to specific chakra frequencies, Tibetan gongs, and sacred chants that have been used for centuries to promote healing and spiritual awakening. The session begins with a guided meditation to help you connect with the lunar energy, followed by 90 minutes of immersive sound healing. You'll lie comfortably on yoga mats as the healing vibrations wash over you, releasing tension, clearing energy blocks, and promoting deep relaxation. Many participants report profound spiritual insights, emotional release, and a sense of renewal after these sessions.",
-      image: soundHealingEvent,
-      organizers: [
-        { 
-          name: "Elena Moonchild", 
-          avatar: elenaProfile, 
-          role: "Sound Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "New Moon Meditation Circle", date: "Feb 28, 2024", attendees: 18 },
-            { title: "Chakra Balancing Workshop", date: "Feb 14, 2024", attendees: 24 },
-            { title: "Sound Bath Experience", date: "Jan 30, 2024", attendees: 32 }
-          ]
-        },
-        { 
-          name: "David Peace", 
-          avatar: davidProfile, 
-          role: "Assistant Healer", 
-          location: "Sedona, AZ",
-          previousEvents: [
-            { title: "Mindfulness Retreat", date: "Mar 1, 2024", attendees: 15 },
-            { title: "Healing Touch Workshop", date: "Feb 20, 2024", attendees: 20 }
-          ]
-        }
-      ],
-      date: "March 15, 2024",
-      time: "7:00 PM - 9:30 PM",
-      location: "Sacred Grove Sanctuary, Sedona AZ",
-      price: "$65",
-      priceOptions: [
-        { type: "Early Bird", price: "$55", description: "Limited time offer", soldOut: true },
-        { type: "Regular", price: "$65", description: "Standard price", soldOut: false },
-        { type: "VIP", price: "$95", description: "Includes crystal gift & tea ceremony", soldOut: false }
-      ],
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      addOns: [
-        { id: "cacao", name: "Sacred Cacao Ceremony", price: "$25", description: "Ceremonial cacao drink to open the heart chakra" },
-        { id: "crystals", name: "Personal Crystal Set", price: "$35", description: "Take home your own set of charged healing crystals" },
-        { id: "sage", name: "Sage Cleansing Kit", price: "$15", description: "White sage bundle and palo santo for home cleansing" },
-        { id: "recording", name: "Session Recording", price: "$20", description: "Audio recording of the healing session for home practice" }
-      ],
-      attendees: [
-        { name: "Sarah Light", avatar: elenaProfile, location: "Phoenix, AZ", isAnonymous: false },
-        { name: "David Peace", avatar: davidProfile, location: "Tucson, AZ", isAnonymous: false },
-        { name: "Luna Sage", avatar: ariaProfile, location: "Flagstaff, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
-        { name: "River Flow", avatar: phoenixProfile, location: "Scottsdale, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
-        { name: "Star Dreamer", avatar: elenaProfile, location: "Tempe, AZ", isAnonymous: false },
-        { name: "Anonymous", avatar: "", location: "", isAnonymous: true },
-      ]
-    }
-  };
-
-  const event = eventData[eventId as keyof typeof eventData];
+  // Get event from centralized data
+  const rawEvent = getEventById(eventId || "");
+  const event = rawEvent ? formatEventForDetail(rawEvent, false) : null;
 
   if (!event) {
     return <div>Event not found</div>;

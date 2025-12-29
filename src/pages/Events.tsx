@@ -16,13 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 
-// Import images
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import soundHealingEvent from "@/assets/sound-healing-event.jpg";
-import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
+// Import centralized events data
+import { getAllEvents, getAllTags, formatEventForList, getAttendeeCount, elenaProfile, davidProfile } from "@/data/events";
 
 const Events = () => {
   const [filter, setFilter] = useState("all");
@@ -45,148 +40,15 @@ const Events = () => {
   const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const events = [
-    {
-      eventId: "1",
-      title: "Morning Meditation Circle",
-      description: "Start your day with peaceful meditation in our beautiful garden sanctuary. All levels welcome. This gentle practice includes breathing exercises, guided meditation, and silent contemplation in nature.",
-      date: "March 16, 2024 at 7:00 AM",
-      location: "Zen Garden Center, Sedona AZ",
-      organizers: [
-        { name: "Sarah Chen", avatar: elenaProfile, id: "healer-1" },
-        { name: "Michael Zen", avatar: elenaProfile, id: "healer-7" }
-      ],
-      attendees: 12,
-      category: "Meditation",
-      image: soundHealingEvent,
-      isPastEvent: false,
-      tags: ["Meditation", "Morning Practice", "Garden"],
-      comments: 5,
-      connectionsGoing: ["Luna Sage", "River Flow"]
-    },
-    {
-      eventId: "2",
-      title: "Full Moon Healing Ceremony",
-      description: "Join us for a transformative healing circle under the full moon's energy. Experience deep healing through sound, crystal work, and collective intention setting in our sacred outdoor space.",
-      date: "March 18, 2024 at 8:00 PM",
-      location: "Sacred Grove, Boulder CO",
-      organizers: [
-        { name: "Marcus Rivera", avatar: elenaProfile, id: "healer-2" }
-      ],
-      attendees: 28,
-      category: "Ceremony",
-      image: crystalWorkshopEvent,
-      isPastEvent: false,
-      tags: ["Full Moon", "Healing", "Ceremony"],
-      comments: 8,
-      connectionsGoing: ["Sarah Light", "David Peace", "Luna Sage"]
-    },
-    {
-      eventId: "3",
-      title: "Yoga & Sound Bath",
-      description: "Gentle yoga flow followed by immersive crystal singing bowl meditation. Perfect for releasing tension and finding inner peace through movement and sound healing vibrations.",
-      date: "March 14, 2024 at 10:00 AM",
-      location: "Harmony Studio, Asheville NC",
-      organizers: [
-        { name: "Luna Wise", avatar: elenaProfile, id: "healer-3" },
-        { name: "Echo Sound", avatar: elenaProfile, id: "healer-8" },
-        { name: "River Flow", avatar: elenaProfile, id: "healer-9" }
-      ],
-      attendees: 15,
-      category: "Yoga",
-      image: soundHealingEvent,
-      isPastEvent: true,
-      averageRating: 4.8,
-      totalReviews: 12,
-      reviews: [
-        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, rating: 5, content: "Amazing session! The sound bath was deeply relaxing and transformative.", timeAgo: "2 days ago" },
-        { id: "2", author: { name: "David Peace", avatar: elenaProfile }, rating: 4, content: "Perfect combination of yoga and sound healing. Luna is very skilled.", timeAgo: "1 day ago" },
-        { id: "3", author: { name: "River Flow", avatar: elenaProfile }, rating: 5, content: "Best sound bath I've experienced. The space was beautiful too.", timeAgo: "3 days ago" }
-      ],
-      tags: ["Yoga", "Sound Bath", "Meditation"],
-      comments: 12,
-      connectionsGoing: ["David Peace"],
-      thoughts: [
-        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Amazing workshop! Looking forward to more sessions like this.", likes: 8, timeAgo: "2 days ago" }
-      ]
-    },
-    {
-      eventId: "4",
-      title: "Mindful Nature Walk",
-      description: "Connect with nature through mindful walking and forest meditation. Discover the healing power of trees, breathe fresh mountain air, and practice walking meditation techniques.",
-      date: "March 17, 2024 at 9:00 AM",
-      location: "Mountain Trail, Big Sur CA",
-      organizers: [
-        { name: "River Stone", avatar: elenaProfile, id: "healer-4" },
-        { name: "Forest Guide", avatar: elenaProfile, id: "healer-10" }
-      ],
-      attendees: 8,
-      category: "Nature",
-      image: crystalWorkshopEvent,
-      isPastEvent: false,
-      tags: ["Nature", "Walking", "Mindfulness"],
-      comments: 3,
-      connectionsGoing: ["Luna Sage"],
-      thoughts: [
-        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, content: "Can't wait for this peaceful nature walk. Perfect way to start the day.", likes: 5, timeAgo: "1 hour ago" }
-      ]
-    },
-    {
-      eventId: "5",
-      title: "Sacred Geometry Workshop",
-      description: "Explore the divine patterns in nature and their spiritual significance. Learn how to recognize and work with sacred geometric forms in meditation, art, and daily life practices.",
-      date: "March 12, 2024 at 6:00 PM",
-      location: "Wisdom Circle, Mount Shasta CA",
-      organizers: [
-        { name: "Dr. Amara Light", avatar: elenaProfile, id: "healer-5" }
-      ],
-      attendees: 22,
-      category: "Workshop",
-      image: soundHealingEvent,
-      isPastEvent: true,
-      averageRating: 4.9,
-      totalReviews: 18,
-      reviews: [
-        { id: "1", author: { name: "Star Seeker", avatar: elenaProfile }, rating: 5, content: "Mind-blowing insights into sacred geometry! Dr. Amara's knowledge is incredible.", timeAgo: "1 week ago" },
-        { id: "2", author: { name: "Cosmic Mind", avatar: elenaProfile }, rating: 5, content: "This workshop changed my perspective on everything. Highly recommended!", timeAgo: "5 days ago" },
-        { id: "3", author: { name: "Sacred Soul", avatar: elenaProfile }, rating: 4, content: "Fascinating content and great presentation. Worth every minute.", timeAgo: "1 week ago" }
-      ],
-      tags: ["Sacred Geometry", "Workshop", "Education"],
-      comments: 15,
-      connectionsGoing: ["Star Seeker", "Cosmic Mind"],
-      thoughts: [
-        { id: "1", author: { name: "Star Seeker", avatar: elenaProfile }, content: "Dr. Amara's workshops are always enlightening. This one was exceptional!", likes: 12, timeAgo: "1 week ago" }
-      ]
-    },
-    {
-      eventId: "6",
-      title: "Chakra Balancing Session",
-      description: "Realign your energy centers through guided visualization and healing. Experience deep chakra cleansing, energy balancing, and learn techniques for maintaining energetic harmony.",
-      date: "March 19, 2024 at 7:30 PM",
-      location: "Crystal Temple, Tulum Mexico",
-      organizers: [
-        { name: "Sage Moon", avatar: elenaProfile, id: "healer-6" },
-        { name: "Crystal Aura", avatar: elenaProfile, id: "healer-11" },
-        { name: "Energy Master", avatar: elenaProfile, id: "healer-12" }
-      ],
-      attendees: 18,
-      category: "Healing",
-      image: crystalWorkshopEvent,
-      isPastEvent: false,
-      tags: ["Chakras", "Healing", "Energy Work"],
-      comments: 7,
-      connectionsGoing: ["Sacred Soul", "Energy Master"],
-      thoughts: [
-        { id: "1", author: { name: "Sacred Soul", avatar: elenaProfile }, content: "Looking forward to this chakra session. Sage Moon's healing work is incredible.", likes: 6, timeAgo: "3 hours ago" }
-      ]
-    }
-  ];
+  // Get events from centralized data
+  const allEvents = getAllEvents();
+  const events = allEvents.map(formatEventForList);
 
   const filteredEvents = filter === "all" ? events : 
     filter === "past" ? events.filter(event => event.isPastEvent) :
     events.filter(event => !event.isPastEvent);
 
-  const allTags = [...new Set(events.flatMap(event => event.tags))];
+  const allTags = getAllTags();
 
   return (
     <>
