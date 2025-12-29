@@ -8,10 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// Import images
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
+// Import centralized data
+import { chatUsers } from "@/data/users";
+import { elenaProfile, davidProfile, ariaProfile, phoenixProfile } from "@/data/healers";
 
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(0);
@@ -106,44 +105,8 @@ const Chat = () => {
     }
   ];
 
-  // Mock data for people to chat with
-  const followingPeople = [
-    {
-      id: 1,
-      name: "Elena Moonchild",
-      username: "@elena_moon",
-      avatar: "",
-      online: true
-    },
-    {
-      id: 2,
-      name: "David Healer",
-      username: "@david_heals",
-      avatar: "",
-      online: false
-    },
-    {
-      id: 3,
-      name: "Aria Starseed", 
-      username: "@aria_star",
-      avatar: "",
-      online: true
-    },
-    {
-      id: 4,
-      name: "Luna Sage",
-      username: "@luna_wisdom",
-      avatar: "",
-      online: true
-    },
-    {
-      id: 5,
-      name: "River Flow",
-      username: "@river_healing",
-      avatar: "",
-      online: false
-    }
-  ];
+  // Use centralized chat users data
+  const followingPeople = chatUsers;
 
   const filteredPeople = followingPeople.filter(person =>
     person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

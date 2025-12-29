@@ -7,10 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 // Import images
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
+import { elenaProfile, davidProfile, ariaProfile, phoenixProfile } from "@/data/healers";
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);

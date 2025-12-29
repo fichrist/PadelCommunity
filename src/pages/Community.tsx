@@ -19,13 +19,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import SignupCard from "@/components/SignupCard";
 
+// Import centralized data
+import { featuredMembers } from "@/data/users";
+import { elenaProfile, davidProfile, ariaProfile, phoenixProfile } from "@/data/healers";
+
 // Import images
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
 import soundHealingEvent from "@/assets/sound-healing-event.jpg";
 import crystalWorkshopEvent from "@/assets/crystal-workshop-event.jpg";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
@@ -162,27 +160,6 @@ const Community = () => {
 
   const filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
 
-  const featuredMembers = [
-    { name: "Luna Sage", role: "Meditation Teacher", followers: 1200, avatar: elenaProfile, location: "Sedona, AZ" },
-    { name: "River Flow", role: "Energy Healer", followers: 890, avatar: davidProfile, location: "Asheville, NC" },
-    { name: "Star Dreamer", role: "Astrologer", followers: 756, avatar: ariaProfile, location: "Boulder, CO" },
-    { name: "Ocean Mystic", role: "Reiki Master", followers: 534, avatar: phoenixProfile, location: "Big Sur, CA" },
-    { name: "Forest Walker", role: "Shaman", followers: 423, avatar: elenaProfile, location: "Tulum, Mexico" },
-    { name: "Crystal Dawn", role: "Crystal Therapist", followers: 398, avatar: davidProfile, location: "Mount Shasta, CA" },
-    { name: "Peaceful Mind", role: "Mindfulness Coach", followers: 367, avatar: ariaProfile, location: "Byron Bay, AU" },
-    { name: "Sacred Rose", role: "Breathwork Facilitator", followers: 892, avatar: phoenixProfile, location: "Costa Rica" },
-    { name: "Divine Light", role: "Chakra Healer", followers: 678, avatar: elenaProfile, location: "Glastonbury, UK" },
-    { name: "Mystic Moon", role: "Tarot Reader", followers: 543, avatar: davidProfile, location: "New Orleans, LA" },
-    { name: "Earth Angel", role: "Herbalist", followers: 467, avatar: ariaProfile, location: "Oregon Coast" },
-    { name: "Soul Fire", role: "Kundalini Teacher", followers: 834, avatar: phoenixProfile, location: "Rishikesh, India" },
-    { name: "Rainbow Spirit", role: "Art Therapist", followers: 389, avatar: elenaProfile, location: "Santa Fe, NM" },
-    { name: "Golden Dawn", role: "Life Coach", followers: 612, avatar: davidProfile, location: "Maui, HI" },
-    { name: "Cosmic Heart", role: "Sound Healer", followers: 445, avatar: ariaProfile, location: "Ibiza, Spain" },
-    { name: "Wild Moon", role: "Nature Guide", followers: 567, avatar: phoenixProfile, location: "Banff, Canada" },
-    { name: "Healing Waters", role: "Hydrotherapist", followers: 378, avatar: elenaProfile, location: "Blue Mountains, AU" },
-    { name: "Ancient Wisdom", role: "Vedic Teacher", followers: 723, avatar: davidProfile, location: "Vrindavan, India" },
-  ];
-
   // Get share titles from followed people for search dropdown
   const sharesByFollowedPeople = posts.filter(post => 
     post.type === 'share' && followedHealers.includes(post.author.name)
@@ -198,7 +175,7 @@ const Community = () => {
         <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">We grow together</h1>
+              <h1 className="text-2xl font-bold text-foreground font-comfortaa">We glow together</h1>
               
               {/* Centered Filters */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">

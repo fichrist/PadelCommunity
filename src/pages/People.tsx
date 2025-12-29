@@ -11,13 +11,9 @@ import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserChec
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Import images
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import davidProfile from "@/assets/david-profile.jpg";
-import ariaProfile from "@/assets/aria-profile.jpg";
-import phoenixProfile from "@/assets/phoenix-profile.jpg";
+// Import centralized data
+import { healers as healersData } from "@/data/healers";
+import { users as usersData } from "@/data/users";
 
 const People = () => {
   const [filter, setFilter] = useState("healers");
@@ -35,255 +31,11 @@ const People = () => {
   const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
   const navigate = useNavigate();
 
-  const healers = [
-    {
-      name: "Elena Moonchild",
-      avatar: elenaProfile,
-      role: "Sound Healer & Reiki Master",
-      location: "Sedona, AZ",
-      followers: 1234,
-      rating: 4.9,
-      reviews: 89,
-      specialties: ["Sound Healing", "Reiki", "Chakra Balancing"],
-      bio: "Certified sound healer with 10+ years of experience in crystal bowl therapy and energy work.",
-      isOnline: true,
-      price: "$120/session",
-      tags: ["Sound Healing", "Energy Work", "Crystal Therapy"],
-      verified: true,
-      isHealer: true
-    },
-    {
-      name: "David Lightwalker",
-      avatar: davidProfile,
-      role: "Sacred Geometry Teacher & Shaman",
-      location: "Boulder, CO",
-      followers: 892,
-      rating: 4.8,
-      reviews: 67,
-      specialties: ["Sacred Geometry", "Shamanic Healing", "Plant Medicine"],
-      bio: "Traditional shamanic practitioner combining ancient wisdom with sacred geometric principles.",
-      isOnline: false,
-      price: "$150/session",
-      tags: ["Sacred Geometry", "Shamanic Healing", "Ancient Wisdom"],
-      verified: true,
-      isHealer: true
-    },
-    {
-      name: "Aria Starseed",
-      avatar: ariaProfile,
-      role: "Crystal Healer & Astrologer",
-      location: "Asheville, NC",
-      followers: 756,
-      rating: 4.7,
-      reviews: 124,
-      specialties: ["Crystal Healing", "Astrology", "Tarot Reading"],
-      bio: "Intuitive crystal healer and astrologer helping souls find their path through celestial guidance.",
-      isOnline: true,
-      price: "$90/session",
-      tags: ["Crystal Healing", "Astrology", "Intuitive Reading"],
-      verified: true,
-      isHealer: true
-    },
-    {
-      name: "Phoenix Rising",
-      avatar: phoenixProfile,
-      role: "Movement Therapist & Life Coach",
-      location: "Big Sur, CA",
-      followers: 1089,
-      rating: 5.0,
-      reviews: 45,
-      specialties: ["Movement Therapy", "Life Coaching", "Breathwork"],
-      bio: "Holistic life coach specializing in transformational movement and conscious breathing practices.",
-      isOnline: true,
-      price: "$100/session",
-      tags: ["Movement Therapy", "Life Coaching", "Breathwork"],
-      verified: true,
-      isHealer: true
-    },
-    {
-      name: "Luna Sage",
-      avatar: elenaProfile,
-      role: "Meditation Teacher & Mindfulness Coach",
-      location: "Mount Shasta, CA",
-      followers: 2156,
-      rating: 4.9,
-      reviews: 203,
-      specialties: ["Meditation", "Mindfulness", "Spiritual Guidance"],
-      bio: "Senior meditation teacher with 15+ years helping others find inner peace and clarity.",
-      isOnline: false,
-      price: "$80/session",
-      tags: ["Meditation", "Mindfulness", "Inner Peace"],
-      verified: true,
-      isHealer: true
-    },
-    {
-      name: "River Flow",
-      avatar: davidProfile,
-      role: "Energy Healer & Theta Practitioner",
-      location: "Tulum, Mexico",
-      followers: 634,
-      rating: 4.6,
-      reviews: 78,
-      specialties: ["Energy Healing", "Theta Healing", "Emotional Release"],
-      bio: "Certified energy healer specializing in deep emotional healing and theta brainwave therapy.",
-      isOnline: true,
-      price: "$110/session",
-      tags: ["Energy Healing", "Theta Healing", "Emotional Healing"],
-      verified: false,
-      isHealer: true
-    },
-    // Non-healer users
-    {
-      name: "Maya Spirit",
-      avatar: ariaProfile,
-      role: "Spiritual Seeker & Artist",
-      location: "Portland, OR",
-      followers: 234,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "Artist and spiritual seeker exploring consciousness through creative expression and meditation.",
-      isOnline: true,
-      price: "",
-      tags: ["Art", "Spirituality", "Meditation"],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Ocean Dreams",
-      avatar: phoenixProfile,
-      role: "Student of Life",
-      location: "San Diego, CA",
-      followers: 156,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "On a journey of self-discovery, learning from the ocean's wisdom and connecting with like-minded souls.",
-      isOnline: false,
-      price: "",
-      tags: ["Nature", "Self-Discovery", "Ocean"],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Forest Walker",
-      avatar: elenaProfile,
-      role: "Nature Enthusiast",
-      location: "Vancouver, BC",
-      followers: 89,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "Finding peace and wisdom in the forest, sharing my journey of connection with Mother Earth.",
-      isOnline: true,
-      price: "",
-      tags: ["Nature", "Forest", "Earth Connection"],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Star Dancer",
-      avatar: davidProfile,
-      role: "Cosmic Explorer",
-      location: "Santa Fe, NM",
-      followers: 312,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "Dancing with the stars and exploring the mysteries of the universe through meditation and stargazing.",
-      isOnline: true,
-      price: "",
-      tags: ["Astronomy", "Meditation", "Cosmic"],
-      verified: false,
-      isHealer: false
-    }
-  ];
+  // Use centralized data
+  const healers = [...healersData, ...usersData];
+  const simpleUsers = usersData.slice(4, 9); // Get last 5 users for simple users list
 
-  // Simple users for following/followers sections
-  const simpleUsers = [
-    {
-      name: "Luna Harmony",
-      avatar: elenaProfile,
-      role: "Soul Seeker",
-      location: "Portland, OR",
-      followers: 89,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "",
-      isOnline: false,
-      price: "",
-      tags: [],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "River Stone",
-      avatar: davidProfile,
-      role: "Spiritual Explorer",
-      location: "Austin, TX", 
-      followers: 156,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "",
-      isOnline: true,
-      price: "",
-      tags: [],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Sky Walker",
-      avatar: ariaProfile,
-      role: "Conscious Soul",
-      location: "Denver, CO",
-      followers: 234,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "",
-      isOnline: false,
-      price: "",
-      tags: [],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Ocean Breeze",
-      avatar: phoenixProfile,
-      role: "Mindful Being",
-      location: "Miami, FL",
-      followers: 78,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "",
-      isOnline: true,
-      price: "",
-      tags: [],
-      verified: false,
-      isHealer: false
-    },
-    {
-      name: "Mountain Spirit",
-      avatar: elenaProfile,
-      role: "Nature Lover",
-      location: "Salt Lake City, UT",
-      followers: 123,
-      rating: 0,
-      reviews: 0,
-      specialties: [],
-      bio: "",
-      isOnline: false,
-      price: "",
-      tags: [],
-      verified: false,
-      isHealer: false
-    }
-  ];
-
-  const allUsers = [...healers, ...simpleUsers];
+  const allUsers = healers;
 
   // Mock contact list - users in your contact list
   const contactUsers = [0, 2, 6, 8]; // indices of users who are in contact list
@@ -313,7 +65,7 @@ const People = () => {
       ).slice(0, 5)
     : [];
 
-  const allTags = [...new Set(healers.flatMap(healer => healer.tags))];
+  const allTags = [...new Set(healersData.flatMap(healer => healer.tags))];
 
   return (
     <TooltipProvider>

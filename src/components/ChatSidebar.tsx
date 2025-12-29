@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { elenaProfile, davidProfile, ariaProfile } from "@/data/healers";
 
 interface Conversation {
   id: string;
@@ -20,7 +21,7 @@ const ChatSidebar = () => {
       name: "Elena Moonchild",
       lastMessage: "Looking forward to the sound healing session tonight! 🌙",
       timestamp: "2 min ago",
-      avatar: "/src/assets/elena-profile.jpg",
+      avatar: elenaProfile,
       isGroup: false
     },
     {
@@ -28,7 +29,7 @@ const ChatSidebar = () => {
       name: "Sacred Geometry Group",
       lastMessage: "David: Just shared some sacred geometry insights",
       timestamp: "5 min ago",
-      avatar: "/src/assets/david-profile.jpg",
+      avatar: davidProfile,
       isGroup: true
     },
     {
@@ -36,7 +37,7 @@ const ChatSidebar = () => {
       name: "Aria Starseed", 
       lastMessage: "Crystal workshop was amazing! Thank you all ✨",
       timestamp: "10 min ago",
-      avatar: "/src/assets/aria-profile.jpg",
+      avatar: ariaProfile,
       isGroup: false
     }
   ]);

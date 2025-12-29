@@ -7,7 +7,7 @@ const Navigation = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: "/", label: "We grow together", icon: Users },
+    { path: "/", label: "We glow together", icon: Users },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/people", label: "Souls", icon: UserCircle },
     { path: "/home", label: "Home", icon: House },
