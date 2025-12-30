@@ -56,8 +56,8 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         setApiLoaded(true);
 
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          types: ['(cities)'],
-          fields: ['formatted_address', 'geometry', 'name']
+          types: ['address'],
+          fields: ['formatted_address', 'geometry', 'name', 'address_components']
         });
 
         autocomplete.addListener('place_changed', () => {

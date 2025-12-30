@@ -4,16 +4,81 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Bell, Shield, Palette } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [privateProfile, setPrivateProfile] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Profile fields
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
+  const [isHealer, setIsHealer] = useState(false);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        setEmail(user.email || "");
+        setFirstName(user.user_metadata?.first_name || "");
+        setLastName(user.user_metadata?.last_name || "");
+        setPhoneNumber(user.user_metadata?.phone_number || "");
+        setStreet(user.user_metadata?.street || "");
+        setCity(user.user_metadata?.city || "");
+        setPostalCode(user.user_metadata?.postal_code || "");
+        setCountry(user.user_metadata?.country || "");
+        setIsHealer(user.user_metadata?.is_healer || false);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to load user data");
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          street: street,
+          city: city,
+          postal_code: postalCode,
+          country: country,
+          is_healer: isHealer,
+          display_name: `${firstName} ${lastName}`.trim() || firstName || lastName
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(error.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -53,105 +118,129 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="Enter your first name" className="bg-background/50" />
+                    <Input 
+                      id="firstName" 
+                      placeholder="Enter your first name" 
+                      className="bg-background/50"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Enter your last name" className="bg-background/50" />
+                    <Input 
+                      id="lastName" 
+                      placeholder="Enter your last name" 
+                      className="bg-background/50"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
                   </div>
                 </div>
+                
                 <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="Enter your email" className="bg-background/50" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={email}
+                    className="bg-muted/50 cursor-not-allowed" 
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email cannot be changed here. Contact support to update your email address.
+                  </p>
                 </div>
+
                 <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Input id="bio" placeholder="Tell us about yourself" className="bg-background/50" />
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input 
+                    id="phoneNumber" 
+                    type="tel"
+                    placeholder="+1 (555) 123-4567" 
+                    className="bg-background/50"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
                 </div>
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Input id="location" placeholder="Your location" className="bg-background/50" />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Notification Settings */}
-            <Card className="bg-card/90 backdrop-blur-sm border border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Bell className="h-5 w-5 text-primary" />
-                  <span>Notifications</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive notifications about events and messages</p>
-                  </div>
-                  <Switch checked={notifications} onCheckedChange={setNotifications} />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive email updates about your activity</p>
-                  </div>
-                  <Switch />
-                </div>
-              </CardContent>
-            </Card>
+                <Separator className="my-4" />
 
-            {/* Privacy Settings */}
-            <Card className="bg-card/90 backdrop-blur-sm border border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <span>Privacy</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold">Address</h3>
+                  
                   <div>
-                    <Label>Private Profile</Label>
-                    <p className="text-sm text-muted-foreground">Make your profile visible only to connections</p>
+                    <Label htmlFor="street">Street Address</Label>
+                    <LocationAutocomplete
+                      value={street}
+                      onChange={setStreet}
+                      placeholder="Start typing your street address..."
+                      className="bg-background/50"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Start typing and select from suggestions for accurate address
+                    </p>
                   </div>
-                  <Switch checked={privateProfile} onCheckedChange={setPrivateProfile} />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Show Online Status</Label>
-                    <p className="text-sm text-muted-foreground">Let others see when you're online</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Appearance Settings */}
-            <Card className="bg-card/90 backdrop-blur-sm border border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Palette className="h-5 w-5 text-primary" />
-                  <span>Appearance</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input 
+                        id="city" 
+                        placeholder="City" 
+                        className="bg-background/50"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Postal Code</Label>
+                      <Input 
+                        id="postalCode" 
+                        placeholder="Postal/ZIP code" 
+                        className="bg-background/50"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input 
+                      id="country" 
+                      placeholder="Country" 
+                      className="bg-background/50"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Dark Mode</Label>
-                    <p className="text-sm text-muted-foreground">Use dark theme across the app</p>
+                    <Label>Are you a healer?</Label>
+                    <p className="text-sm text-muted-foreground">Enable healer features and visibility</p>
                   </div>
-                  <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                  <Switch 
+                    checked={isHealer} 
+                    onCheckedChange={setIsHealer}
+                  />
                 </div>
               </CardContent>
             </Card>
 
             {/* Save Button */}
             <div className="flex justify-end">
-              <Button className="min-w-32">
-                Save Changes
+              <Button 
+                className="min-w-32" 
+                onClick={handleSave}
+                disabled={loading}
+              >
+                {loading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>
