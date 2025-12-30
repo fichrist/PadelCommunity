@@ -133,7 +133,7 @@ const AppLayout = ({
                 )}
                 {showNotifications && <NotificationDropdown />}
                 {showProfileDropdown ? (
-                  <ProfileDropdown userImage={elenaProfile} userName="Aurora Starlight" />
+                  <ProfileDropdown userImage={elenaProfile} />
                 ) : (
                   <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
                     <AvatarImage src={elenaProfile} />

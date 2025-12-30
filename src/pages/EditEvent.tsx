@@ -237,7 +237,7 @@ const EditEvent = () => {
                 </div>
                 <CreateDropdown onCreateShare={() => {}} />
                 <NotificationDropdown />
-                <ProfileDropdown userImage={elenaProfile} userName="Elena Moonchild" />
+                <ProfileDropdown userImage={elenaProfile} />
               </div>
             </div>
           </div>
