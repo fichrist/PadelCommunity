@@ -12,7 +12,17 @@
     "build": "npm run build --workspaces",
     "build:frontend": "npm run build --workspace=packages/frontend",
     "build:backend": "npm run build --workspace=packages/backend",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:reset": "supabase db reset",
+    "db:new": "supabase migration new",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:diff": "supabase db diff -f",
+    "db:types": "supabase gen types typescript --local > packages/shared/types/supabase.ts",
+    "dev:all": "npm run supabase:start && npm run dev"
   },
   "devDependencies": {},
   "engines": {
