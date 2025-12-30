@@ -1,73 +1,197 @@
-# Welcome to your Lovable project
+# Sacred Paths Connect - Monorepo
 
-## Project info
+A social media platform for spiritual community building with Supabase integration.
 
-**URL**: https://lovable.dev/projects/ba0b90d5-a1d6-44e4-b1a7-ae2df8bb0312
+## 🏗️ Project Structure
 
-## How can I edit this code?
+This is a monorepo containing both frontend and backend packages:
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/ba0b90d5-a1d6-44e4-b1a7-ae2df8bb0312) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+sacred-paths-connect/
+├── packages/
+│   ├── frontend/          # React + Vite frontend application
+│   │   ├── src/
+│   │   ├── public/
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   └── backend/           # Express + TypeScript backend API
+│       ├── src/
+│       ├── supabase/
+│       ├── package.json
+│       └── tsconfig.json
+├── package.json           # Root package.json for workspace management
+└── README.md
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Getting Started
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Prerequisites
 
-**Use GitHub Codespaces**
+- Node.js >= 18.0.0
+- npm or yarn
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Installation
 
-## What technologies are used for this project?
+1. Clone the repository:
+```bash
+git clone https://github.com/fichrist/sacred-paths-connect.git
+cd sacred-paths-connect
+```
 
-This project is built with:
+2. Install all dependencies:
+```bash
+npm install
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+This will install dependencies for both frontend and backend packages.
 
-## How can I deploy this project?
+### Environment Variables
 
-Simply open [Lovable](https://lovable.dev/projects/ba0b90d5-a1d6-44e4-b1a7-ae2df8bb0312) and click on Share -> Publish.
+#### Frontend (.env in packages/frontend/)
+```env
+VITE_SUPABASE_PROJECT_ID="your-project-id"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_ANON_KEY="your-anon-key"
+```
 
-## Can I connect a custom domain to my Lovable project?
+#### Backend (.env in packages/backend/)
+```env
+PORT=3001
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_PROJECT_ID="your-project-id"
+```
 
-Yes, yes you can!
+## 📦 Available Scripts
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Root Level Scripts
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Run from the root directory:
+
+```bash
+# Run both frontend and backend in development mode
+npm run dev
+
+# Run only frontend
+npm run dev:frontend
+
+# Run only backend
+npm run dev:backend
+
+# Build all packages
+npm run build
+
+# Build only frontend
+npm run build:frontend
+
+# Build only backend
+npm run build:backend
+```
+
+### Frontend Scripts
+
+Run from `packages/frontend/`:
+
+```bash
+# Start development server (http://localhost:5173)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run linter
+npm run lint
+```
+
+### Backend Scripts
+
+Run from `packages/backend/`:
+
+```bash
+# Start development server (http://localhost:3001)
+npm run dev
+
+# Build TypeScript to JavaScript
+npm run build
+
+# Run production server
+npm run start
+
+# Run linter
+npm run lint
+```
+
+## 🏛️ Architecture
+
+### Frontend
+
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **UI Components**: Radix UI + shadcn/ui
+- **Styling**: Tailwind CSS
+- **Routing**: React Router v6
+- **State Management**: TanStack Query (React Query)
+- **Form Handling**: React Hook Form + Zod
+
+### Backend
+
+- **Framework**: Express.js with TypeScript
+- **Runtime**: Node.js
+- **Database**: Supabase (PostgreSQL)
+- **API Style**: RESTful
+- **Development**: tsx watch for hot reload
+
+## 🗄️ Database
+
+The project uses Supabase as the backend-as-a-service platform. Database migrations are located in `packages/backend/supabase/migrations/`.
+
+### Supabase Setup
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Copy your project credentials to the `.env` files
+3. Run migrations using the Supabase CLI or dashboard
+
+## 🔗 API Endpoints
+
+The backend provides the following REST API endpoints:
+
+- `GET /health` - Health check
+- `GET /api/events` - Get all events
+- `GET /api/users/:id` - Get user profile by ID
+- `POST /api/events` - Create a new event
+
+## 🛠️ Development Workflow
+
+1. **Start Development Servers**:
+   ```bash
+   npm run dev
+   ```
+   - Frontend: http://localhost:5173
+   - Backend: http://localhost:3001
+
+2. **Make Changes**:
+   - Frontend code in `packages/frontend/src/`
+   - Backend code in `packages/backend/src/`
+
+3. **Test Your Changes**:
+   - Both servers support hot reload
+   - Frontend changes reflect immediately
+   - Backend restarts automatically with tsx watch
+
+## 📝 Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
+
+## 📄 License
+
+This project is private and proprietary.
+
+## 🤝 Support
+
+For issues and questions, please open an issue on GitHub.
