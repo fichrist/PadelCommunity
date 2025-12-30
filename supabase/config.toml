@@ -1,1 +1,14 @@
 project_id = "udrjxnlcsexahuvohqkr"
+
+[api]
+port = 54621 #  54321
+# ... other settings
+
+[db]
+port = 54622  # Changed from 54322
+
+[studio]
+port = 54623  # Changed from 54323
+
+[inbucket]
+port = 54624  # Changed from 54324

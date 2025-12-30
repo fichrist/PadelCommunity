@@ -10,100 +10,83 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
-      calendar_notes: {
+      profiles: {
         Row: {
-          content: string
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          country: string | null
           created_at: string
+          display_name: string | null
+          first_name: string | null
           id: string
-          note_date: string
+          is_healer: boolean | null
+          last_name: string | null
+          phone_number: string | null
+          postal_code: string | null
+          street: string | null
           updated_at: string
-          user_id: string
         }
         Insert: {
-          content: string
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
-          id?: string
-          note_date: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          note_date?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      gift_credits: {
-        Row: {
-          amount: number
-          buyer_email: string
-          code: string
-          created_at: string
+          display_name?: string | null
+          first_name?: string | null
           id: string
-          recipient_email: string
-          redeemed: boolean
-          redeemed_at: string | null
-        }
-        Insert: {
-          amount: number
-          buyer_email: string
-          code: string
-          created_at?: string
-          id?: string
-          recipient_email: string
-          redeemed?: boolean
-          redeemed_at?: string | null
+          is_healer?: boolean | null
+          last_name?: string | null
+          phone_number?: string | null
+          postal_code?: string | null
+          street?: string | null
+          updated_at?: string
         }
         Update: {
-          amount?: number
-          buyer_email?: string
-          code?: string
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          display_name?: string | null
+          first_name?: string | null
           id?: string
-          recipient_email?: string
-          redeemed?: boolean
-          redeemed_at?: string | null
-        }
-        Relationships: []
-      }
-      personal_events: {
-        Row: {
-          created_at: string
-          description: string | null
-          event_date: string
-          id: string
-          tag: string | null
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          event_date: string
-          id?: string
-          tag?: string | null
-          title: string
+          is_healer?: boolean | null
+          last_name?: string | null
+          phone_number?: string | null
+          postal_code?: string | null
+          street?: string | null
           updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          event_date?: string
-          id?: string
-          tag?: string | null
-          title?: string
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -241,6 +224,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

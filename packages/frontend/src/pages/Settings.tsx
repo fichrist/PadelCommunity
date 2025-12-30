@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { getCurrentProfile, updateProfile } from "@/lib/profiles";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -37,14 +38,20 @@ const Settings = () => {
       
       if (user) {
         setEmail(user.email || "");
-        setFirstName(user.user_metadata?.first_name || "");
-        setLastName(user.user_metadata?.last_name || "");
-        setPhoneNumber(user.user_metadata?.phone_number || "");
-        setStreet(user.user_metadata?.street || "");
-        setCity(user.user_metadata?.city || "");
-        setPostalCode(user.user_metadata?.postal_code || "");
-        setCountry(user.user_metadata?.country || "");
-        setIsHealer(user.user_metadata?.is_healer || false);
+        
+        // Fetch profile from profiles table
+        const profile = await getCurrentProfile();
+        
+        if (profile) {
+          setFirstName(profile.first_name || "");
+          setLastName(profile.last_name || "");
+          setPhoneNumber(profile.phone_number || "");
+          setStreet(profile.street || "");
+          setCity(profile.city || "");
+          setPostalCode(profile.postal_code || "");
+          setCountry(profile.country || "");
+          setIsHealer(profile.is_healer || false);
+        }
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -55,21 +62,21 @@ const Settings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: phoneNumber,
-          street: street,
-          city: city,
-          postal_code: postalCode,
-          country: country,
-          is_healer: isHealer,
-          display_name: `${firstName} ${lastName}`.trim() || firstName || lastName
-        }
+      // Update profile in profiles table
+      const success = await updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: phoneNumber,
+        street: street,
+        city: city,
+        postal_code: postalCode,
+        country: country,
+        is_healer: isHealer,
       });
 
-      if (error) throw error;
+      if (!success) {
+        throw new Error("Failed to update profile");
+      }
 
       toast.success("Profile updated successfully!");
     } catch (error: any) {

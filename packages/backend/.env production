@@ -1,0 +1,5 @@
+PORT=3001
+SUPABASE_PROJECT_ID="udrjxnlcsexahuvohqkr"
+SUPABASE_URL="https://udrjxnlcsexahuvohqkr.supabase.co"
+SUPABASE_ANON_KEY="sb_publishable_DLdU9AOKAnvCVoPjKOTiVA_OUOc_Yfk"
+

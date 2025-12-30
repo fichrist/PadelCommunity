@@ -1,0 +1,4 @@
+SUPABASE_PROJECT_ID="udrjxnlcsexahuvohqkr"
+SUPABASE_URL="http://localhost:54621"
+SUPABASE_ANON_KEY="sb_publishable_DLdU9AOKAnvCVoPjKOTiVA_OUOc_Yfk"
+DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres # not 54622?
