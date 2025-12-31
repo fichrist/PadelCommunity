@@ -11,6 +11,7 @@ import { User, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentProfile } from "@/lib/profiles";
 
 interface ProfileDropdownProps {
   userImage: string;
@@ -22,6 +23,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState<string>(userName || "My Page");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(userImage);
 
   useEffect(() => {
     // Fetch the current user's information
@@ -29,39 +31,63 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Get display name from user metadata or email
-        const name = user.user_metadata?.display_name || 
-                     user.user_metadata?.full_name || 
-                     user.user_metadata?.name ||
+        // Fetch profile from profiles table
+        const profile = await getCurrentProfile();
+        
+        // Get display name from profile or fallback to email
+        const name = profile?.display_name || 
+                     profile?.first_name ||
                      user.email?.split('@')[0] || 
                      "My Page";
         setDisplayName(name);
         setUserEmail(user.email || "");
+        
+        // Set avatar URL from profile
+        if (profile?.avatar_url) {
+          setAvatarUrl(profile.avatar_url);
+        } else {
+          setAvatarUrl(userImage);
+        }
       }
     };
 
     fetchUser();
 
+    // Listen for profile updates
+    const handleProfileUpdate = () => {
+      fetchUser();
+    };
+    window.addEventListener('profile-updated', handleProfileUpdate);
+
     // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const name = session.user.user_metadata?.display_name || 
-                     session.user.user_metadata?.full_name || 
-                     session.user.user_metadata?.name ||
+        // Fetch profile from profiles table
+        const profile = await getCurrentProfile();
+        
+        const name = profile?.display_name || 
+                     profile?.first_name ||
                      session.user.email?.split('@')[0] || 
                      "My Page";
         setDisplayName(name);
         setUserEmail(session.user.email || "");
+        
+        // Set avatar URL from profile
+        if (profile?.avatar_url) {
+          setAvatarUrl(profile.avatar_url);
+        }
       } else {
         setDisplayName("My Page");
         setUserEmail("");
+        setAvatarUrl(userImage);
       }
     });
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener('profile-updated', handleProfileUpdate);
     };
-  }, [userName]);
+  }, [userName, userImage]);
 
   const handleLogout = async () => {
     try {
@@ -98,7 +124,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-          <AvatarImage src={userImage} />
+          <AvatarImage src={avatarUrl} referrerPolicy="no-referrer" />
           <AvatarFallback className="text-sm">ME</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
