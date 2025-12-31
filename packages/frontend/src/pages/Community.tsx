@@ -198,8 +198,6 @@ const Community = () => {
         thoughts: []
       }));
 
-      // Add database posts to the beginning of the posts array
-      setPosts(prev => [...formattedDbPosts, ...prev]);
     };
 
     fetchDatabasePosts();

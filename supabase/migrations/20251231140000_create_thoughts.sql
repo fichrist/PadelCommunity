@@ -40,3 +40,4 @@ CREATE INDEX thoughts_created_at_idx ON public.thoughts(created_at DESC);
 CREATE TRIGGER set_thoughts_updated_at
     BEFORE UPDATE ON public.thoughts
     FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
