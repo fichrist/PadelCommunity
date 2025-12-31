@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, X, Search, Link as LinkIcon, Image as ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
+import { createPost } from "@/lib/posts";
 import {
   Command,
   CommandEmpty,
@@ -123,24 +124,33 @@ const CreatePost = () => {
     setPostVideo(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !thought.trim()) {
       toast.error("Please fill in the title and your thought.");
       return;
     }
 
-    // Here you would typically save the post to the database
-    console.log("Creating post:", {
-      title,
-      thought,
-      url,
-      tags: selectedTags,
-      image: postImage,
-      video: postVideo,
-    });
-    
-    toast.success("Post created successfully!");
-    navigate('/community');
+    try {
+      // Save the post to the database
+      const result = await createPost({
+        title: title.trim(),
+        content: thought.trim(),
+        url: url.trim() || undefined,
+        tags: selectedTags,
+        image_url: postImage || undefined,
+        video_url: postVideo || undefined,
+      });
+
+      if (result.success) {
+        toast.success("Post created successfully!");
+        navigate('/community');
+      } else {
+        toast.error(result.error || "Failed to create post");
+      }
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      toast.error("An unexpected error occurred");
+    }
   };
 
   return (

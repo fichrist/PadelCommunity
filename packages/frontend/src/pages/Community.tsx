@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAllPosts } from "@/lib/posts";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
@@ -168,6 +169,41 @@ const Community = () => {
   const filteredShareTitles = sharesByFollowedPeople
     .filter(share => share.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, 5); // Limit to 5 results
+
+  // Fetch posts from database on mount
+  useEffect(() => {
+    const fetchDatabasePosts = async () => {
+      const dbPosts = await getAllPosts();
+      
+      // Convert database posts to the format expected by the UI
+      const formattedDbPosts = dbPosts.map((dbPost) => ({
+        type: 'post',
+        author: { 
+          name: "Community Member", 
+          avatar: elenaProfile, 
+          followers: 0, 
+          role: "Member" 
+        },
+        title: dbPost.title,
+        thought: dbPost.content,
+        description: dbPost.content,
+        tags: dbPost.tags || [],
+        timeAgo: new Date(dbPost.created_at || '').toLocaleDateString(),
+        comments: 0,
+        likes: 0,
+        shares: 0,
+        youtubeUrl: dbPost.url,
+        postImage: dbPost.image_url,
+        postVideo: dbPost.video_url,
+        thoughts: []
+      }));
+
+      // Add database posts to the beginning of the posts array
+      setPosts(prev => [...formattedDbPosts, ...prev]);
+    };
+
+    fetchDatabasePosts();
+  }, []);
 
   return (
     <>
@@ -521,6 +557,15 @@ const Community = () => {
                       </div>
                     )}
 
+                    {/* Post Title Header for Posts from Database */}
+                    {post.type === 'post' && (
+                      <div className="p-3 pb-2">
+                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight">
+                          {post.title}
+                        </h2>
+                      </div>
+                    )}
+
                     {/* Share Title Header for Shares */}
                     {post.type === 'share' && (
                       <div className="p-3 pb-2 relative">
@@ -548,6 +593,22 @@ const Community = () => {
                               {tag}
                             </Badge>
                           ))}
+                        </div>
+                      )}
+
+                      {/* Post content from database */}
+                      {post.type === 'post' && (
+                        <div className="mb-3">
+                          <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                            {post.thought}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {post.tags && post.tags.map((tag: string, tagIndex: number) => (
+                              <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       )}
 
