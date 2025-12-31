@@ -16,6 +16,7 @@ import HealerProfile from "./pages/HealerProfile";
 import CreateEvent from "./pages/CreateEvent";
 import CreatePost from "./pages/CreatePost";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import EditEvent from "./pages/EditEvent";
 import EventHealerMode from "./pages/EventHealerMode";
@@ -30,7 +31,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<AppLayout><Community /></AppLayout>} />
+          <Route path="/" element={<Login />} />
+          <Route path="/community" element={<AppLayout><Community /></AppLayout>} />
           <Route path="/events" element={<AppLayout><Events /></AppLayout>} />
           <Route path="/people" element={<AppLayout><People /></AppLayout>} />
           <Route path="/event/:eventId" element={<AppLayout><EventDetails /></AppLayout>} />

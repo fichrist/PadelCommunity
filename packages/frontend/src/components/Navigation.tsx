@@ -7,7 +7,7 @@ const Navigation = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: "/", label: "We glow together", icon: Users },
+    { path: "/community", label: "We glow together", icon: Users },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/people", label: "Souls", icon: UserCircle },
     { path: "/home", label: "Home", icon: House },
@@ -20,7 +20,7 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <Link to="/community" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <Sparkles className="h-8 w-8 text-primary" />
               <span className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Spirit

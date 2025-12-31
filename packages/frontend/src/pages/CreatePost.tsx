@@ -140,7 +140,7 @@ const CreatePost = () => {
     });
     
     toast.success("Post created successfully!");
-    navigate('/');
+    navigate('/community');
   };
 
   return (
@@ -155,7 +155,7 @@ const CreatePost = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/community')}
               className="flex items-center space-x-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -373,7 +373,7 @@ const CreatePost = () => {
             <div className="flex justify-end space-x-2 pt-4">
               <Button 
                 variant="outline" 
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/community')}
               >
                 Cancel
               </Button>

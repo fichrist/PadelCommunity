@@ -108,7 +108,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
         description: "You have been successfully logged out.",
       });
       
-      // Navigate to home page after logout
+      // Navigate to login page after logout
       navigate('/');
     } catch (error) {
       console.error("Unexpected logout error:", error);
