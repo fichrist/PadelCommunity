@@ -35,11 +35,11 @@ const CreateDropdown = ({ onCreateShare }: CreateDropdownProps) => {
           <span>Add Event</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={onCreateShare}
+          onClick={() => navigate('/create-post')}
           className="cursor-pointer flex items-center space-x-2 py-3"
         >
           <Share2 className="h-4 w-4 text-primary" />
-          <span>Add Share</span>
+          <span>Add Post</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

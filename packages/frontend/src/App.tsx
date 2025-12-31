@@ -14,6 +14,7 @@ import EventDetails from "./pages/EventDetails";
 import EditableEventDetails from "./pages/EditableEventDetails";
 import HealerProfile from "./pages/HealerProfile";
 import CreateEvent from "./pages/CreateEvent";
+import CreatePost from "./pages/CreatePost";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import EditEvent from "./pages/EditEvent";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
           <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
+          <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
