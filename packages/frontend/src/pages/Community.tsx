@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts, getPostsWithDetails } from "@/lib/posts";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
@@ -18,7 +18,6 @@ import ImageModal from "@/components/ImageModal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import SignupCard from "@/components/SignupCard";
 
 // Import centralized data
 import { featuredMembers } from "@/data/users";
@@ -173,31 +172,58 @@ const Community = () => {
   // Fetch posts from database on mount
   useEffect(() => {
     const fetchDatabasePosts = async () => {
-      const dbPosts = await getAllPosts();
+      const dbPosts = await getPostsWithDetails();
       
       // Convert database posts to the format expected by the UI
-      const formattedDbPosts = dbPosts.map((dbPost) => ({
-        type: 'post',
-        author: { 
-          name: "Community Member", 
-          avatar: elenaProfile, 
-          followers: 0, 
-          role: "Member" 
-        },
-        title: dbPost.title,
-        thought: dbPost.content,
-        description: dbPost.content,
-        tags: dbPost.tags || [],
-        timeAgo: new Date(dbPost.created_at || '').toLocaleDateString(),
-        comments: 0,
-        likes: 0,
-        shares: 0,
-        youtubeUrl: dbPost.url,
-        postImage: dbPost.image_url,
-        postVideo: dbPost.video_url,
-        thoughts: []
-      }));
+      const formattedDbPosts = dbPosts.map((dbPost) => {
+        // Provide default values if author is null
+        const authorName = dbPost.author?.display_name || dbPost.author?.first_name || "Anonymous";
+        const authorRole = dbPost.author?.is_healer ? "Healer" : "Member";
+        const avatarUrl = dbPost.author?.avatar_url || elenaProfile;
+        
+        // Calculate time ago
+        const createdDate = new Date(dbPost.created_at || '');
+        const now = new Date();
+        const diffMs = now.getTime() - createdDate.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        let timeAgo = 'Just now';
+        if (diffDays > 0) {
+          timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        } else if (diffHours > 0) {
+          timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        } else if (diffMins > 0) {
+          timeAgo = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        }
+        
+        return {
+          type: 'share',
+          id: dbPost.id,
+          author: { 
+            name: authorName, 
+            avatar: avatarUrl, 
+            followers: 0, 
+            role: authorRole 
+          },
+          title: dbPost.title,
+          thought: dbPost.content,
+          description: dbPost.content,
+          tags: dbPost.tags || [],
+          timeAgo: timeAgo,
+          comments: dbPost.thoughts_count || 0,
+          likes: 0,
+          shares: 0,
+          youtubeUrl: dbPost.url,
+          postImage: dbPost.image_url,
+          postVideo: dbPost.video_url,
+          thoughts: []
+        };
+      });
 
+      // Merge with existing mocked posts (keep the mocked posts)
+      setPosts(prevPosts => [...prevPosts, ...formattedDbPosts]);
     };
 
     fetchDatabasePosts();
@@ -474,9 +500,6 @@ const Community = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-4 space-y-4">
-              {/* Signup Card for new users */}
-              <SignupCard />
-              
               {filteredPosts.map((post, index) => (
                 <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200 relative">
                   

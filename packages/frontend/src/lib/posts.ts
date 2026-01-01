@@ -73,6 +73,63 @@ export async function getAllPosts(): Promise<Post[]> {
 }
 
 /**
+ * Get all posts with author profiles and thoughts count
+ */
+export async function getPostsWithDetails(): Promise<any[]> {
+  try {
+    // First, fetch all posts
+    const { data: posts, error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (postsError) {
+      console.error("Error fetching posts:", postsError);
+      return [];
+    }
+
+    if (!posts || posts.length === 0) return [];
+
+    // Fetch profiles and thoughts count for each post
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        // Fetch profile - use maybeSingle to avoid errors if not found
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, display_name, avatar_url, is_healer, bio')
+          .eq('id', post.user_id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching profile for user", post.user_id, ":", profileError);
+        }
+
+        // Fetch thoughts count
+        const { count, error: thoughtsError } = await supabase
+          .from('thoughts')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id);
+
+        if (thoughtsError) {
+          console.error("Error fetching thoughts count:", thoughtsError);
+        }
+
+        return {
+          ...post,
+          thoughts_count: count || 0,
+          author: profile || null,
+        };
+      })
+    );
+
+    return postsWithDetails;
+  } catch (error) {
+    console.error("Unexpected error fetching posts with details:", error);
+    return [];
+  }
+}
+
+/**
  * Get posts by user
  */
 export async function getUserPosts(userId: string): Promise<Post[]> {
