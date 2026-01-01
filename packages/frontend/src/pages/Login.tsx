@@ -12,19 +12,23 @@ const Login = () => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Login - Current session:", session);
       if (session) {
         // Redirect to community if already logged in
-        navigate('/community');
+        console.log("Login - Redirecting to /community");
+        navigate('/community', { replace: true });
       }
     };
 
     checkUser();
 
     // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Login - Auth state changed:", event, "Session:", session);
       if (session) {
         // Redirect to community when user logs in
-        navigate('/community');
+        console.log("Login - Redirecting to /community after sign in");
+        navigate('/community', { replace: true });
       }
     });
 

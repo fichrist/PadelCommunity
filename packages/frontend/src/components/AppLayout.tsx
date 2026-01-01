@@ -64,10 +64,10 @@ const AppLayout = ({
                     variant="ghost" 
                     size="lg" 
                     className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/community')}
                   >
-                    <Users className={`h-9 w-9 ${isActive('/') && location.pathname === '/' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
-                    {isActive('/') && location.pathname === '/' && (
+                    <Users className={`h-9 w-9 ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
+                    {isActive('/community') && (
                       <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
                     )}
                   </Button>

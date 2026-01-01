@@ -10,9 +10,9 @@ export interface Thought {
 }
 
 /**
- * Create a new thought for a post
+ * Create a new thought for a post (optionally as a reply to another thought)
  */
-export async function createThought(postId: string, content: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
+export async function createThought(postId: string, content: string, parentThoughtId?: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -26,6 +26,7 @@ export async function createThought(postId: string, content: string): Promise<{ 
         post_id: postId,
         user_id: user.id,
         content: content.trim(),
+        parent_thought_id: parentThoughtId || null,
       })
       .select('id')
       .single();
@@ -47,10 +48,10 @@ export async function createThought(postId: string, content: string): Promise<{ 
  */
 export async function getThoughtsByPostId(postId: string): Promise<any[]> {
   try {
-    // First, fetch thoughts
+    // First, fetch thoughts including parent_thought_id
     const { data: thoughts, error: thoughtsError } = await supabase
       .from('thoughts')
-      .select('id, content, created_at, user_id')
+      .select('id, content, created_at, user_id, parent_thought_id')
       .eq('post_id', postId)
       .order('created_at', { ascending: false });
 
@@ -112,6 +113,7 @@ export async function getThoughtsByPostId(postId: string): Promise<any[]> {
       return {
         id: thought.id,
         user_id: thought.user_id,
+        parent_thought_id: thought.parent_thought_id,
         author: {
           name: authorName,
           avatar: profile?.avatar_url
