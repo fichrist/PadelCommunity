@@ -6,6 +6,7 @@ import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plu
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllPosts, getPostsWithDetails, deletePost } from "@/lib/posts";
+import { getThoughtsByPostId } from "@/lib/thoughts";
 import { supabase } from "@/integrations/supabase/client";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -48,6 +49,8 @@ const Community = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loadedThoughts, setLoadedThoughts] = useState<any[]>([]);
+  const [isLoadingThoughts, setIsLoadingThoughts] = useState(false);
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([
@@ -854,8 +857,26 @@ const Community = () => {
                     <div className="px-3 py-2 border-t border-border">
                       <div className="flex items-center justify-between">
                         <button 
-                          onClick={() => {
+                          onClick={async () => {
                             setSelectedPost(post);
+                            
+                            // Fetch thoughts from database if post has an ID
+                            const postId = post.id || post.eventId;
+                            console.log("Opening thoughts for postId:", postId);
+                            
+                            if (postId) {
+                              setIsLoadingThoughts(true);
+                              const dbThoughts = await getThoughtsByPostId(postId);
+                              console.log("Loaded thoughts:", dbThoughts);
+                              setLoadedThoughts(dbThoughts);
+                              setIsLoadingThoughts(false);
+                            } else {
+                              // Use mocked thoughts for posts without database ID
+                              console.log("Using mocked thoughts:", post.thoughts);
+                              setLoadedThoughts(post.thoughts || []);
+                            }
+                            
+                            // Open modal after thoughts are loaded
                             setThoughtsModalOpen(true);
                           }}
                           className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -1299,8 +1320,18 @@ const Community = () => {
         <ThoughtsModal
           open={thoughtsModalOpen}
           onOpenChange={setThoughtsModalOpen}
+          postId={selectedPost.id || selectedPost.eventId || ''}
           postTitle={selectedPost.title}
-          thoughts={selectedPost.thoughts || []}
+          thoughts={loadedThoughts}
+          onThoughtAdded={async () => {
+            // Refresh thoughts from database after adding
+            const postId = selectedPost.id || selectedPost.eventId;
+            if (postId) {
+              const dbThoughts = await getThoughtsByPostId(postId);
+              setLoadedThoughts(dbThoughts);
+            }
+            toast.success("Thought added!");
+          }}
         />
       )}
 

@@ -43,22 +43,71 @@ export async function createThought(postId: string, content: string): Promise<{ 
 }
 
 /**
- * Get all thoughts for a post
+ * Get all thoughts for a post with author profile information
  */
-export async function getThoughtsByPostId(postId: string): Promise<Thought[]> {
+export async function getThoughtsByPostId(postId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
       .from('thoughts')
-      .select('*')
+      .select(`
+        id,
+        content,
+        created_at,
+        user_id,
+        profiles!thoughts_user_id_fkey (
+          id,
+          first_name,
+          last_name,
+          display_name,
+          avatar_url
+        )
+      `)
       .eq('post_id', postId)
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Error fetching thoughts:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       return [];
     }
 
-    return data || [];
+    console.log("Fetched thoughts from database:", data);
+
+    // Transform data to match ThoughtsModal expectations
+    const transformedThoughts = (data || []).map((thought: any) => {
+      const profile = thought.profiles;
+      const authorName = profile?.display_name || profile?.first_name || 'Anonymous';
+      
+      // Calculate time ago
+      const createdDate = new Date(thought.created_at || '');
+      const now = new Date();
+      const diffMs = now.getTime() - createdDate.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      let timeAgo = 'Just now';
+      if (diffDays > 0) {
+        timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      } else if (diffHours > 0) {
+        timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      } else if (diffMins > 0) {
+        timeAgo = `${diffMins} min ago`;
+      }
+      
+      return {
+        id: thought.id,
+        author: {
+          name: authorName,
+          avatar: profile?.avatar_url
+        },
+        content: thought.content,
+        likes: 0, // TODO: implement likes functionality
+        timeAgo: timeAgo
+      };
+    });
+
+    return transformedThoughts;
   } catch (error) {
     console.error("Unexpected error fetching thoughts:", error);
     return [];

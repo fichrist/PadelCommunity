@@ -687,8 +687,12 @@ const HealerProfile = () => {
       <ThoughtsModal
         open={thoughtsModalOpen}
         onOpenChange={setThoughtsModalOpen}
+        postId={selectedPost?.eventId || selectedPost?.id || ''}
         postTitle={selectedPost?.title || selectedPost?.eventId || ""}
         thoughts={[]}
+        onThoughtAdded={() => {
+          // Optionally refresh thoughts here
+        }}
       />
     </>
   );

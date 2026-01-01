@@ -593,8 +593,12 @@ const Events = () => {
         <ThoughtsModal
           open={thoughtsModalOpen}
           onOpenChange={setThoughtsModalOpen}
+          postId={selectedEvent?.eventId || selectedEvent?.id || ''}
           postTitle={selectedEvent?.title || ""}
           thoughts={selectedEvent?.thoughts || []}
+          onThoughtAdded={() => {
+            // Optionally refresh thoughts here
+          }}
         />
 
         {/* Review Modal */}

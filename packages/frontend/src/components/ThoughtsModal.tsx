@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageCircle } from "lucide-react";
+import { createThought } from "@/lib/thoughts";
+import { toast } from "sonner";
 
 interface Thought {
   id: string;
@@ -19,18 +21,38 @@ interface Thought {
 interface ThoughtsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  postId: string;
   postTitle: string;
   thoughts: Thought[];
+  onThoughtAdded?: () => void;
 }
 
-const ThoughtsModal = ({ open, onOpenChange, postTitle, thoughts }: ThoughtsModalProps) => {
+const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThoughtAdded }: ThoughtsModalProps) => {
   const [newThought, setNewThought] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitThought = () => {
-    if (newThought.trim()) {
-      // Here you would typically add the thought to your data
-      console.log("New thought:", newThought);
-      setNewThought("");
+  const handleSubmitThought = async () => {
+    if (!newThought.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await createThought(postId, newThought);
+      
+      if (result.success) {
+        toast.success("Thought shared successfully!");
+        setNewThought("");
+        // Notify parent to refresh thoughts
+        if (onThoughtAdded) {
+          onThoughtAdded();
+        }
+      } else {
+        toast.error(result.error || "Failed to share thought");
+      }
+    } catch (error) {
+      console.error("Error submitting thought:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -56,10 +78,10 @@ const ThoughtsModal = ({ open, onOpenChange, postTitle, thoughts }: ThoughtsModa
             <div className="flex justify-end">
               <Button 
                 onClick={handleSubmitThought}
-                disabled={!newThought.trim()}
+                disabled={!newThought.trim() || isSubmitting}
                 size="sm"
               >
-                Share Thought
+                {isSubmitting ? "Sharing..." : "Share Thought"}
               </Button>
             </div>
           </div>
