@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Link, Image, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { createPost, uploadPostImage, uploadPostVideo } from "@/lib/posts";
+import { toast as sonnerToast } from "sonner";
 
 interface CreateShareModalProps {
   open: boolean;
@@ -19,9 +21,16 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
   const [url, setUrl] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState("");
   const { toast } = useToast();
+
+  // Check if media (image or video) is uploaded
+  const hasMedia = image !== null || video !== null;
+  // Check if URL is provided
+  const hasUrl = url.trim() !== "";
 
   // Predefined list of available tags
   const availableTags = [
@@ -42,8 +51,12 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log("handleSubmit called!");
+    console.log("Title:", title, "Content:", content);
+    
     if (!title.trim() || !content.trim()) {
+      console.log("Validation failed - missing title or content");
       toast({
         title: "Missing Information",
         description: "Please fill in both title and content.",
@@ -52,23 +65,90 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
       return;
     }
 
-    // Here you would typically save the share
-    console.log("Creating share:", { title, content, url, image, video, tags });
-    
-    toast({
-      title: "Share Created",
-      description: "Your share has been posted to the community.",
-    });
+    // Validate file sizes (max 10MB for images, 50MB for videos)
+    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
-    // Reset form and close modal
-    setTitle("");
-    setContent("");
-    setUrl("");
-    setImage(null);
-    setVideo(null);
-    setTags([]);
-    setSelectedTag("");
-    onOpenChange(false);
+    if (image && image.size > MAX_IMAGE_SIZE) {
+      toast({
+        title: "Image Too Large",
+        description: `Image must be smaller than 10MB. Your image is ${(image.size / 1024 / 1024).toFixed(1)}MB. Please compress it first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (video && video.size > MAX_VIDEO_SIZE) {
+      toast({
+        title: "Video Too Large",
+        description: `Video must be smaller than 50MB. Your video is ${(video.size / 1024 / 1024).toFixed(1)}MB. Please compress it first or use a URL instead.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("Starting post creation...");
+    const toastId = sonnerToast.loading("Creating post...");
+
+    try {
+      let imageUrl: string | undefined = undefined;
+      let videoUrl: string | undefined = undefined;
+
+      // Upload image if provided
+      if (image) {
+        sonnerToast.loading("Uploading image...", { id: toastId });
+        imageUrl = await uploadPostImage(image) || undefined;
+        if (!imageUrl) {
+          sonnerToast.error("Failed to upload image", { id: toastId });
+          return;
+        }
+      }
+
+      // Upload video if provided
+      if (video) {
+        sonnerToast.loading("Uploading video...", { id: toastId });
+        videoUrl = await uploadPostVideo(video) || undefined;
+        if (!videoUrl) {
+          sonnerToast.error("Failed to upload video", { id: toastId });
+          return;
+        }
+      }
+
+      // Create post in database
+      sonnerToast.loading("Saving post...", { id: toastId });
+      const result = await createPost({
+        title,
+        content,
+        url: url || undefined,
+        tags,
+        image_url: imageUrl,
+        video_url: videoUrl,
+      });
+
+      if (result.success) {
+        sonnerToast.success("Post created successfully!", { id: toastId });
+        
+        // Reset form and close modal
+        setTitle("");
+        setContent("");
+        setUrl("");
+        setImage(null);
+        setVideo(null);
+        setImagePreview(null);
+        setVideoPreview(null);
+        setTags([]);
+        setSelectedTag("");
+        onOpenChange(false);
+
+        // Refresh page to show new post
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        sonnerToast.error(result.error || "Failed to create post", { id: toastId });
+      }
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      sonnerToast.error(error?.message || "An unexpected error occurred", { id: toastId });
+    }
   };
 
   return (
@@ -179,10 +259,10 @@ const CreateShareModal = ({ open, onOpenChange }: CreateShareModalProps) => {
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button type="button" onClick={handleSubmit}>
               Create Share
             </Button>
           </div>

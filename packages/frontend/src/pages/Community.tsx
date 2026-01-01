@@ -2,10 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3 } from "lucide-react";
+import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllPosts, getPostsWithDetails } from "@/lib/posts";
+import { getAllPosts, getPostsWithDetails, deletePost } from "@/lib/posts";
+import { supabase } from "@/integrations/supabase/client";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
 import CreateShareModal from "@/components/CreateShareModal";
@@ -46,6 +47,7 @@ const Community = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([
@@ -71,19 +73,6 @@ const Community = () => {
         { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Can't wait for this healing session! The full moon energy is perfect timing.", likes: 5, timeAgo: "1 hour ago" },
         { id: "2", author: { name: "David Peace", avatar: davidProfile }, content: "Elena's sound healing sessions are transformative. Highly recommend!", likes: 8, timeAgo: "45 min ago" }
       ]
-    },
-    {
-      type: "share",
-      author: { name: "David Lightwalker", avatar: davidProfile, followers: 189, role: "Sacred Geometry Teacher" },
-      title: "Sacred Geometry in Daily Life",
-      thought: "I've been contemplating how the golden ratio appears everywhere in nature and how we can use this wisdom in our daily spiritual practice.",
-      description: "Discovering the divine patterns that surround us and how they can guide our spiritual journey through conscious observation and application.",
-      tags: ["Sacred Geometry", "Mindfulness", "Nature Wisdom"],
-      timeAgo: "4 hours ago",
-      comments: 12,
-      likes: 67,
-      shares: 8,
-      youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
     },
     {
       type: "event",
@@ -113,19 +102,6 @@ const Community = () => {
       thoughts: [
         { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, content: "This workshop exceeded my expectations. Aria's energy is so pure and healing.", likes: 12, timeAgo: "2 days ago" }
       ]
-    },
-    {
-      type: "share",
-      author: { name: "Phoenix Rising", avatar: phoenixProfile, followers: 298, role: "Movement Therapist" },
-      title: "Meditation Through Movement",
-      thought: "Today's ecstatic dance session reminded me how our bodies hold infinite wisdom. Movement is prayer, dance is meditation.",
-      description: "Exploring how dance and movement can become powerful forms of moving meditation that connect us to our inner truth and divine expression.",
-      tags: ["Movement Meditation", "Ecstatic Dance", "Body Wisdom"],
-      timeAgo: "8 hours ago",
-      comments: 9,
-      likes: 34,
-      shares: 6,
-      youtubeUrl: "https://www.youtube.com/embed/abc123xyz"
     }
   ]);
 
@@ -140,7 +116,6 @@ const Community = () => {
       updatedPosts[editingShare.index] = {
         ...updatedPosts[editingShare.index],
         title: updatedShare.title,
-        thought: updatedShare.thought,
         description: updatedShare.description,
         tags: updatedShare.tags,
         ...(updatedShare.url && { youtubeUrl: updatedShare.url })
@@ -158,6 +133,25 @@ const Community = () => {
     }
   };
 
+  const handleDeletePost = async (post: any, index: number) => {
+    if (!post.id) {
+      toast.error("Cannot delete this post");
+      return;
+    }
+
+    if (window.confirm("Are you sure you want to delete this post? This will also delete all associated thoughts. This action cannot be undone.")) {
+      const success = await deletePost(post.id);
+      
+      if (success) {
+        // Remove from UI
+        setPosts(prevPosts => prevPosts.filter((_, i) => i !== index));
+        toast.success("Post deleted successfully");
+      } else {
+        toast.error("Failed to delete post. Please try again.");
+      }
+    }
+  };
+
   const filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
 
   // Get share titles from followed people for search dropdown
@@ -168,6 +162,34 @@ const Community = () => {
   const filteredShareTitles = sharesByFollowedPeople
     .filter(share => share.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, 5); // Limit to 5 results
+
+  // Helper function to convert YouTube URLs to embed format
+  const convertToEmbedUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    
+    // Already an embed URL
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // Standard YouTube URL: https://www.youtube.com/watch?v=VIDEO_ID
+    const standardMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    if (standardMatch && standardMatch[1]) {
+      return `https://www.youtube.com/embed/${standardMatch[1]}`;
+    }
+    
+    // Return original URL if no match (might be another video platform)
+    return url;
+  };
+
+  // Get current user on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   // Fetch posts from database on mount
   useEffect(() => {
@@ -201,6 +223,7 @@ const Community = () => {
         return {
           type: 'share',
           id: dbPost.id,
+          user_id: dbPost.user_id, // Include user_id for ownership check
           author: { 
             name: authorName, 
             avatar: avatarUrl, 
@@ -208,17 +231,15 @@ const Community = () => {
             role: authorRole 
           },
           title: dbPost.title,
-          thought: dbPost.content,
           description: dbPost.content,
           tags: dbPost.tags || [],
           timeAgo: timeAgo,
           comments: dbPost.thoughts_count || 0,
           likes: 0,
           shares: 0,
-          youtubeUrl: dbPost.url,
+          youtubeUrl: convertToEmbedUrl(dbPost.url),
           postImage: dbPost.image_url,
-          postVideo: dbPost.video_url,
-          thoughts: []
+          postVideo: dbPost.video_url
         };
       });
 
@@ -590,17 +611,30 @@ const Community = () => {
                     {/* Share Title Header for Shares */}
                     {post.type === 'share' && (
                       <div className="p-3 pb-2 relative">
-                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight pr-8">
+                        <h2 className="text-lg font-bold text-foreground mb-1 leading-tight pr-20">
                           {post.title}
                         </h2>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditShare(post, index)}
-                          className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-muted/70"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
+                        {/* Only show edit and delete buttons if the post belongs to the current user */}
+                        {post.user_id && currentUserId && post.user_id === currentUserId && (
+                          <div className="absolute top-2 right-2 flex space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditShare(post, index)}
+                              className="h-8 w-8 p-0 hover:bg-muted/70"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePost(post, index)}
+                              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -636,9 +670,6 @@ const Community = () => {
                       {/* Share content: description above tags */}
                       {post.type === 'share' && (
                         <div className="mb-3">
-                          <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                            {post.thought}
-                          </p>
                           <p className="text-sm text-foreground/80 leading-relaxed mb-3">
                             {post.description}
                           </p>
@@ -731,6 +762,40 @@ const Community = () => {
                               </button>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* Images for Shares */}
+                      {post.type === 'share' && post.postImage && (
+                        <div className="mb-3">
+                          <div className="relative rounded-lg overflow-hidden bg-muted cursor-pointer"
+                               onClick={() => {
+                                 setSelectedImage({
+                                   src: post.postImage,
+                                   alt: post.title,
+                                   title: post.title
+                                 });
+                                 setImageModalOpen(true);
+                               }}>
+                            <img
+                              src={post.postImage}
+                              alt={post.title}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Videos for Shares */}
+                      {post.type === 'share' && post.postVideo && (
+                        <div className="mb-3">
+                          <div className="relative rounded-lg overflow-hidden bg-muted">
+                            <video
+                              src={post.postVideo}
+                              controls
+                              className="w-full h-auto"
+                            />
+                          </div>
                         </div>
                       )}
 

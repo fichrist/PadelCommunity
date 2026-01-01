@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Link, Image, Video, Trash2 } from "lucide-react";
+import { X, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditShareModalProps {
@@ -13,7 +13,7 @@ interface EditShareModalProps {
   onOpenChange: (open: boolean) => void;
   share: {
     title: string;
-    thought: string;
+    thought?: string;
     description: string;
     tags: string[];
     url?: string;
@@ -25,10 +25,7 @@ interface EditShareModalProps {
 
 const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditShareModalProps) => {
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [url, setUrl] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [video, setVideo] = useState<File | null>(null);
+  const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState("");
   const { toast } = useToast();
@@ -45,12 +42,9 @@ const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditS
   useEffect(() => {
     if (share) {
       setTitle(share.title);
-      setContent(share.thought + (share.description ? '\n\n' + share.description : ''));
-      setUrl(share.url || share.youtubeUrl || "");
+      setDescription(share.description);
       setTags(share.tags);
       setSelectedTag("");
-      setImage(null);
-      setVideo(null);
     }
   }, [share]);
 
@@ -66,23 +60,19 @@ const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditS
   };
 
   const handleUpdate = () => {
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !description.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill in both title and content.",
+        description: "Please fill in both title and description.",
         variant: "destructive",
       });
       return;
     }
 
-    // Here you would typically update the share
+    // Only update title, description, and tags
     const updatedShare = {
       title,
-      thought: content,
-      description: "",
-      url,
-      image,
-      video,
+      description,
       tags
     };
     
@@ -109,10 +99,7 @@ const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditS
 
   const resetForm = () => {
     setTitle("");
-    setContent("");
-    setUrl("");
-    setImage(null);
-    setVideo(null);
+    setDescription("");
     setTags([]);
     setSelectedTag("");
   };
@@ -131,6 +118,7 @@ const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditS
         
         <div className="space-y-4">
           <div>
+            <label className="block text-sm font-medium mb-2">Title</label>
             <Input
               placeholder="Share title..."
               value={title}
@@ -140,65 +128,17 @@ const EditShareModal = ({ open, onOpenChange, share, onUpdate, onDelete }: EditS
           </div>
           
           <div>
+            <label className="block text-sm font-medium mb-2">Description</label>
             <Textarea
               placeholder="What's on your mind? Share your thoughts, insights, or wisdom..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="min-h-[200px] resize-none bg-background/50"
             />
           </div>
-
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <Link className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Add a URL (optional)..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="bg-background/50"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 flex items-center space-x-2">
-                <Image className="h-4 w-4" />
-                <span>Upload Image</span>
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImage(e.target.files?.[0] || null)}
-                className="bg-background/50"
-              />
-              {image && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Selected: {image.name}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2 flex items-center space-x-2">
-                <Video className="h-4 w-4" />
-                <span>Upload Video</span>
-              </label>
-              <Input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setVideo(e.target.files?.[0] || null)}
-                className="bg-background/50"
-              />
-              {video && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Selected: {video.name}
-                </p>
-              )}
-            </div>
-          </div>
           
           <div>
+            <label className="block text-sm font-medium mb-2">Tags</label>
             <div className="flex items-center space-x-2 mb-2">
               <Select value={selectedTag} onValueChange={setSelectedTag}>
                 <SelectTrigger className="flex-1 bg-background/50">

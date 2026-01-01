@@ -18,13 +18,15 @@ const SignupCard = () => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("SignupCard - Current session:", session);
       setIsLoggedIn(!!session);
     };
 
     checkUser();
 
     // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("SignupCard - Auth event:", event, "Session:", session);
       setIsLoggedIn(!!session);
     });
 
@@ -32,11 +34,6 @@ const SignupCard = () => {
       subscription.unsubscribe();
     };
   }, []);
-
-  // Don't render the card if user is logged in
-  if (isLoggedIn) {
-    return null;
-  }
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();

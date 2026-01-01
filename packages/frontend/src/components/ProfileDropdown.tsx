@@ -91,6 +91,12 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
 
   const handleLogout = async () => {
     try {
+      // Show loading toast
+      toast({
+        title: "Logging out...",
+        description: "Please wait.",
+      });
+
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -108,8 +114,8 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
         description: "You have been successfully logged out.",
       });
       
-      // Navigate to login page after logout
-      navigate('/');
+      // Navigate to landing page using React Router
+      navigate('/', { replace: true });
     } catch (error) {
       console.error("Unexpected logout error:", error);
       toast({
