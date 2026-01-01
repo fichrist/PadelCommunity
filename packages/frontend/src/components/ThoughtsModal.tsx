@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle } from "lucide-react";
-import { createThought } from "@/lib/thoughts";
+import { Edit3, Trash2 } from "lucide-react";
+import { createThought, updateThought, deleteThought } from "@/lib/thoughts";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Thought {
   id: string;
+  user_id?: string;
   author: {
     name: string;
     avatar?: string;
@@ -30,9 +32,21 @@ interface ThoughtsModalProps {
 const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThoughtAdded }: ThoughtsModalProps) => {
   const [newThought, setNewThought] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingThoughtId, setEditingThoughtId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   
   // Debug logging
   console.log("ThoughtsModal rendered with:", { postId, postTitle, thoughtsCount: thoughts?.length, thoughts });
+
+  // Get current user on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   const handleSubmitThought = async () => {
     if (!newThought.trim()) return;
@@ -56,6 +70,50 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThou
       toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEditThought = (thought: Thought) => {
+    setEditingThoughtId(thought.id);
+    setEditContent(thought.content);
+  };
+
+  const handleSaveEdit = async (thoughtId: string) => {
+    if (!editContent.trim()) return;
+
+    const success = await updateThought(thoughtId, editContent);
+    
+    if (success) {
+      toast.success("Thought updated successfully!");
+      setEditingThoughtId(null);
+      setEditContent("");
+      // Notify parent to refresh thoughts
+      if (onThoughtAdded) {
+        onThoughtAdded();
+      }
+    } else {
+      toast.error("Failed to update thought");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingThoughtId(null);
+    setEditContent("");
+  };
+
+  const handleDeleteThought = async (thoughtId: string) => {
+    if (window.confirm("Are you sure you want to delete this thought? This action cannot be undone.")) {
+      const success = await deleteThought(thoughtId);
+      
+      if (success) {
+        toast.success("Thought deleted successfully!");
+        // Notify parent to refresh thoughts
+        if (onThoughtAdded) {
+          onThoughtAdded();
+        }
+      } else {
+        toast.error("Failed to delete thought");
+      }
     }
   };
 
@@ -93,7 +151,29 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThou
           <div className="space-y-4">
             {thoughts && thoughts.length > 0 ? (
               thoughts.map((thought) => (
-                <div key={thought.id} className="border rounded-lg p-4">
+                <div key={thought.id} className="border rounded-lg p-4 relative">
+                  {/* Edit/Delete buttons for own thoughts */}
+                  {thought.user_id && currentUserId && thought.user_id === currentUserId && editingThoughtId !== thought.id && (
+                    <div className="absolute top-2 right-2 flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditThought(thought)}
+                        className="h-7 w-7 p-0 hover:bg-muted/70"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteThought(thought.id)}
+                        className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={thought.author.avatar} />
@@ -106,7 +186,35 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThou
                         <span className="text-sm font-medium">{thought.author.name}</span>
                         <span className="text-xs text-muted-foreground">{thought.timeAgo}</span>
                       </div>
-                      <p className="text-sm text-foreground/90">{thought.content}</p>
+                      
+                      {/* Edit mode */}
+                      {editingThoughtId === thought.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="min-h-[60px] resize-none text-sm"
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCancelEdit}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveEdit(thought.id)}
+                              disabled={!editContent.trim()}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground/90 pr-16">{thought.content}</p>
+                      )}
                     </div>
                   </div>
                 </div>

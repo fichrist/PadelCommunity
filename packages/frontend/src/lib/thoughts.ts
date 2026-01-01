@@ -111,6 +111,7 @@ export async function getThoughtsByPostId(postId: string): Promise<any[]> {
       
       return {
         id: thought.id,
+        user_id: thought.user_id,
         author: {
           name: authorName,
           avatar: profile?.avatar_url
