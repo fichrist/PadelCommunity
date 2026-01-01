@@ -30,6 +30,9 @@ interface ThoughtsModalProps {
 const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThoughtAdded }: ThoughtsModalProps) => {
   const [newThought, setNewThought] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Debug logging
+  console.log("ThoughtsModal rendered with:", { postId, postTitle, thoughtsCount: thoughts?.length, thoughts });
 
   const handleSubmitThought = async () => {
     if (!newThought.trim()) return;
@@ -88,35 +91,31 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, onThou
 
           {/* Existing thoughts */}
           <div className="space-y-4">
-            {thoughts?.map((thought) => (
-              <div key={thought.id} className="border rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={thought.author.avatar} />
-                    <AvatarFallback className="text-xs bg-primary/10">
-                      {thought.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-sm font-medium">{thought.author.name}</span>
-                      <span className="text-xs text-muted-foreground">{thought.timeAgo}</span>
-                    </div>
-                    <p className="text-sm text-foreground/90 mb-3">{thought.content}</p>
-                    <div className="flex items-center space-x-4">
-                      <button className="flex items-center space-x-1 text-xs text-muted-foreground hover:text-primary">
-                        <Heart className="h-3 w-3" />
-                        <span>{thought.likes}</span>
-                      </button>
-                      <button className="flex items-center space-x-1 text-xs text-muted-foreground hover:text-primary">
-                        <MessageCircle className="h-3 w-3" />
-                        <span>Reply</span>
-                      </button>
+            {thoughts && thoughts.length > 0 ? (
+              thoughts.map((thought) => (
+                <div key={thought.id} className="border rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={thought.author.avatar} />
+                      <AvatarFallback className="text-xs bg-primary/10">
+                        {thought.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-sm font-medium">{thought.author.name}</span>
+                        <span className="text-xs text-muted-foreground">{thought.timeAgo}</span>
+                      </div>
+                      <p className="text-sm text-foreground/90">{thought.content}</p>
                     </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No thoughts yet. Be the first to share your thoughts!</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </DialogContent>

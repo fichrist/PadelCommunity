@@ -47,35 +47,49 @@ export async function createThought(postId: string, content: string): Promise<{ 
  */
 export async function getThoughtsByPostId(postId: string): Promise<any[]> {
   try {
-    const { data, error } = await supabase
+    // First, fetch thoughts
+    const { data: thoughts, error: thoughtsError } = await supabase
       .from('thoughts')
-      .select(`
-        id,
-        content,
-        created_at,
-        user_id,
-        profiles!thoughts_user_id_fkey (
-          id,
-          first_name,
-          last_name,
-          display_name,
-          avatar_url
-        )
-      `)
+      .select('id, content, created_at, user_id')
       .eq('post_id', postId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching thoughts:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
+    if (thoughtsError) {
+      console.error("Error fetching thoughts:", thoughtsError);
       return [];
     }
 
-    console.log("Fetched thoughts from database:", data);
+    if (!thoughts || thoughts.length === 0) {
+      console.log("No thoughts found for post:", postId);
+      return [];
+    }
+
+    console.log("Fetched thoughts from database:", thoughts);
+
+    // Get unique user IDs
+    const userIds = [...new Set(thoughts.map(t => t.user_id))];
+
+    // Fetch profiles for all users
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, display_name, avatar_url')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+
+    console.log("Fetched profiles:", profiles);
+
+    // Create a map of user_id to profile
+    const profileMap = new Map();
+    (profiles || []).forEach(profile => {
+      profileMap.set(profile.id, profile);
+    });
 
     // Transform data to match ThoughtsModal expectations
-    const transformedThoughts = (data || []).map((thought: any) => {
-      const profile = thought.profiles;
+    const transformedThoughts = thoughts.map((thought: any) => {
+      const profile = profileMap.get(thought.user_id);
       const authorName = profile?.display_name || profile?.first_name || 'Anonymous';
       
       // Calculate time ago
@@ -107,6 +121,7 @@ export async function getThoughtsByPostId(postId: string): Promise<any[]> {
       };
     });
 
+    console.log("Transformed thoughts:", transformedThoughts);
     return transformedThoughts;
   } catch (error) {
     console.error("Unexpected error fetching thoughts:", error);

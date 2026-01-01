@@ -1329,6 +1329,14 @@ const Community = () => {
             if (postId) {
               const dbThoughts = await getThoughtsByPostId(postId);
               setLoadedThoughts(dbThoughts);
+              
+              // Update the comment count on the post card
+              setPosts(prevPosts => prevPosts.map(post => {
+                if ((post.id && post.id === postId) || (post.eventId && post.eventId === postId)) {
+                  return { ...post, comments: dbThoughts.length };
+                }
+                return post;
+              }));
             }
             toast.success("Thought added!");
           }}
