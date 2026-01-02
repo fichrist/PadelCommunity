@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Sparkles, CalendarDays, MessageSquare, UserCircle, House, Users } from "lucide-react";
+import { CalendarDays, MessageSquare, UserCircle, House, Users } from "lucide-react";
+import newLogo from "@/assets/ChatGPT Image 2 jan 2026, 17_01_01.png";
 
 const Navigation = () => {
   const location = useLocation();
@@ -21,9 +22,9 @@ const Navigation = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/community" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <Sparkles className="h-8 w-8 text-primary" />
+              <img src={newLogo} alt="Glow Logo" className="h-10 w-10 object-contain" />
               <span className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Spirit
+                Glow
               </span>
             </Link>
           </div>

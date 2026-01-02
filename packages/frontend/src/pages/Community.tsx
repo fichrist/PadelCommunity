@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plus, User, Heart, Repeat2, Filter, Home, Search, Star, ExternalLink, Link, Copy, Check, X, ChevronDown, Edit3, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllPosts, getPostsWithDetails, deletePost } from "@/lib/posts";
+import { getAllPosts, getPostsWithDetails, deletePost, updatePost } from "@/lib/posts";
 import { getThoughtsByPostId } from "@/lib/thoughts";
 import { supabase } from "@/integrations/supabase/client";
 import ChatSidebar from "@/components/ChatSidebar";
@@ -113,17 +113,31 @@ const Community = () => {
     setEditShareModalOpen(true);
   };
 
-  const handleUpdateShare = (updatedShare: any) => {
-    if (editingShare) {
-      const updatedPosts = [...posts];
-      updatedPosts[editingShare.index] = {
-        ...updatedPosts[editingShare.index],
+  const handleUpdateShare = async (updatedShare: any) => {
+    if (editingShare && editingShare.id) {
+      // Update in database
+      const success = await updatePost(editingShare.id, {
         title: updatedShare.title,
-        description: updatedShare.description,
-        tags: updatedShare.tags,
-        ...(updatedShare.url && { youtubeUrl: updatedShare.url })
-      };
-      setPosts(updatedPosts);
+        content: updatedShare.description,
+        tags: updatedShare.tags
+      });
+
+      if (success) {
+        // Update local state
+        const updatedPosts = [...posts];
+        updatedPosts[editingShare.index] = {
+          ...updatedPosts[editingShare.index],
+          title: updatedShare.title,
+          description: updatedShare.description,
+          tags: updatedShare.tags,
+          ...(updatedShare.url && { youtubeUrl: updatedShare.url })
+        };
+        setPosts(updatedPosts);
+        toast.success("Share updated successfully!");
+      } else {
+        toast.error("Failed to update share");
+      }
+      
       setEditingShare(null);
     }
   };

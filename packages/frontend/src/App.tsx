@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import EditEvent from "./pages/EditEvent";
 import EventHealerMode from "./pages/EventHealerMode";
 import EventHealerModeEdit from "./pages/EventHealerModeEdit";
+import EditHealerProfile from "./pages/EditHealerProfile";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
           <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+          <Route path="/edit-healer-profile" element={<AppLayout><EditHealerProfile /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
