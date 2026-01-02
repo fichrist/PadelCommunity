@@ -6,18 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search, Video } from "lucide-react";
+import { ArrowLeft, X, Plus, Calendar, MapPin, Image as ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import CreateDropdown from "@/components/CreateDropdown";
-import NotificationDropdown from "@/components/NotificationDropdown";
-import ProfileDropdown from "@/components/ProfileDropdown";
-
-// Import centralized events data
-import { getEventById, elenaProfile } from "@/data/events";
+import { updateEvent, getEventById } from "@/lib/events";
 
 const EditEvent = () => {
   const navigate = useNavigate();
@@ -30,46 +21,42 @@ const EditEvent = () => {
   const [date, setDate] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [time, setTime] = useState("");
-  const [prices, setPrices] = useState<{text: string, amount: string, soldOut: boolean}[]>([]);
+  const [prices, setPrices] = useState<{text: string, amount: string}[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventVideo, setEventVideo] = useState<string | null>(null);
-  const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string, soldOut: boolean}[]>([]);
+  const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get event from centralized data
-  const event = getEventById(eventId || "");
-
-  // Prefill data when component loads
+  // Fetch event data on mount
   useEffect(() => {
-    if (event) {
-      setTitle(event.title);
-      setDescription(event.description);
-      setFullDescription(event.fullDescription || "");
-      setLocation(event.location);
-      setDate(event.date);
-      setDateTo(event.dateTo || "");
-      setTime(event.time || "");
-      setPrices((event.prices || []).map((price: any) => ({
-        text: price.text || "",
-        amount: price.amount || "",
-        soldOut: price.soldOut || false
-      })));
-      setTags(event.tags);
-      setAdditionalOptions((event.additionalOptions || []).map((option: any) => ({
-        name: option.name || "",
-        price: option.price || "",
-        description: option.description || "",
-        soldOut: option.soldOut || false
-      })));
-      setEventImage(event.image);
-      setEventVideo(null);
-    }
-  }, [event]);
-
-  if (!event) {
-    return <div>Event not found</div>;
-  }
+    const fetchEventData = async () => {
+      if (!eventId) return;
+      
+      setLoading(true);
+      const dbEvent = await getEventById(eventId);
+      
+      if (dbEvent) {
+        setTitle(dbEvent.title || "");
+        setDescription(dbEvent.description || "");
+        setFullDescription(dbEvent.full_description || "");
+        setLocation(dbEvent.location || "");
+        setDate(dbEvent.date || "");
+        setDateTo(dbEvent.date_to || "");
+        setTime(dbEvent.time || "");
+        setPrices(dbEvent.prices || []);
+        setTags(dbEvent.tags || []);
+        setAdditionalOptions(dbEvent.additional_options || []);
+        setEventImage(dbEvent.image_url || null);
+        setEventVideo(dbEvent.video_url || null);
+      }
+      
+      setLoading(false);
+    };
+    
+    fetchEventData();
+  }, [eventId]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -83,14 +70,14 @@ const EditEvent = () => {
   };
 
   const handleAddPrice = () => {
-    setPrices([...prices, {text: "", amount: "", soldOut: false}]);
+    setPrices([...prices, {text: "", amount: ""}]);
   };
 
   const handleRemovePrice = (index: number) => {
     setPrices(prices.filter((_, i) => i !== index));
   };
 
-  const handlePriceChange = (index: number, field: 'text' | 'amount' | 'soldOut', value: string | boolean) => {
+  const handlePriceChange = (index: number, field: 'text' | 'amount', value: string) => {
     const updatedPrices = prices.map((price, i) => 
       i === index ? { ...price, [field]: value } : price
     );
@@ -98,14 +85,14 @@ const EditEvent = () => {
   };
 
   const handleAddOption = () => {
-    setAdditionalOptions([...additionalOptions, {name: "", price: "", description: "", soldOut: false}]);
+    setAdditionalOptions([...additionalOptions, {name: "", price: "", description: ""}]);
   };
 
   const handleRemoveOption = (index: number) => {
     setAdditionalOptions(additionalOptions.filter((_, i) => i !== index));
   };
 
-  const handleOptionChange = (index: number, field: 'name' | 'price' | 'description' | 'soldOut', value: string | boolean) => {
+  const handleOptionChange = (index: number, field: 'name' | 'price' | 'description', value: string) => {
     const updatedOptions = additionalOptions.map((option, i) => 
       i === index ? { ...option, [field]: value } : option
     );
@@ -136,128 +123,70 @@ const EditEvent = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !location.trim() || !date) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Here you would typically save the event
-    console.log("Updating event:", {
-      title,
-      description,
-      fullDescription,
-      location,
-      date,
-      dateTo,
-      time,
-      prices,
-      tags,
-      additionalOptions,
-      eventImage,
-      eventVideo
-    });
-    
-    toast.success("Event updated successfully!");
-    navigate(`/eventhealermode/${eventId}`);
+    if (!eventId) {
+      toast.error("Event ID is missing.");
+      return;
+    }
+
+    const eventData = {
+      title: title.trim(),
+      description: description.trim(),
+      full_description: fullDescription.trim(),
+      location: location.trim(),
+      date: date.trim(),
+      date_to: dateTo.trim() || undefined,
+      time: time.trim() || undefined,
+      prices: prices,
+      tags: tags,
+      additional_options: additionalOptions,
+      image_url: eventImage || undefined,
+      video_url: eventVideo || undefined
+    };
+
+    try {
+      const result = await updateEvent(eventId, eventData);
+      
+      if (result) {
+        toast.success("Event updated successfully!");
+        navigate(`/event/${eventId}`);
+      } else {
+        toast.error("Failed to update event. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+      toast.error("An error occurred. Please try again.");
+    }
   };
 
-  return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${colorfulSkyBackground})` }}
-    >
-      <div className="min-h-screen bg-background/90 backdrop-blur-sm">
-        {/* Top Navigation Bar */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <img src={spiritualLogo} alt="Spirit" className="h-6 w-6" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Spirit</span>
-              </div>
-              
-              {/* Center: Navigation Icons */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/')}
-                  >
-                    <Users className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <Calendar className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/people')}
-                  >
-                    <User className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="p-4 rounded-xl hover:bg-muted/70 transition-all hover:scale-110"
-                    onClick={() => navigate('/chat')}
-                  >
-                    <MessageCircle className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Right: Search Bar + Create Button + Profile */}
-              <div className="flex items-center space-x-3">
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-muted rounded-full px-3 py-2 w-64">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                  <input 
-                    type="text" 
-                    placeholder="search..." 
-                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder:text-muted-foreground"
-                  />
-                </div>
-                <CreateDropdown onCreateShare={() => {}} />
-                <NotificationDropdown />
-                <ProfileDropdown userImage={elenaProfile} />
-              </div>
-            </div>
-          </div>
-        </div>
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading event...</div>;
+  }
 
+  return (
+    <>
         {/* Page Title */}
-        <div className="bg-transparent sticky top-[73px] z-40">
+        <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Edit Event</h1>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate(`/eventhealermode/${eventId}`)}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
-              </Button>
-            </div>
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-foreground font-comfortaa">
+                  Edit Event
+                </h1>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate(`/event/${eventId}`)}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </Button>
+              </div>
           </div>
         </div>
 
@@ -265,7 +194,9 @@ const EditEvent = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="bg-card/90 backdrop-blur-sm border border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Edit Event Details</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Edit Event Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Basic Information */}
@@ -360,44 +291,32 @@ const EditEvent = () => {
                   <Label>Prices (€)</Label>
                   <div className="space-y-2 mt-2">
                     {prices.map((price, index) => (
-                      <div key={index} className="border border-border rounded-lg p-3 bg-background/30">
-                        <div className="flex items-center space-x-2">
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          placeholder="Description (e.g., Regular, Early Bird)..."
+                          value={price.text}
+                          onChange={(e) => handlePriceChange(index, 'text', e.target.value)}
+                          className="flex-1 bg-background/50"
+                        />
+                        <div className="flex items-center">
+                          <span className="text-sm text-muted-foreground mr-2">€</span>
                           <Input
-                            placeholder="Description (e.g., Regular, Early Bird)..."
-                            value={price.text}
-                            onChange={(e) => handlePriceChange(index, 'text', e.target.value)}
-                            className="flex-1 bg-background/50"
+                            placeholder="0.00"
+                            value={price.amount}
+                            onChange={(e) => handlePriceChange(index, 'amount', e.target.value)}
+                            className="w-24 bg-background/50"
+                            type="number"
+                            step="0.01"
                           />
-                          <div className="flex items-center">
-                            <span className="text-sm text-muted-foreground mr-2">€</span>
-                            <Input
-                              placeholder="0.00"
-                              value={price.amount}
-                              onChange={(e) => handlePriceChange(index, 'amount', e.target.value)}
-                              className="w-24 bg-background/50"
-                              type="number"
-                              step="0.01"
-                            />
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemovePrice(index)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
-                        <div className="flex items-center mt-2">
-                          <Checkbox
-                            id={`price-soldout-${index}`}
-                            checked={price.soldOut}
-                            onCheckedChange={(checked) => handlePriceChange(index, 'soldOut', checked as boolean)}
-                          />
-                          <Label htmlFor={`price-soldout-${index}`} className="ml-2 text-sm">
-                            Sold Out
-                          </Label>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemovePrice(index)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                     <Button
@@ -419,7 +338,7 @@ const EditEvent = () => {
                 <div className="space-y-3 mt-2">
                   {additionalOptions.map((option, index) => (
                     <div key={index} className="border border-border rounded-lg p-4 bg-background/30">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <Input
                           placeholder="Option name..."
                           value={option.name}
@@ -453,16 +372,6 @@ const EditEvent = () => {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center">
-                        <Checkbox
-                          id={`option-soldout-${index}`}
-                          checked={option.soldOut}
-                          onCheckedChange={(checked) => handleOptionChange(index, 'soldOut', checked as boolean)}
-                        />
-                        <Label htmlFor={`option-soldout-${index}`} className="ml-2 text-sm">
-                          Sold Out
-                        </Label>
                       </div>
                     </div>
                   ))}
@@ -561,7 +470,10 @@ const EditEvent = () => {
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => navigate(`/eventhealermode/${eventId}`)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(`/event/${eventId}`)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSubmit} className="min-w-32">
@@ -571,8 +483,7 @@ const EditEvent = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 

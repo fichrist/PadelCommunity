@@ -6,7 +6,8 @@ import { MessageCircle, Share2, BookOpen, Users, Sparkles, MapPin, Calendar, Plu
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllPosts, getPostsWithDetails, deletePost, updatePost } from "@/lib/posts";
-import { getThoughtsByPostId } from "@/lib/thoughts";
+import { getThoughtsByPostId, getThoughtsByEventId, createEventThought } from "@/lib/thoughts";
+import { getAllEvents } from "@/lib/events";
 import { supabase } from "@/integrations/supabase/client";
 import ChatSidebar from "@/components/ChatSidebar";
 import CreateDropdown from "@/components/CreateDropdown";
@@ -53,60 +54,7 @@ const Community = () => {
   const [isLoadingThoughts, setIsLoadingThoughts] = useState(false);
   const navigate = useNavigate();
 
-  const [posts, setPosts] = useState([
-    {
-      type: "event",
-      author: { name: "Elena Moonchild", avatar: elenaProfile, followers: 234, role: "Sound Healer" },
-      title: "Full Moon Sound Healing Ceremony",
-      thought: "Join us under the powerful energy of the full moon for a transformative sound healing experience that will align your chakras and restore inner peace.",
-      description: "Experience the healing power of crystal bowls, gongs, and ancient chants in our sacred moonlight ceremony.",
-      location: "Sacred Grove Sanctuary, Sedona AZ",
-      tags: ["Sound Healing", "Full Moon", "Chakra Alignment"],
-      attendees: 24,
-      connectionsGoing: ["Sarah Light", "David Peace"],
-      timeAgo: "2 hours ago",
-      comments: 8,
-      likes: 42,
-      shares: 5,
-      image: soundHealingEvent,
-      dateRange: { start: "Mar 15", end: null },
-      eventId: "1",
-      isPastEvent: false,
-      thoughts: [
-        { id: "1", author: { name: "Sarah Light", avatar: elenaProfile }, content: "Can't wait for this healing session! The full moon energy is perfect timing.", likes: 5, timeAgo: "1 hour ago" },
-        { id: "2", author: { name: "David Peace", avatar: davidProfile }, content: "Elena's sound healing sessions are transformative. Highly recommend!", likes: 8, timeAgo: "45 min ago" }
-      ]
-    },
-    {
-      type: "event",
-      author: { name: "Aria Starseed", avatar: ariaProfile, followers: 156, role: "Crystal Healer" },
-      title: "Crystal Healing Workshop for Beginners",
-      thought: "Crystals have been my guides for over a decade. I'm excited to share this gentle introduction to help you start your own healing journey.",
-      description: "Learn to select, cleanse, and work with crystals for healing, protection, and spiritual growth in this hands-on workshop.",
-      location: "Crystal Cave Studio, Asheville NC",
-      tags: ["Crystal Healing", "Beginner Friendly", "Hands-on Workshop"],
-      attendees: 12,
-      connectionsGoing: ["Luna Sage"],
-      timeAgo: "6 hours ago",
-      comments: 15,
-      likes: 23,
-      shares: 3,
-      image: crystalWorkshopEvent,
-      dateRange: { start: "Apr 2", end: "Apr 4" },
-      eventId: "2",
-      isPastEvent: true,
-      averageRating: 4.8,
-      totalReviews: 12,
-      reviews: [
-        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, rating: 5, content: "Amazing workshop! Aria's knowledge is incredible and I learned so much about crystal healing.", timeAgo: "2 days ago" },
-        { id: "2", author: { name: "River Flow", avatar: davidProfile }, rating: 5, content: "Transformative experience. The hands-on approach made all the difference.", timeAgo: "1 day ago" },
-        { id: "3", author: { name: "Star Dreamer", avatar: ariaProfile }, rating: 4, content: "Great introduction to crystals. Perfect for beginners!", timeAgo: "3 days ago" }
-      ],
-      thoughts: [
-        { id: "1", author: { name: "Luna Sage", avatar: elenaProfile }, content: "This workshop exceeded my expectations. Aria's energy is so pure and healing.", likes: 12, timeAgo: "2 days ago" }
-      ]
-    }
-  ]);
+  const [posts, setPosts] = useState<any[]>([]);
 
   const handleEditShare = (post: any, index: number) => {
     setEditingShare({ ...post, index });
@@ -208,10 +156,68 @@ const Community = () => {
     getCurrentUser();
   }, []);
 
-  // Fetch posts from database on mount
+  // Fetch events and posts from database on mount
   useEffect(() => {
-    const fetchDatabasePosts = async () => {
+    const fetchDatabaseContent = async () => {
+      // Fetch events
+      const dbEvents = await getAllEvents();
+      
+      // Fetch posts (shares)
       const dbPosts = await getPostsWithDetails();
+      
+      // Get unique user IDs from events
+      const eventUserIds = [...new Set(dbEvents.map((e: any) => e.user_id).filter(Boolean))];
+      
+      // Fetch profiles for event creators
+      const { data: eventProfiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, display_name, avatar_url, is_healer')
+        .in('id', eventUserIds);
+      
+      // Create a map of user_id to profile
+      const profileMap = new Map();
+      (eventProfiles || []).forEach((profile: any) => {
+        profileMap.set(profile.id, profile);
+      });
+      
+      // Format events for UI
+      const formattedEvents = dbEvents.map((dbEvent: any) => {
+        // Get author info from profile
+        const profile = profileMap.get(dbEvent.user_id);
+        const authorName = profile?.display_name || profile?.first_name || "Event Creator";
+        const authorRole = profile?.is_healer ? "Healer" : "Event Organizer";
+        const avatarUrl = profile?.avatar_url || elenaProfile;
+        
+        return {
+          type: 'event',
+          id: dbEvent.id,
+          eventId: dbEvent.id,
+          user_id: dbEvent.user_id,
+          author: {
+            name: authorName,
+            avatar: avatarUrl,
+            followers: 0,
+            role: authorRole
+          },
+          title: dbEvent.title,
+          thought: dbEvent.description,
+          description: dbEvent.full_description || dbEvent.description,
+          location: dbEvent.location,
+          tags: dbEvent.tags || [],
+          attendees: 10,
+          connectionsGoing: [],
+          timeAgo: 'Just now',
+          comments: 0,
+          likes: 0,
+          shares: 0,
+          image: dbEvent.image_url || spiritualBackground,
+          dateRange: {
+            start: dbEvent.date,
+            end: dbEvent.date_to || null
+          },
+          isPastEvent: false
+        };
+      });
       
       // Convert database posts to the format expected by the UI
       const formattedDbPosts = dbPosts.map((dbPost) => {
@@ -260,11 +266,11 @@ const Community = () => {
         };
       });
 
-      // Merge with existing mocked posts (keep the mocked posts)
-      setPosts(prevPosts => [...prevPosts, ...formattedDbPosts]);
+      // Merge events and shares
+      setPosts([...formattedEvents, ...formattedDbPosts]);
     };
 
-    fetchDatabasePosts();
+    fetchDatabaseContent();
   }, []);
 
   return (
@@ -580,7 +586,7 @@ const Community = () => {
                                <div className="flex items-center space-x-2">
                                   <Avatar 
                                     className="h-6 w-6 cursor-pointer"
-                                    onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                    onClick={() => navigate(`/healer/${post.user_id}`)}
                                   >
                                    <AvatarImage src={post.author.avatar} />
                                    <AvatarFallback className="bg-primary/10 text-xs">
@@ -591,7 +597,7 @@ const Community = () => {
                                    <div className="flex items-center space-x-2">
                                       <span 
                                         className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                                        onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                        onClick={() => navigate(`/healer/${post.user_id}`)}
                                       >
                                         {post.author.name}
                                       </span>
@@ -837,7 +843,7 @@ const Community = () => {
                             <div className="flex items-center space-x-2">
                                <Avatar 
                                  className="h-6 w-6 cursor-pointer"
-                                 onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                 onClick={() => navigate(`/healer/${post.user_id}`)}
                                >
                                 <AvatarImage src={post.author.avatar} />
                                 <AvatarFallback className="bg-primary/10 text-xs">
@@ -848,7 +854,7 @@ const Community = () => {
                                 <div className="flex items-center space-x-2">
                                    <span 
                                      className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                                     onClick={() => navigate(`/healer/${post.author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                     onClick={() => navigate(`/healer/${post.user_id}`)}
                                    >
                                      {post.author.name}
                                    </span>
@@ -880,7 +886,10 @@ const Community = () => {
                             
                             if (postId) {
                               setIsLoadingThoughts(true);
-                              const dbThoughts = await getThoughtsByPostId(postId);
+                              // Use appropriate function based on post type
+                              const dbThoughts = post.type === 'event' 
+                                ? await getThoughtsByEventId(postId)
+                                : await getThoughtsByPostId(postId);
                               console.log("Loaded thoughts:", dbThoughts);
                               setLoadedThoughts(dbThoughts);
                               setIsLoadingThoughts(false);
@@ -1337,11 +1346,15 @@ const Community = () => {
           postId={selectedPost.id || selectedPost.eventId || ''}
           postTitle={selectedPost.title}
           thoughts={loadedThoughts}
+          isEvent={selectedPost.type === 'event'}
           onThoughtAdded={async () => {
             // Refresh thoughts from database after adding
             const postId = selectedPost.id || selectedPost.eventId;
             if (postId) {
-              const dbThoughts = await getThoughtsByPostId(postId);
+              // Use appropriate function based on post type
+              const dbThoughts = selectedPost.type === 'event'
+                ? await getThoughtsByEventId(postId)
+                : await getThoughtsByPostId(postId);
               setLoadedThoughts(dbThoughts);
               
               // Update the comment count on the post card

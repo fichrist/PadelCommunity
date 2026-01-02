@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,13 +18,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
-
-// Import centralized events data
-import { getEventById, formatEventForDetail, elenaProfile } from "@/data/events";
+import { getEventById, deleteEvent } from "@/lib/events";
+import { elenaProfile } from "@/data/healers";
+import spiritualBackground from "@/assets/spiritual-background.jpg";
+import { supabase } from "@/integrations/supabase/client";
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
   const [allowVisible, setAllowVisible] = useState(true);
   const [selectedPrice, setSelectedPrice] = useState("");
@@ -42,6 +45,8 @@ const EventDetails = () => {
   const [isHealerMode, setIsHealerMode] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedEvent, setEditedEvent] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -86,13 +91,90 @@ const EventDetails = () => {
     }));
   };
 
-  // Get event from centralized data
-  const rawEvent = getEventById(eventId || "");
-  const event = rawEvent ? formatEventForDetail(rawEvent, isHealerMode) : null;
+  // Fetch current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Fetch event from database
+  useEffect(() => {
+    const fetchEvent = async () => {
+      if (!eventId) return;
+      
+      setLoading(true);
+      const dbEvent = await getEventById(eventId);
+      
+      if (dbEvent) {
+        // Format prices from database
+        const priceOptions = (dbEvent.prices || []).map((price: any) => ({
+          type: price.text || 'Standard',
+          price: `€${price.amount}`,
+          description: price.description || '',
+          soldOut: false
+        }));
+        
+        // Format additional options from database
+        const addOns = (dbEvent.additional_options || []).map((option: any, index: number) => ({
+          id: `addon-${index}`,
+          name: option.name || '',
+          price: `€${option.price}`,
+          description: option.description || ''
+        }));
+        
+        // Format event for display with database data
+        const formattedEvent = {
+          id: dbEvent.id,
+          user_id: dbEvent.user_id,
+          title: dbEvent.title,
+          description: dbEvent.description,
+          fullDescription: dbEvent.full_description || dbEvent.description,
+          location: dbEvent.location,
+          date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
+          time: dbEvent.time || 'TBD',
+          tags: dbEvent.tags || [],
+          image: dbEvent.image_url || spiritualBackground,
+          price: priceOptions.length > 0 ? priceOptions[0].price : '€25',
+          organizers: [{
+            name: 'Event Creator',
+            avatar: elenaProfile,
+            location: dbEvent.location,
+            previousEvents: []
+          }],
+          attendees: [{
+            name: 'Anonymous',
+            avatar: elenaProfile,
+            location: '',
+            isAnonymous: true
+          }],
+          priceOptions: priceOptions.length > 0 ? priceOptions : [{
+            type: 'Standard',
+            price: '€25',
+            description: 'Regular admission',
+            soldOut: false
+          }],
+          addOns: addOns
+        };
+        
+        setEvent(formattedEvent);
+      }
+      setLoading(false);
+    };
+    
+    fetchEvent();
+  }, [eventId]);
+
   const displayEvent = editedEvent || event;
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading event...</div>;
+  }
+
   if (!event) {
-    return <div>Event not found</div>;
+    return <div className="flex items-center justify-center h-screen">Event not found</div>;
   }
 
   return (
@@ -100,14 +182,37 @@ const EventDetails = () => {
         {/* Header */}
         <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
           <div className="max-w-[72%] mx-auto px-4 sm:px-6 lg:px-8">
-            <Button
-              variant="ghost"
-              onClick={() => window.history.back()}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                variant="ghost"
+                onClick={() => window.history.back()}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              
+              {/* Edit and Delete buttons - only visible for event creator */}
+              {currentUserId && event.user_id === currentUserId && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/editevent/${event.id}`)}
+                    className="border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Event
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Delete Event
+                  </Button>
+                </div>
+              )}
+            </div>
             
             {/* Mode Toggle */}
             <div className="flex justify-center mb-4">
@@ -973,6 +1078,47 @@ const EventDetails = () => {
                 <Button onClick={handleBroadcastMessage}>
                   <Send className="w-4 h-4 mr-2" />
                   Send to All
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Event</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete "{event.title}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeleteConfirmOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!eventId) return;
+                    
+                    const result = await deleteEvent(eventId);
+                    
+                    if (result) {
+                      toast.success("Event deleted successfully");
+                      setDeleteConfirmOpen(false);
+                      navigate('/events');
+                    } else {
+                      toast.error("Failed to delete event. Please try again.");
+                    }
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Delete
                 </Button>
               </div>
             </div>

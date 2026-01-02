@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X, Heart, Repeat2, Share2, ExternalLink, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,9 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
-
-// Import centralized events data
-import { getAllEvents, getAllTags, formatEventForList, getAttendeeCount, elenaProfile, davidProfile } from "@/data/events";
+import { getAllEvents } from "@/lib/events";
+import { elenaProfile, davidProfile } from "@/data/healers";
+import spiritualBackground from "@/assets/spiritual-background.jpg";
 
 const Events = () => {
   const [filter, setFilter] = useState("all");
@@ -38,17 +38,51 @@ const Events = () => {
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<string | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([
+    "Movement", "Dance", "Yoga", "Exhibition", "Festival", "Garden",
+    "Workshop", "Education", "Sacred Geometry", "Sound Bath", "Chakras",
+    "Energy Work", "Healing", "Ceremony", "Full Moon", "Meditation",
+    "Morning Practice", "Nature", "Walking", "Mindfulness"
+  ]);
   const navigate = useNavigate();
 
-  // Get events from centralized data
-  const allEvents = getAllEvents();
-  const events = allEvents.map(formatEventForList);
+  // Fetch events from database
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const dbEvents = await getAllEvents();
+      
+      // Format events for display
+      const formattedEvents = dbEvents.map((dbEvent: any) => ({
+        eventId: dbEvent.id,
+        title: dbEvent.title,
+        description: dbEvent.description,
+        location: dbEvent.location,
+        date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
+        time: dbEvent.time,
+        tags: dbEvent.tags || [],
+        attendees: 10, // Default as requested
+        connectionsGoing: [],
+        comments: 0, // Default as requested
+        image: dbEvent.image_url || spiritualBackground,
+        isPastEvent: false,
+        organizers: [{
+          id: 'organizer-1',
+          name: 'Event Creator',
+          avatar: elenaProfile
+        }],
+        thoughts: []
+      }));
+      
+      setEvents(formattedEvents);
+    };
+    
+    fetchEvents();
+  }, []);
 
   const filteredEvents = filter === "all" ? events : 
     filter === "past" ? events.filter(event => event.isPastEvent) :
     events.filter(event => !event.isPastEvent);
-
-  const allTags = getAllTags();
 
   return (
     <>

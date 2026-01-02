@@ -16,6 +16,7 @@ import elenaProfile from "@/assets/elena-profile.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import { createEvent, updateEvent, getEventById } from "@/lib/events";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -38,9 +39,34 @@ const CreateEvent = () => {
   const [eventVideo, setEventVideo] = useState<string | null>(null);
   const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
 
-  // Prefill data when editing
+  // Fetch event data when in edit mode
   useEffect(() => {
-    if (isEditMode) {
+    const fetchEventData = async () => {
+      if (isEditMode && eventId) {
+        const dbEvent = await getEventById(eventId);
+        if (dbEvent) {
+          setTitle(dbEvent.title || "");
+          setDescription(dbEvent.description || "");
+          setFullDescription(dbEvent.full_description || "");
+          setLocation(dbEvent.location || "");
+          setDate(dbEvent.date || "");
+          setDateTo(dbEvent.date_to || "");
+          setTime(dbEvent.time || "");
+          setPrices(dbEvent.prices || []);
+          setTags(dbEvent.tags || []);
+          setAdditionalOptions(dbEvent.additional_options || []);
+          setEventImage(dbEvent.image_url || null);
+          setEventVideo(dbEvent.video_url || null);
+        }
+      }
+    };
+    
+    fetchEventData();
+  }, [isEditMode, eventId]);
+
+  // Legacy: Prefill data from URL params (keeping for backwards compatibility)
+  useEffect(() => {
+    if (isEditMode && !eventId) {
       const titleParam = searchParams.get('title');
       const descriptionParam = searchParams.get('description');
       const fullDescriptionParam = searchParams.get('fullDescription');
@@ -140,34 +166,52 @@ const CreateEvent = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !location.trim() || !date) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Here you would typically save the event
-    console.log("Creating event:", {
-      title,
-      description,
-      fullDescription,
-      location,
-      date,
-      dateTo,
-      time,
-      prices,
-      tags,
-      additionalOptions,
-      eventImage,
-      eventVideo
-    });
-    
-    toast.success(isEditMode ? "Event updated successfully!" : "Event created successfully!");
+    const eventData = {
+      title: title.trim(),
+      description: description.trim(),
+      full_description: fullDescription.trim(),
+      location: location.trim(),
+      date: date.trim(),
+      date_to: dateTo.trim() || undefined,
+      time: time.trim() || undefined,
+      prices: prices,
+      tags: tags,
+      additional_options: additionalOptions,
+      image_url: eventImage || undefined,
+      video_url: eventVideo || undefined
+    };
 
-    if (isEditMode && eventId) {
-      navigate(`/eventhealermode/${eventId}`);
-    } else {
-      navigate('/');
+    try {
+      if (isEditMode && eventId) {
+        // Update existing event
+        const result = await updateEvent(eventId, eventData);
+        
+        if (result) {
+          toast.success("Event updated successfully!");
+          navigate(`/eventhealermode/${eventId}`);
+        } else {
+          toast.error("Failed to update event. Please try again.");
+        }
+      } else {
+        // Create new event
+        const result = await createEvent(eventData);
+        
+        if (result) {
+          toast.success("Event created successfully!");
+          navigate(`/event/${result.id}`);
+        } else {
+          toast.error("Failed to create event. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving event:", error);
+      toast.error("An error occurred. Please try again.");
     }
   };
 
