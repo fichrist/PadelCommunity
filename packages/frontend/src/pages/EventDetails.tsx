@@ -189,7 +189,7 @@ const EventDetails = () => {
             <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
-                onClick={() => window.history.back()}
+                onClick={() => navigate('/events')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search, Video } from "lucide-react";
+import { ArrowLeft, X, Plus, Upload, Calendar, MapPin, Image as ImageIcon, Users, MessageCircle, User, Search, Video, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -17,6 +17,10 @@ import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import { createEvent, updateEvent, getEventById } from "@/lib/events";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -41,6 +45,24 @@ const CreateEvent = () => {
   const [eventImage, setEventImage] = useState<string | null>(null);
   const [eventVideo, setEventVideo] = useState<string | null>(null);
   const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
+  const [availableTags, setAvailableTags] = useState<{ id: string; name: string }[]>([]);
+  const [tagsOpen, setTagsOpen] = useState(false);
+
+  // Fetch available tags from database
+  useEffect(() => {
+    const fetchTags = async () => {
+      const { data: dbTags } = await (supabase as any)
+        .from('tags')
+        .select('id, name')
+        .order('name');
+      
+      if (dbTags) {
+        setAvailableTags(dbTags as any);
+      }
+    };
+    
+    fetchTags();
+  }, []);
 
   // Fetch event data when in edit mode
   useEffect(() => {
@@ -105,10 +127,11 @@ const CreateEvent = () => {
     }
   }, [searchParams, isEditMode]);
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag("");
+  const toggleTag = (tag: string) => {
+    if (tags.includes(tag)) {
+      setTags(tags.filter(t => t !== tag));
+    } else {
+      setTags([...tags, tag]);
     }
   };
 
@@ -529,31 +552,71 @@ const CreateEvent = () => {
               </div>
 
               {/* Tags */}
-              <div>
+              <div className="space-y-2">
                 <Label>Event Tags</Label>
-                <div className="flex items-center space-x-2 mt-2 mb-2">
-                  <Input
-                    placeholder="Add tag..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                    className="flex-1 bg-background/50"
-                  />
-                  <Button onClick={handleAddTag} size="sm" variant="outline">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center space-x-1">
-                      <span>{tag}</span>
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => handleRemoveTag(tag)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
+                <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tagsOpen}
+                      className="w-full justify-between"
+                    >
+                      {tags.length > 0
+                        ? `${tags.length} tag${tags.length === 1 ? '' : 's'} selected`
+                        : "Select tags..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search tags..." />
+                      <CommandList>
+                        <CommandEmpty>No tag found.</CommandEmpty>
+                        <CommandGroup>
+                          {availableTags.map((tag) => (
+                            <CommandItem
+                              key={tag.id}
+                              value={tag.name}
+                              onSelect={() => {
+                                toggleTag(tag.name);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tags.includes(tag.name) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {tag.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Display selected tags as badges */}
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="default"
+                        className="cursor-pointer"
+                        onClick={() => toggleTag(tag)}
+                      >
+                        {tag}
+                        <X className="ml-1 h-3 w-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                <p className="text-sm text-muted-foreground">
+                  {tags.length} tag{tags.length === 1 ? '' : 's'} selected
+                </p>
               </div>
 
               {/* Submit Button */}
