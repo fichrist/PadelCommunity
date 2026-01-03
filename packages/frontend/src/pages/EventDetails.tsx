@@ -40,6 +40,7 @@ const EventDetails = () => {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+  const [remarks, setRemarks] = useState("");
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [isHealerMode, setIsHealerMode] = useState(false);
@@ -217,41 +218,6 @@ const EventDetails = () => {
                 </div>
               )}
             </div>
-            
-            {/* Mode Toggle */}
-            <div className="flex justify-center mb-4">
-              <div className="flex items-center bg-muted rounded-lg p-1">
-                <Button
-                  variant={!isHealerMode ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setIsHealerMode(false);
-                    setIsEditing(false);
-                    setEditedEvent(null);
-                  }}
-                  className={`px-4 py-2 rounded-md transition-colors ${!isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Reader
-                </Button>
-                <Button
-                  variant={isHealerMode ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => navigate(`/eventhealermode/${eventId}`)}
-                  className={`px-4 py-2 rounded-md transition-colors ${isHealerMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Healer
-                </Button>
-              </div>
-            </div>
-
-            {/* Healer Mode Badge */}
-            {isHealerMode && (
-              <div className="flex justify-center mb-4">
-                <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                  Healer Mode - Full Attendee Visibility
-                </Badge>
-              </div>
-            )}
             
             {/* Title with Edit Controls */}
             <div className="flex items-center justify-center mb-8 relative">
@@ -805,24 +771,6 @@ const EventDetails = () => {
                         </div>
                       </label>
                     ))}
-                    {/* Pay at Entry Option */}
-                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                      <input
-                        type="radio"
-                        name="priceOption"
-                        value="Pay at Entry"
-                        checked={selectedPrice === "Pay at Entry"}
-                        onChange={(e) => setSelectedPrice(e.target.value)}
-                        className="text-primary focus:ring-primary"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Pay at Entry</span>
-                          <span className="font-bold text-primary">{event.price}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Pay when you arrive at the event location</p>
-                      </div>
-                    </label>
                   </div>
                 </div>
 
@@ -840,6 +788,22 @@ const EventDetails = () => {
                       </Label>
                       <p className="text-xs text-muted-foreground">Others will see you're attending this event</p>
                     </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="remarks" className="text-sm font-medium">
+                      Remarks (Optional)
+                    </Label>
+                    <Textarea
+                      id="remarks"
+                      placeholder="Any special requests, dietary restrictions, or notes for the organizer..."
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      className="min-h-[80px] resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This information will be shared with the event organizer
+                    </p>
                   </div>
                 </div>
 
@@ -901,15 +865,59 @@ const EventDetails = () => {
                   <Button
                     className="flex-1"
                     disabled={!selectedPrice}
-                    onClick={() => {
-                      const paymentMethod = selectedPrice === "Pay at Entry" ? "Pay at Entry" : "Online Payment";
-                      const addOnNames = selectedAddOns.map(id => event.addOns?.find(addon => addon.id === id)?.name).filter(Boolean).join(', ');
-                      const message = addOnNames 
-                        ? `Successfully enrolled in ${event.title} with add-ons: ${addOnNames}! Payment method: ${paymentMethod}. Check your email for confirmation.`
-                        : `Successfully enrolled in ${event.title}! Payment method: ${paymentMethod}. Check your email for confirmation.`;
-                      toast.success(message);
-                      setEnrollmentModalOpen(false);
-                      setSelectedAddOns([]);
+                    onClick={async () => {
+                      if (!currentUserId) {
+                        toast.error("Please log in to enroll in events");
+                        return;
+                      }
+
+                      try {
+                        // Check if user is already enrolled
+                        const { data: existingEnrollment } = await (supabase as any)
+                          .from('enrollments')
+                          .select('id')
+                          .eq('event_id', event.id)
+                          .eq('user_id', currentUserId)
+                          .single();
+
+                        if (existingEnrollment) {
+                          toast.error("You are already enrolled in this event");
+                          return;
+                        }
+
+                        // Create enrollment record
+                        const { error: enrollmentError } = await (supabase as any)
+                          .from('enrollments')
+                          .insert({
+                            event_id: event.id,
+                            user_id: currentUserId,
+                            selected_price_option: selectedPrice,
+                            selected_add_ons: selectedAddOns,
+                            allow_visible: allowVisible,
+                            remarks: remarks.trim() || null,
+                            status: 'confirmed'
+                          });
+
+                        if (enrollmentError) {
+                          console.error('Enrollment error:', enrollmentError);
+                          toast.error("Failed to enroll. Please try again.");
+                          return;
+                        }
+
+                        const addOnNames = selectedAddOns.map(id => event.addOns?.find(addon => addon.id === id)?.name).filter(Boolean).join(', ');
+                        const message = addOnNames 
+                          ? `Successfully enrolled in ${event.title} with add-ons: ${addOnNames}! Check your email for confirmation.`
+                          : `Successfully enrolled in ${event.title}! Check your email for confirmation.`;
+                        
+                        toast.success(message);
+                        setEnrollmentModalOpen(false);
+                        setSelectedAddOns([]);
+                        setSelectedPrice("");
+                        setRemarks("");
+                      } catch (error) {
+                        console.error('Error enrolling:', error);
+                        toast.error("An error occurred. Please try again.");
+                      }
                     }}
                   >
                     Confirm Enrollment
