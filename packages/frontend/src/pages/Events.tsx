@@ -15,7 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
+import CommunityEventCard from "@/components/CommunityEventCard";
 import { getAllEvents } from "@/lib/events";
+import { getThoughtsByEventId } from "@/lib/thoughts";
 import { elenaProfile, davidProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 
@@ -57,7 +59,7 @@ const Events = () => {
         eventId: dbEvent.id,
         title: dbEvent.title,
         description: dbEvent.description,
-        location: dbEvent.location,
+        location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
         date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
         time: dbEvent.time,
         tags: dbEvent.tags || [],
@@ -351,273 +353,58 @@ const Events = () => {
             {/* Main Content - Events */}
             <div className="lg:col-span-6 space-y-4">
               {filteredEvents.map((event, index) => (
-                <Card key={index} className="bg-card/90 backdrop-blur-sm border border-border hover:shadow-lg transition-all duration-200">
-                  <CardContent className="p-0">
-                    {/* Event Image Header */}
-                    {event.image && (
-                      <div className="p-4">
-                        <div className="flex space-x-3">
-                          {/* Event Image - 4:3 Aspect Ratio - Clickable */}
-                          <div 
-                            className="w-48 h-36 flex-shrink-0 cursor-pointer"
-                            onClick={() => navigate(`/event/${event.eventId}`)}
-                          >
-                            <img 
-                              src={event.image} 
-                              alt={event.title}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                          </div>
-                          
-                          {/* Event Details */}
-                          <div className="flex-1 min-w-0">
-                            <h2 
-                              className="text-lg font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => navigate(`/event/${event.eventId}`)}
-                            >
-                              {event.title}
-                            </h2>
-                            
-                            <div className="space-y-1 text-sm">
-                              <div className="mb-2">
-                                <span className="text-2xl font-bold text-primary">
-                                  {event.date}
-                                </span>
-                              </div>
-                              
-                              <div className="flex items-center space-x-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src={event.organizers[0]?.avatar} />
-                                  <AvatarFallback className="bg-primary/10 text-xs">
-                                    {event.organizers[0]?.name.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="flex items-center space-x-2">
-                                     <span 
-                                       className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                                       onClick={() => navigate(`/healer/${event.organizers[0]?.id}`)}
-                                     >
-                                       {event.organizers[0]?.name}
-                                     </span>
-                                    <span className="text-xs text-muted-foreground">•</span>
-                                    <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
-                                      Follow
-                                    </Button>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Event Organizer
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center space-x-2 text-muted-foreground">
-                                <MapPin className="h-4 w-4" />
-                                <span>{event.location}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    <div className="px-3">
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {event.tags.map((tag) => (
-                          <Badge 
-                            key={tag}
-                            variant="secondary" 
-                            className="text-xs px-2 py-1"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="px-3">
-                      {/* Event Description */}
-                      <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                        {event.description}
-                      </p>
-
-                      {/* Event Details */}
-                      <div className="mb-3">
-                        <div className="flex items-center space-x-4 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{event.attendees} attending</span>
-                          </div>
-                          {event.connectionsGoing && event.connectionsGoing.length > 0 && (
-                            <div className="flex items-center space-x-1">
-                              {event.connectionsGoing.length <= 2 ? (
-                                <span className="text-primary font-medium">
-                                  {event.connectionsGoing.join(", ")} going
-                                </span>
-                              ) : (
-                                <Popover open={connectionPopoverOpen === event.eventId} onOpenChange={(open) => setConnectionPopoverOpen(open ? event.eventId : null)}>
-                                  <PopoverTrigger asChild>
-                                    <button className="text-primary font-medium hover:underline cursor-pointer">
-                                      {event.connectionsGoing.length} connections going
-                                    </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-64 p-3">
-                                    <div className="space-y-2">
-                                      <h4 className="text-sm font-semibold">Connections Attending</h4>
-                                      {event.connectionsGoing.map((connection: string, idx: number) => (
-                                        <div key={idx} className="flex items-center space-x-2 p-1 rounded hover:bg-muted cursor-pointer">
-                                          <Avatar className="h-6 w-6">
-                                            <AvatarImage src={idx % 2 === 0 ? elenaProfile : davidProfile} />
-                                            <AvatarFallback className="text-xs">
-                                              {connection.split(' ').map((n: string) => n[0]).join('')}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <span className="text-sm">{connection}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Past Event Ratings */}
-                        {event.isPastEvent && event.averageRating && (
-                          <div className="flex items-center space-x-2 mt-2">
-                            <div className="flex items-center space-x-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Heart
-                                  key={i}
-                                  className={`h-3 w-3 ${
-                                    i < Math.floor(event.averageRating!) ? 'fill-primary text-primary' : 'text-muted-foreground/30'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-sm font-medium">{event.averageRating.toFixed(1)}</span>
-                            <button
-                              onClick={() => {
-                                setSelectedEvent(event);
-                                setReviewModalOpen(true);
-                              }}
-                              className="text-sm text-primary hover:underline"
-                            >
-                              ({event.totalReviews} reviews)
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Past Event with No Reviews */}
-                        {event.isPastEvent && !event.averageRating && (
-                          <div className="mt-2">
-                            <button
-                              onClick={() => {
-                                setSelectedEvent(event);
-                                setReviewModalOpen(true);
-                              }}
-                              className="text-sm text-primary hover:underline"
-                            >
-                              Be the first to review this event
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Bar */}
-                    <div className="px-3 py-2 border-t border-border">
-                      <div className="flex items-center justify-between">
-                        <button 
-                          onClick={() => {
-                            setSelectedEvent(event);
-                            setThoughtsModalOpen(true);
-                          }}
-                          className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          <span>{event.comments} Comments</span>
-                        </button>
-                        <button 
-                          className={`flex items-center space-x-2 text-sm transition-colors ${
-                            resharedEvents.includes(event.eventId) 
-                              ? 'text-primary font-bold' 
-                              : 'text-muted-foreground hover:text-primary'
-                          }`}
-                          onClick={() => {
-                            if (resharedEvents.includes(event.eventId)) {
-                              setResharedEvents(prev => prev.filter(id => id !== event.eventId));
-                              toast.success("Reshare removed");
-                            } else {
-                              setResharedEvents(prev => [...prev, event.eventId]);
-                              toast.success("Event reshared!");
-                            }
-                          }}
-                        >
-                          <Repeat2 className="h-4 w-4" />
-                          <span>{resharedEvents.includes(event.eventId) ? 'Reshared' : 'Reshare'}</span>
-                        </button>
-                        
-                        <button 
-                          className={`flex items-center space-x-2 text-sm transition-colors ${
-                            savedEvents.includes(event.eventId) 
-                              ? 'text-primary font-bold' 
-                              : 'text-muted-foreground hover:text-primary'
-                          }`}
-                          onClick={() => {
-                            if (savedEvents.includes(event.eventId)) {
-                              setSavedEvents(prev => prev.filter(id => id !== event.eventId));
-                              toast.success("Removed from saved");
-                            } else {
-                              setSavedEvents(prev => [...prev, event.eventId]);
-                              toast.success("Event saved!");
-                            }
-                          }}
-                        >
-                          <BookOpen className={`h-4 w-4 ${savedEvents.includes(event.eventId) ? 'fill-current' : ''}`} />
-                          <span>Save</span>
-                        </button>
-                        
-                        <Popover open={sharePopoverOpen === event.eventId} onOpenChange={(open) => setSharePopoverOpen(open ? event.eventId : null)}>
-                          <PopoverTrigger asChild>
-                            <button className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                              <Share2 className="h-4 w-4" />
-                              <span>Share</span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-56 p-2">
-                            <div className="space-y-2">
-                              <button 
-                                className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`${window.location.origin}/event/${event.eventId}`);
-                                  setLinkCopied(true);
-                                  toast.success("Event link copied to clipboard!");
-                                  setTimeout(() => setLinkCopied(false), 2000);
-                                  setSharePopoverOpen(null);
-                                }}
-                              >
-                                {linkCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                <span>Copy Link</span>
-                              </button>
-                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
-                                <ExternalLink className="h-4 w-4" />
-                                <span>Share on Twitter</span>
-                              </button>
-                              <button className="flex items-center space-x-2 w-full p-2 text-sm rounded-md hover:bg-muted transition-colors">
-                                <ExternalLink className="h-4 w-4" />
-                                <span>Share on Facebook</span>
-                              </button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CommunityEventCard
+                  key={event.eventId}
+                  eventId={event.eventId}
+                  title={event.title}
+                  thought={event.description}
+                  image={event.image}
+                  dateRange={{
+                    start: event.date.includes('-') ? event.date.split(' - ')[0] : event.date,
+                    end: event.date.includes('-') ? event.date.split(' - ')[1] : undefined
+                  }}
+                  author={{
+                    name: event.organizers[0]?.name || 'Event Creator',
+                    avatar: event.organizers[0]?.avatar || elenaProfile,
+                    role: 'Event Organizer'
+                  }}
+                  location={event.location}
+                  attendees={event.attendees}
+                  tags={event.tags}
+                  connectionsGoing={event.connectionsGoing}
+                  isPastEvent={event.isPastEvent}
+                  averageRating={event.averageRating}
+                  totalReviews={event.totalReviews}
+                  comments={event.comments}
+                  index={index}
+                  onOpenThoughts={async (evt) => {
+                    setSelectedEvent(event);
+                    // Load thoughts from database
+                    const thoughts = await getThoughtsByEventId(event.eventId);
+                    setSelectedEvent({ ...event, thoughts });
+                    setThoughtsModalOpen(true);
+                  }}
+                  isReshared={resharedEvents.includes(event.eventId)}
+                  onToggleReshare={() => {
+                    if (resharedEvents.includes(event.eventId)) {
+                      setResharedEvents(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Reshare removed");
+                    } else {
+                      setResharedEvents(prev => [...prev, event.eventId]);
+                      toast.success("Event reshared!");
+                    }
+                  }}
+                  isSaved={savedEvents.includes(event.eventId)}
+                  onToggleSave={() => {
+                    if (savedEvents.includes(event.eventId)) {
+                      setSavedEvents(prev => prev.filter(id => id !== event.eventId));
+                      toast.success("Removed from saved");
+                    } else {
+                      setSavedEvents(prev => [...prev, event.eventId]);
+                      toast.success("Event saved!");
+                    }
+                  }}
+                />
               ))}
             </div>
           </div>

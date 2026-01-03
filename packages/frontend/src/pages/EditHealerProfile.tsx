@@ -6,33 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Check, ChevronsUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentProfile } from "@/lib/profiles";
 import { toast } from "sonner";
-
-const SPECIALTY_OPTIONS = [
-  "Sound Healing",
-  "Crystal Healing",
-  "Reiki",
-  "Energy Healing",
-  "Meditation",
-  "Yoga",
-  "Breathwork",
-  "Shamanic Healing",
-  "Chakra Balancing",
-  "Spiritual Coaching",
-  "Past Life Regression",
-  "Tarot Reading",
-  "Astrology",
-  "Herbalism",
-  "Aromatherapy"
-];
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const EditHealerProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState("");
+  const [availableTags, setAvailableTags] = useState<{ id: string; name: string }[]>([]);
+  const [specialtiesOpen, setSpecialtiesOpen] = useState(false);
   
   // Form state
   const [name, setName] = useState("");
@@ -56,6 +43,16 @@ const EditHealerProfile = () => {
       }
 
       setUserId(user.id);
+
+      // Fetch all tags from database
+      const { data: tags } = await (supabase as any)
+        .from('tags')
+        .select('id, name')
+        .order('name');
+      
+      if (tags) {
+        setAvailableTags(tags as any);
+      }
 
       // Get profile for default name
       const profile = await getCurrentProfile();
@@ -190,23 +187,68 @@ const EditHealerProfile = () => {
             {/* Specialties */}
             <div className="space-y-2">
               <Label>Specialties</Label>
-              <div className="flex flex-wrap gap-2">
-                {SPECIALTY_OPTIONS.map((specialty) => (
-                  <Badge
-                    key={specialty}
-                    variant={specialties.includes(specialty) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleSpecialty(specialty)}
+              <Popover open={specialtiesOpen} onOpenChange={setSpecialtiesOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={specialtiesOpen}
+                    className="w-full justify-between"
                   >
-                    {specialty}
-                    {specialties.includes(specialty) && (
+                    {specialties.length > 0
+                      ? `${specialties.length} selected`
+                      : "Select specialties..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search specialties..." />
+                    <CommandList>
+                      <CommandEmpty>No specialty found.</CommandEmpty>
+                      <CommandGroup>
+                        {availableTags.map((tag) => (
+                          <CommandItem
+                            key={tag.id}
+                            value={tag.name}
+                            onSelect={() => {
+                              toggleSpecialty(tag.name);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                specialties.includes(tag.name) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {tag.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Display selected specialties as badges */}
+              {specialties.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {specialties.map((specialty) => (
+                    <Badge
+                      key={specialty}
+                      variant="default"
+                      className="cursor-pointer"
+                      onClick={() => toggleSpecialty(specialty)}
+                    >
+                      {specialty}
                       <X className="ml-1 h-3 w-3" />
-                    )}
-                  </Badge>
-                ))}
-              </div>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
               <p className="text-sm text-muted-foreground">
-                Click to select specialties ({specialties.length} selected)
+                {specialties.length} specialt{specialties.length === 1 ? 'y' : 'ies'} selected
               </p>
             </div>
 

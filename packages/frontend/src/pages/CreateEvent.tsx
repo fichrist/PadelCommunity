@@ -28,7 +28,10 @@ const CreateEvent = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [fullDescription, setFullDescription] = useState("");
-  const [location, setLocation] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
   const [date, setDate] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [time, setTime] = useState("");
@@ -48,7 +51,10 @@ const CreateEvent = () => {
           setTitle(dbEvent.title || "");
           setDescription(dbEvent.description || "");
           setFullDescription(dbEvent.full_description || "");
-          setLocation(dbEvent.location || "");
+          setStreet(dbEvent.street || "");
+          setCity(dbEvent.city || "");
+          setPostalCode(dbEvent.postal_code || "");
+          setCountry(dbEvent.country || "");
           setDate(dbEvent.date || "");
           setDateTo(dbEvent.date_to || "");
           setTime(dbEvent.time || "");
@@ -73,14 +79,12 @@ const CreateEvent = () => {
       const dateParam = searchParams.get('date');
       const dateToParam = searchParams.get('dateTo');
       const timeParam = searchParams.get('time');
-      const locationParam = searchParams.get('location');
       const pricesParam = searchParams.get('prices');
       const additionalOptionsParam = searchParams.get('additionalOptions');
 
       if (titleParam) setTitle(titleParam);
       if (descriptionParam) setDescription(descriptionParam);
       if (fullDescriptionParam) setFullDescription(fullDescriptionParam);
-      if (locationParam) setLocation(locationParam);
       if (dateParam) setDate(dateParam);
       if (dateToParam) setDateTo(dateToParam);
       if (timeParam) setTime(timeParam);
@@ -167,7 +171,7 @@ const CreateEvent = () => {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim() || !location.trim() || !date) {
+    if (!title.trim() || !description.trim() || !city.trim() || !date) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -176,7 +180,10 @@ const CreateEvent = () => {
       title: title.trim(),
       description: description.trim(),
       full_description: fullDescription.trim(),
-      location: location.trim(),
+      street: street.trim() || undefined,
+      city: city.trim(),
+      postal_code: postalCode.trim() || undefined,
+      country: country.trim() || undefined,
       date: date.trim(),
       date_to: dateTo.trim() || undefined,
       time: time.trim() || undefined,
@@ -282,16 +289,50 @@ const CreateEvent = () => {
                 </div>
                 
                 <div className="md:col-span-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="location"
-                      placeholder="Event location..."
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="pl-10 bg-background/50"
-                    />
+                  <Label>Location *</Label>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="street" className="text-sm">Street</Label>
+                      <Input
+                        id="street"
+                        placeholder="Street address..."
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="city" className="text-sm">City *</Label>
+                        <Input
+                          id="city"
+                          placeholder="City..."
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="postalCode" className="text-sm">Postal Code</Label>
+                        <Input
+                          id="postalCode"
+                          placeholder="Postal code..."
+                          value={postalCode}
+                          onChange={(e) => setPostalCode(e.target.value)}
+                          className="bg-background/50"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="country" className="text-sm">Country</Label>
+                      <Input
+                        id="country"
+                        placeholder="Country..."
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="bg-background/50"
+                      />
+                    </div>
                   </div>
                 </div>
                 

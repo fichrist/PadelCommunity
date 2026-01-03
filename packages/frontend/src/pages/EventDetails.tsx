@@ -132,7 +132,11 @@ const EventDetails = () => {
           title: dbEvent.title,
           description: dbEvent.description,
           fullDescription: dbEvent.full_description || dbEvent.description,
-          location: dbEvent.location,
+          street: dbEvent.street,
+          city: dbEvent.city,
+          postal_code: dbEvent.postal_code,
+          country: dbEvent.country,
+          location: [dbEvent.street, dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
           date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
           time: dbEvent.time || 'TBD',
           tags: dbEvent.tags || [],
@@ -141,7 +145,7 @@ const EventDetails = () => {
           organizers: [{
             name: 'Event Creator',
             avatar: elenaProfile,
-            location: dbEvent.location,
+            location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
             previousEvents: []
           }],
           attendees: [{

@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Thought {
   id?: string;
-  post_id: string;
+  post_id?: string | null;
+  event_id?: string | null;
   user_id?: string;
   content: string;
   created_at?: string;
@@ -61,7 +62,7 @@ export async function createEventThought(eventId: string, content: string, paren
         user_id: user.id,
         content: content.trim(),
         parent_thought_id: parentThoughtId || null,
-      })
+      } as any)
       .select('id')
       .single();
 
@@ -82,9 +83,9 @@ export async function createEventThought(eventId: string, content: string, paren
  */
 export async function getThoughtsByEventId(eventId: string): Promise<any[]> {
   try {
-    const { data: thoughts, error: thoughtsError } = await supabase
+    const { data: thoughts, error: thoughtsError } = await (supabase
       .from('thoughts')
-      .select('id, content, created_at, user_id, parent_thought_id')
+      .select('id, content, created_at, user_id, parent_thought_id') as any)
       .eq('event_id', eventId)
       .order('created_at', { ascending: false });
 
@@ -98,7 +99,7 @@ export async function getThoughtsByEventId(eventId: string): Promise<any[]> {
     }
 
     // Get unique user IDs
-    const userIds = [...new Set(thoughts.map((t: any) => t.user_id))];
+    const userIds = [...new Set(thoughts.map((t: any) => t.user_id))] as string[];
 
     // Fetch profiles for all users
     const { data: profiles, error: profilesError } = await supabase

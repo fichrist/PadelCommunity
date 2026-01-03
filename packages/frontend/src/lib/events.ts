@@ -4,7 +4,10 @@ export interface EventData {
   title: string;
   description: string;
   full_description?: string;
-  location: string;
+  city: string;
+  street?: string;
+  postal_code?: string;
+  country?: string;
   date: string;
   date_to?: string;
   time?: string;
@@ -31,7 +34,10 @@ export const createEvent = async (eventData: EventData) => {
         title: eventData.title,
         description: eventData.description,
         full_description: eventData.full_description || null,
-        location: eventData.location,
+        city: eventData.city,
+        street: eventData.street || null,
+        postal_code: eventData.postal_code || null,
+        country: eventData.country || null,
         date: eventData.date,
         date_to: eventData.date_to || null,
         time: eventData.time || null,
@@ -64,7 +70,10 @@ export const updateEvent = async (eventId: string, eventData: Partial<EventData>
         title: eventData.title,
         description: eventData.description,
         full_description: eventData.full_description,
-        location: eventData.location,
+        city: eventData.city,
+        street: eventData.street,
+        postal_code: eventData.postal_code,
+        country: eventData.country,
         date: eventData.date,
         date_to: eventData.date_to,
         time: eventData.time,
@@ -133,9 +142,13 @@ export const getUserEvents = async (userId: string) => {
 
 export const getAllEvents = async () => {
   try {
+    // Fetch events with thought counts
     const { data, error } = await (supabase as any)
       .from('events')
-      .select('*')
+      .select(`
+        *,
+        thoughts:thoughts(count)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -143,7 +156,13 @@ export const getAllEvents = async () => {
       return [];
     }
 
-    return data || [];
+    // Transform the data to include thought count
+    const eventsWithCounts = (data || []).map((event: any) => ({
+      ...event,
+      thoughts_count: event.thoughts?.[0]?.count || 0
+    }));
+
+    return eventsWithCounts;
   } catch (error) {
     console.error("Error in getAllEvents:", error);
     return [];
