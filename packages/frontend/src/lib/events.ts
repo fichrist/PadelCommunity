@@ -8,8 +8,8 @@ export interface EventData {
   street?: string;
   postal_code?: string;
   country?: string;
-  date: string;
-  date_to?: string;
+  start_date: string;
+  end_date?: string;
   time?: string;
   prices?: { text: string; amount: string }[];
   tags?: string[];
@@ -38,8 +38,8 @@ export const createEvent = async (eventData: EventData) => {
         street: eventData.street || null,
         postal_code: eventData.postal_code || null,
         country: eventData.country || null,
-        date: eventData.date,
-        date_to: eventData.date_to || null,
+        start_date: eventData.start_date,
+        end_date: eventData.end_date || null,
         time: eventData.time || null,
         prices: eventData.prices || [],
         tags: eventData.tags || [],
@@ -74,8 +74,8 @@ export const updateEvent = async (eventId: string, eventData: Partial<EventData>
         street: eventData.street,
         postal_code: eventData.postal_code,
         country: eventData.country,
-        date: eventData.date,
-        date_to: eventData.date_to,
+        start_date: eventData.start_date,
+        end_date: eventData.end_date,
         time: eventData.time,
         prices: eventData.prices,
         tags: eventData.tags,

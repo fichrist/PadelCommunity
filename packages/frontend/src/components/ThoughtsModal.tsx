@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, Trash2, Reply, X } from "lucide-react";
-import { createThought, createEventThought, updateThought, deleteThought } from "@/lib/thoughts";
+import { createThought, createEventThought, createHealerProfileThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ interface ThoughtsModalProps {
   postTitle: string;
   thoughts: Thought[];
   isEvent?: boolean;
+  isHealerProfile?: boolean;
   onThoughtAdded?: () => void;
 }
 
@@ -199,7 +200,7 @@ const ThoughtItem = ({
   );
 };
 
-const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEvent = false, onThoughtAdded }: ThoughtsModalProps) => {
+const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEvent = false, isHealerProfile = false, onThoughtAdded }: ThoughtsModalProps) => {
   const [newThought, setNewThought] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -227,10 +228,15 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
 
     setIsSubmitting(true);
     try {
-      // Use the appropriate function based on whether this is an event or post
-      const result = isEvent 
-        ? await createEventThought(postId, newThought, replyingToThought?.id)
-        : await createThought(postId, newThought, replyingToThought?.id);
+      // Use the appropriate function based on context (event, healer profile, or post)
+      let result;
+      if (isHealerProfile) {
+        result = await createHealerProfileThought(postId, newThought, replyingToThought?.id);
+      } else if (isEvent) {
+        result = await createEventThought(postId, newThought, replyingToThought?.id);
+      } else {
+        result = await createThought(postId, newThought, replyingToThought?.id);
+      }
       
       if (result.success) {
         toast.success(replyingToThought ? "Reply added successfully!" : "Thought shared successfully!");

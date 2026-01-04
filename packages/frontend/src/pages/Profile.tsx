@@ -1,180 +1,270 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, Heart, MessageCircle, Settings, Edit, User, Plus, Search, ArrowLeft, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { MapPin } from "lucide-react";
 import { toast } from "sonner";
-import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
-import spiritualLogo from "@/assets/spiritual-logo.png";
-import elenaProfile from "@/assets/elena-profile.jpg";
-import CreateDropdown from "@/components/CreateDropdown";
-import NotificationDropdown from "@/components/NotificationDropdown";
-import ProfileDropdown from "@/components/ProfileDropdown";
+import { supabase } from "@/integrations/supabase/client";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import CommunityShareCard from "@/components/CommunityShareCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
-import PersonalCalendar from "@/components/PersonalCalendar";
+import { getThoughtsByEventId, getThoughtsByPostId } from "@/lib/thoughts";
+import { format } from "date-fns";
 
 const Profile = () => {
-  const navigate = useNavigate();
+  const { userId } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [shares, setShares] = useState<any[]>([]);
+  
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [loadedThoughts, setLoadedThoughts] = useState<any[]>([]);
   const [resharedPosts, setResharedPosts] = useState<string[]>([]);
   const [savedPosts, setSavedPosts] = useState<string[]>([]);
   const [resharedShares, setResharedShares] = useState<string[]>([]);
   const [savedShares, setSavedShares] = useState<string[]>([]);
-
-  const recentActivity = [
-    {
-      type: "event",
-      title: "Joined Morning Meditation Circle",
-      time: "2 hours ago"
-    },
-    {
-      type: "post",
-      title: "Shared 'Sacred Geometry in Daily Life'",
-      time: "1 day ago"
-    },
-    {
-      type: "follow",
-      title: "Started following Luna Sage",
-      time: "2 days ago"
-    },
-    {
-      type: "event",
-      title: "Created Full Moon Ceremony",
-      time: "3 days ago"
-    }
-  ];
-
-  const upcomingEvents = [
-    {
-      title: "Morning Meditation Circle",
-      date: "Tomorrow",
-      time: "7:00 AM",
-      location: "Zen Garden Center"
-    },
-    {
-      title: "Full Moon Healing Ceremony",
-      date: "Friday",
-      time: "8:00 PM",
-      location: "Sacred Grove"
-    },
-    {
-      title: "Yoga & Sound Bath",
-      date: "Saturday",
-      time: "10:00 AM",
-      location: "Harmony Studio"
-    }
-  ];
 
   const interests = [
     "Meditation", "Crystal Healing", "Astrology", "Chakras", 
     "Sacred Geometry", "Yoga", "Mindfulness", "Energy Healing"
   ];
 
-  const upcomingEventsData = [
-    {
-      eventId: "morning-meditation-1",
-      title: "Morning Meditation Circle",
-      image: "/src/assets/peaceful-background.jpg",
-      dateRange: { start: "Tomorrow • 7:00 AM" },
-      author: { name: "Aurora Starlight", avatar: elenaProfile, role: "Spiritual Guide" },
-      location: "Zen Garden Center",
-      attendees: 12,
-      tags: ["Meditation", "Morning Practice"],
-      thought: "Join us for a peaceful start to your day with guided meditation.",
-      comments: 5
-    },
-    {
-      eventId: "full-moon-ceremony-1",
-      title: "Full Moon Healing Ceremony",
-      image: "/src/assets/spiritual-background.jpg",
-      dateRange: { start: "Friday • 8:00 PM" },
-      author: { name: "Aurora Starlight", avatar: elenaProfile, role: "Spiritual Guide" },
-      location: "Sacred Grove",
-      attendees: 24,
-      tags: ["Full Moon", "Healing", "Ceremony"],
-      thought: "Harness the powerful energy of the full moon for deep healing and transformation.",
-      comments: 11
-    }
-  ];
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      setLoading(true);
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("Please log in to view profiles");
+          return;
+        }
 
-  const pastEventsData = [
-    {
-      eventId: "sound-healing-1",
-      title: "Sound Healing Workshop",
-      image: "/src/assets/sound-healing-event.jpg",
-      dateRange: { start: "Last Week" },
-      author: { name: "Aurora Starlight", avatar: elenaProfile, role: "Spiritual Guide" },
-      location: "Harmony Studio",
-      attendees: 18,
-      tags: ["Sound Healing", "Workshop"],
-      thought: "An amazing journey through healing frequencies and vibrations.",
-      comments: 8,
-      rating: 4.9,
-      reviews: 15
-    }
-  ];
+        // Determine which user's profile to fetch
+        const profileUserId = userId || user.id;
 
-  const sharesData = [
-    {
-      title: "Sacred Geometry in Daily Life",
-      thought: "The golden ratio appears everywhere in nature, from flower petals to galaxy spirals.",
-      description: "Understanding sacred geometry helps us recognize the divine patterns that surround us every day. When we align with these universal patterns, we find greater harmony and flow in our lives.",
-      tags: ["Sacred Geometry", "Nature", "Divine Patterns"],
-      author: { name: "Aurora Starlight", avatar: elenaProfile, role: "Spiritual Guide" },
-      comments: 23
-    },
-    {
-      title: "Moon Phase Manifestation",
-      thought: "Each lunar phase offers unique energy for manifestation and release.",
-      description: "Working with the moon's natural cycles amplifies our intentions. New moon for setting intentions, full moon for manifestation, waning moon for release.",
-      tags: ["Moon Phases", "Manifestation", "Lunar Energy"],
-      author: { name: "Aurora Starlight", avatar: elenaProfile, role: "Spiritual Guide" },
-      comments: 17
-    }
-  ];
+        // Fetch user profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', profileUserId)
+          .single();
+
+        if (profileError) throw profileError;
+        setProfile(profileData);
+
+        // Fetch enrolled events with event details
+        const { data: enrollments, error: enrollmentsError } = await (supabase as any)
+          .from('enrollments')
+          .select('*, events(*)')
+          .eq('user_id', profileUserId);
+
+        if (enrollmentsError) {
+          console.error("Error fetching enrollments:", enrollmentsError);
+        }
+
+        // Fetch healer profiles for the events
+        const healerIds = (enrollments || [])
+          .map((e: any) => e.events?.user_id)
+          .filter((id: any) => id);
+        
+        let healerProfiles: any = {};
+        if (healerIds.length > 0) {
+          // Fetch basic profile data
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, display_name, first_name, last_name, avatar_url, bio, is_healer')
+            .in('id', healerIds);
+          
+          // Fetch healer profile data
+          const { data: healerProfilesData } = await (supabase as any)
+            .from('healer_profiles')
+            .select('user_id, specialties, tagline, role')
+            .in('user_id', healerIds);
+          
+          // Create a map of healer profile data
+          const healerProfileMap = new Map();
+          (healerProfilesData || []).forEach((hp: any) => {
+            healerProfileMap.set(hp.user_id, hp);
+          });
+          
+          (profilesData || []).forEach((profile: any) => {
+            const healerProfile = healerProfileMap.get(profile.id);
+            healerProfiles[profile.id] = {
+              ...profile,
+              role: healerProfile?.role || null,
+              tagline: healerProfile?.tagline || profile.bio,
+              specialties: healerProfile?.specialties || []
+            };
+          });
+        }
+
+        // Get event IDs to fetch counts
+        const eventIds = (enrollments || [])
+          .map((e: any) => e.events?.id)
+          .filter((id: any) => id);
+        
+        // Fetch enrollment counts for all events
+        const enrollmentCountsMap = new Map();
+        if (eventIds.length > 0) {
+          const { data: enrollmentCounts } = await (supabase as any)
+            .from('enrollments')
+            .select('event_id')
+            .in('event_id', eventIds)
+            .eq('status', 'confirmed');
+          
+          (enrollmentCounts || []).forEach((enrollment: any) => {
+            const currentCount = enrollmentCountsMap.get(enrollment.event_id) || 0;
+            enrollmentCountsMap.set(enrollment.event_id, currentCount + 1);
+          });
+        }
+        
+        // Fetch thought counts for all events
+        const thoughtCountsMap = new Map();
+        if (eventIds.length > 0) {
+          const { data: thoughtCounts } = await (supabase as any)
+            .from('thoughts')
+            .select('event_id')
+            .in('event_id', eventIds)
+            .not('event_id', 'is', null);
+          
+          (thoughtCounts || []).forEach((thought: any) => {
+            const currentCount = thoughtCountsMap.get(thought.event_id) || 0;
+            thoughtCountsMap.set(thought.event_id, currentCount + 1);
+          });
+        }
+
+        // Separate into upcoming and past events
+        const now = new Date();
+        const upcoming: any[] = [];
+        const past: any[] = [];
+
+        (enrollments || []).forEach((enrollment: any) => {
+          // Show all events on own profile (user can see everything they enrolled in)
+          if (enrollment.events) {
+            const event = enrollment.events;
+            const healer = healerProfiles[event.user_id];
+            const eventDate = new Date(event.start_date);
+            const eventData = {
+              eventId: event.id,
+              title: event.title,
+              image: event.image_url || "/src/assets/peaceful-background.jpg",
+              dateRange: { 
+                start: format(new Date(event.start_date), 'd MMMM yyyy')
+              },
+              author: { 
+                id: event.user_id,
+                name: healer?.display_name || healer?.first_name || "Unknown",
+                avatar: healer?.avatar_url || "",
+                role: healer?.role || healer?.tagline || healer?.bio || "Healer",
+                isHealer: healer?.is_healer || false
+              },
+              location: `${event.city || ''}${event.city && event.country ? ', ' : ''}${event.country || ''}`,
+              attendees: enrollmentCountsMap.get(event.id) || 0,
+              tags: event.tags || [],
+              thought: event.description || "",
+              comments: thoughtCountsMap.get(event.id) || 0
+            };
+
+            if (eventDate >= now) {
+              upcoming.push(eventData);
+            } else {
+              past.push(eventData);
+            }
+          }
+        });
+
+        setUpcomingEvents(upcoming);
+        setPastEvents(past);
+
+        // Fetch user's shares/posts
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('user_id', profileUserId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (!postsError && postsData) {
+          const formattedShares = postsData.map((post: any) => ({
+            id: post.id,
+            title: post.title,
+            thought: post.content,
+            description: "",
+            tags: post.tags || [],
+            author: { 
+              name: profileData.display_name || profileData.first_name || "You",
+              avatar: profileData.avatar_url || "",
+              role: profileData.bio || ""
+            },
+            comments: 0 // TODO: Count thoughts
+          }));
+          setShares(formattedShares);
+        }
+
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Please log in to view your profile</p>
+      </div>
+    );
+  }
+
+  const displayName = profile.display_name || profile.first_name || "User";
+  const location = [profile.city, profile.country].filter(Boolean).join(', ') || "Location not set";
 
   return (
     <>
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10 py-8">
         <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-start space-x-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary/10 text-xl">AS</AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl font-bold mb-1">Aurora Starlight</h1>
-                <div className="flex items-center space-x-2 text-muted-foreground mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>San Francisco, CA</span>
-                </div>
-                <p className="text-muted-foreground max-w-md">
-                  Walking the path of light and love, sharing wisdom from ancient traditions. 🙏✨
-                </p>
+          <div className="flex items-start space-x-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback className="bg-primary/10 text-xl">
+                {displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold mb-1">{displayName}</h1>
+              <div className="flex items-center space-x-2 text-muted-foreground mb-2">
+                <MapPin className="h-4 w-4" />
+                <span>{location}</span>
               </div>
+              {profile.bio && (
+                <p className="text-muted-foreground max-w-md">
+                  {profile.bio}
+                </p>
+              )}
             </div>
-            <Button>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Personal Calendar */}
-        <div className="mb-12">
-          <PersonalCalendar />
-        </div>
-
         {/* Spiritual Interests */}
         <div className="mb-12">
           <Card className="border-border/50">
@@ -199,129 +289,145 @@ const Profile = () => {
         </div>
 
         {/* Upcoming Events */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
-          <div className="relative">
-            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-              {upcomingEventsData.map((event, index) => (
-                <CommunityEventCard
-                  key={index}
-                  {...event}
-                  index={index}
-                  isHorizontal={true}
-                  onOpenThoughts={(eventData) => {
-                    setSelectedPost(eventData);
-                    setThoughtsModalOpen(true);
-                  }}
-                  isReshared={resharedPosts.includes(event.eventId)}
-                  onToggleReshare={() => {
-                    if (resharedPosts.includes(event.eventId)) {
-                      setResharedPosts(prev => prev.filter(id => id !== event.eventId));
-                      toast.success("Reshare removed");
-                    } else {
-                      setResharedPosts(prev => [...prev, event.eventId]);
-                      toast.success("Event reshared!");
-                    }
-                  }}
-                  isSaved={savedPosts.includes(event.eventId)}
-                  onToggleSave={() => {
-                    if (savedPosts.includes(event.eventId)) {
-                      setSavedPosts(prev => prev.filter(id => id !== event.eventId));
-                      toast.success("Removed from saved");
-                    } else {
-                      setSavedPosts(prev => [...prev, event.eventId]);
-                      toast.success("Saved to your private page!");
-                    }
-                  }}
-                />
-              ))}
+        {upcomingEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {upcomingEvents.map((event, index) => (
+                  <CommunityEventCard
+                    key={event.eventId}
+                    {...event}
+                    index={index}
+                    isHorizontal={true}
+                    onOpenThoughts={async (eventData) => {
+                      setSelectedPost(eventData);
+                      // Load thoughts for the event
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setLoadedThoughts(thoughts);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={resharedPosts.includes(event.eventId)}
+                    onToggleReshare={() => {
+                      if (resharedPosts.includes(event.eventId)) {
+                        setResharedPosts(prev => prev.filter(id => id !== event.eventId));
+                        toast.success("Reshare removed");
+                      } else {
+                        setResharedPosts(prev => [...prev, event.eventId]);
+                        toast.success("Event reshared!");
+                      }
+                    }}
+                    isSaved={savedPosts.includes(event.eventId)}
+                    onToggleSave={() => {
+                      if (savedPosts.includes(event.eventId)) {
+                        setSavedPosts(prev => prev.filter(id => id !== event.eventId));
+                        toast.success("Removed from saved");
+                      } else {
+                        setSavedPosts(prev => [...prev, event.eventId]);
+                        toast.success("Saved to your private page!");
+                      }
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {upcomingEvents.length === 0 && (
+          <div className="mb-12 text-center py-12 text-muted-foreground">
+            <p>No upcoming events. Explore events to join!</p>
+          </div>
+        )}
 
         {/* Past Events */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Past Events</h2>
-          <div className="relative">
-            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-              {pastEventsData.map((event, index) => (
-                <CommunityEventCard
-                  key={index}
-                  {...event}
-                  index={index}
-                  isHorizontal={true}
-                  onOpenThoughts={(eventData) => {
-                    setSelectedPost(eventData);
-                    setThoughtsModalOpen(true);
-                  }}
-                  isReshared={resharedPosts.includes(event.eventId)}
-                  onToggleReshare={() => {
-                    if (resharedPosts.includes(event.eventId)) {
-                      setResharedPosts(prev => prev.filter(id => id !== event.eventId));
-                      toast.success("Reshare removed");
-                    } else {
-                      setResharedPosts(prev => [...prev, event.eventId]);
-                      toast.success("Event reshared!");
-                    }
-                  }}
-                  isSaved={savedPosts.includes(event.eventId)}
-                  onToggleSave={() => {
-                    if (savedPosts.includes(event.eventId)) {
-                      setSavedPosts(prev => prev.filter(id => id !== event.eventId));
-                      toast.success("Removed from saved");
-                    } else {
-                      setSavedPosts(prev => [...prev, event.eventId]);
-                      toast.success("Saved to your private page!");
-                    }
-                  }}
-                />
-              ))}
+        {pastEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Past Events</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {pastEvents.map((event, index) => (
+                  <CommunityEventCard
+                    key={event.eventId}
+                    {...event}
+                    index={index}
+                    isHorizontal={true}
+                    onOpenThoughts={async (eventData) => {
+                      setSelectedPost(eventData);
+                      // Load thoughts for the event
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setLoadedThoughts(thoughts);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={resharedPosts.includes(event.eventId)}
+                    onToggleReshare={() => {
+                      if (resharedPosts.includes(event.eventId)) {
+                        setResharedPosts(prev => prev.filter(id => id !== event.eventId));
+                        toast.success("Reshare removed");
+                      } else {
+                        setResharedPosts(prev => [...prev, event.eventId]);
+                        toast.success("Event reshared!");
+                      }
+                    }}
+                    isSaved={savedPosts.includes(event.eventId)}
+                    onToggleSave={() => {
+                      if (savedPosts.includes(event.eventId)) {
+                        setSavedPosts(prev => prev.filter(id => id !== event.eventId));
+                        toast.success("Removed from saved");
+                      } else {
+                        setSavedPosts(prev => [...prev, event.eventId]);
+                        toast.success("Saved to your private page!");
+                      }
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Shares Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">Recent Shares</h2>
-          <div className="relative">
-            <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-              {sharesData.map((share, index) => (
-                <CommunityShareCard
-                  key={index}
-                  {...share}
-                  index={index}
-                  isHorizontal={true}
-                  onOpenThoughts={(shareData) => {
-                    setSelectedPost(shareData);
-                    setThoughtsModalOpen(true);
-                  }}
-                  isReshared={resharedShares.includes(`${share.title}-${index}`)}
-                  onToggleReshare={() => {
-                    const shareId = `${share.title}-${index}`;
-                    if (resharedShares.includes(shareId)) {
-                      setResharedShares(prev => prev.filter(id => id !== shareId));
-                      toast.success("Reshare removed");
-                    } else {
-                      setResharedShares(prev => [...prev, shareId]);
-                      toast.success("Share reshared!");
-                    }
-                  }}
-                  isSaved={savedShares.includes(`${share.title}-${index}`)}
-                  onToggleSave={() => {
-                    const shareId = `${share.title}-${index}`;
-                    if (savedShares.includes(shareId)) {
-                      setSavedShares(prev => prev.filter(id => id !== shareId));
-                      toast.success("Removed from saved");
-                    } else {
-                      setSavedShares(prev => [...prev, shareId]);
-                      toast.success("Saved to your private page!");
-                    }
-                  }}
-                />
-              ))}
+        {shares.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-6">Recent Shares</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {shares.map((share, index) => (
+                  <CommunityShareCard
+                    key={share.id}
+                    {...share}
+                    index={index}
+                    isHorizontal={true}
+                    onOpenThoughts={(shareData) => {
+                      setSelectedPost(shareData);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={resharedShares.includes(share.id)}
+                    onToggleReshare={() => {
+                      if (resharedShares.includes(share.id)) {
+                        setResharedShares(prev => prev.filter(id => id !== share.id));
+                        toast.success("Reshare removed");
+                      } else {
+                        setResharedShares(prev => [...prev, share.id]);
+                        toast.success("Share reshared!");
+                      }
+                    }}
+                    isSaved={savedShares.includes(share.id)}
+                    onToggleSave={() => {
+                      if (savedShares.includes(share.id)) {
+                        setSavedShares(prev => prev.filter(id => id !== share.id));
+                        toast.success("Removed from saved");
+                      } else {
+                        setSavedShares(prev => [...prev, share.id]);
+                        toast.success("Saved to your private page!");
+                      }
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Thoughts Modal */}
@@ -329,10 +435,19 @@ const Profile = () => {
         open={thoughtsModalOpen}
         onOpenChange={setThoughtsModalOpen}
         postId={selectedPost?.eventId || selectedPost?.id || ''}
-        postTitle={selectedPost?.title || selectedPost?.eventId || ""}
-        thoughts={[]}
-        onThoughtAdded={() => {
-          // Optionally refresh thoughts here
+        postTitle={selectedPost?.title || ""}
+        thoughts={loadedThoughts}
+        isEvent={!!selectedPost?.eventId}
+        onThoughtAdded={async () => {
+          // Refresh thoughts after adding
+          const postId = selectedPost?.eventId || selectedPost?.id;
+          if (postId) {
+            const thoughts = selectedPost?.eventId 
+              ? await getThoughtsByEventId(postId)
+              : await getThoughtsByPostId(postId);
+            setLoadedThoughts(thoughts);
+          }
+          toast.success("Thought added!");
         }}
       />
     </>

@@ -18,9 +18,11 @@ interface CommunityEventCardProps {
     end?: string;
   };
   author: {
+    id: string;
     name: string;
     avatar: string;
     role: string;
+    isHealer?: boolean;
   };
   location: string;
   attendees: number;
@@ -109,7 +111,10 @@ const CommunityEventCard = ({
                 <div className="flex items-center space-x-2">
                   <Avatar 
                     className="h-6 w-6 cursor-pointer"
-                    onClick={() => navigate(`/healer/${author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                    onClick={() => {
+                      const targetRoute = author.isHealer ? `/healer/${author.id}` : `/profile/${author.id}`;
+                      navigate(targetRoute);
+                    }}
                   >
                     <AvatarImage src={author.avatar} />
                     <AvatarFallback className="bg-primary/10 text-xs">
@@ -120,7 +125,10 @@ const CommunityEventCard = ({
                     <div className="flex items-center space-x-2">
                       <span 
                         className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/healer/${author.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                        onClick={() => {
+                          const targetRoute = author.isHealer ? `/healer/${author.id}` : `/profile/${author.id}`;
+                          navigate(targetRoute);
+                        }}
                       >
                         {author.name}
                       </span>

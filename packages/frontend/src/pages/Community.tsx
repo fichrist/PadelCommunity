@@ -21,6 +21,7 @@ import ImageModal from "@/components/ImageModal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 // Import centralized data
 import { featuredMembers } from "@/data/users";
@@ -165,14 +166,22 @@ const Community = () => {
       // Fetch posts (shares)
       const dbPosts = await getPostsWithDetails();
       
-      // Get unique user IDs from events
+      // Get unique user IDs from events and posts
       const eventUserIds = [...new Set(dbEvents.map((e: any) => e.user_id).filter(Boolean))];
+      const postUserIds = [...new Set(dbPosts.map((p: any) => p.user_id).filter(Boolean))];
+      const allUserIds = [...new Set([...eventUserIds, ...postUserIds])];
       
-      // Fetch profiles for event creators
+      // Fetch profiles for all users
       const { data: eventProfiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, display_name, avatar_url, is_healer')
-        .in('id', eventUserIds);
+        .in('id', allUserIds);
+      
+      // Fetch healer profiles for roles
+      const { data: healerProfiles } = await (supabase as any)
+        .from('healer_profiles')
+        .select('user_id, role')
+        .in('user_id', allUserIds);
       
       // Create a map of user_id to profile
       const profileMap = new Map();
@@ -180,13 +189,35 @@ const Community = () => {
         profileMap.set(profile.id, profile);
       });
       
+      // Create a map of user_id to healer role
+      const healerRoleMap = new Map();
+      (healerProfiles || []).forEach((healerProfile: any) => {
+        healerRoleMap.set(healerProfile.user_id, healerProfile.role);
+      });
+      
+      // Fetch enrollment counts for all events
+      const eventIds = dbEvents.map((e: any) => e.id);
+      const { data: enrollmentCounts } = await (supabase as any)
+        .from('enrollments')
+        .select('event_id')
+        .in('event_id', eventIds)
+        .eq('status', 'confirmed');
+      
+      // Create a map of event_id to enrollment count
+      const enrollmentCountMap = new Map();
+      (enrollmentCounts || []).forEach((enrollment: any) => {
+        const currentCount = enrollmentCountMap.get(enrollment.event_id) || 0;
+        enrollmentCountMap.set(enrollment.event_id, currentCount + 1);
+      });
+      
       // Format events for UI
       const formattedEvents = dbEvents.map((dbEvent: any) => {
         // Get author info from profile
         const profile = profileMap.get(dbEvent.user_id);
         const authorName = profile?.display_name || profile?.first_name || "Event Creator";
-        const authorRole = profile?.is_healer ? "Healer" : "Event Organizer";
+        const authorRole = healerRoleMap.get(dbEvent.user_id) || "Event Organizer";
         const avatarUrl = profile?.avatar_url || elenaProfile;
+        const enrollmentCount = enrollmentCountMap.get(dbEvent.id) || 0;
         
         return {
           type: 'event',
@@ -204,7 +235,7 @@ const Community = () => {
           description: dbEvent.full_description || dbEvent.description,
           location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
           tags: dbEvent.tags || [],
-          attendees: 10,
+          attendees: enrollmentCount,
           connectionsGoing: [],
           timeAgo: 'Just now',
           comments: dbEvent.thoughts_count || 0,
@@ -212,10 +243,10 @@ const Community = () => {
           shares: 0,
           image: dbEvent.image_url || spiritualBackground,
           dateRange: {
-            start: dbEvent.date,
-            end: dbEvent.date_to || null
+            start: dbEvent.start_date ? format(new Date(dbEvent.start_date), 'd MMMM yyyy') : 'TBD',
+            end: dbEvent.end_date ? format(new Date(dbEvent.end_date), 'd MMMM yyyy') : null
           },
-          isPastEvent: false
+          isPastEvent: dbEvent.start_date ? new Date(dbEvent.start_date) < new Date() : false
         };
       });
       
@@ -223,7 +254,7 @@ const Community = () => {
       const formattedDbPosts = dbPosts.map((dbPost) => {
         // Provide default values if author is null
         const authorName = dbPost.author?.display_name || dbPost.author?.first_name || "Anonymous";
-        const authorRole = dbPost.author?.is_healer ? "Healer" : "Member";
+        const authorRole = healerRoleMap.get(dbPost.user_id) || "Member";
         const avatarUrl = dbPost.author?.avatar_url || elenaProfile;
         
         // Calculate time ago

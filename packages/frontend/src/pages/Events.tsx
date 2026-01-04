@@ -20,6 +20,7 @@ import { getAllEvents } from "@/lib/events";
 import { getThoughtsByEventId } from "@/lib/thoughts";
 import { elenaProfile, davidProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
+import { format } from "date-fns";
 
 const Events = () => {
   const [filter, setFilter] = useState("all");
@@ -60,14 +61,17 @@ const Events = () => {
         title: dbEvent.title,
         description: dbEvent.description,
         location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
-        date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
+        dateRange: {
+          start: dbEvent.start_date ? format(new Date(dbEvent.start_date), 'd MMMM yyyy') : 'TBD',
+          end: dbEvent.end_date ? format(new Date(dbEvent.end_date), 'd MMMM yyyy') : undefined
+        },
         time: dbEvent.time,
         tags: dbEvent.tags || [],
         attendees: 10, // Default as requested
         connectionsGoing: [],
         comments: 0, // Default as requested
         image: dbEvent.image_url || spiritualBackground,
-        isPastEvent: false,
+        isPastEvent: dbEvent.start_date ? new Date(dbEvent.start_date) < new Date() : false,
         organizers: [{
           id: 'organizer-1',
           name: 'Event Creator',
@@ -359,10 +363,7 @@ const Events = () => {
                   title={event.title}
                   thought={event.description}
                   image={event.image}
-                  dateRange={{
-                    start: event.date.includes('-') ? event.date.split(' - ')[0] : event.date,
-                    end: event.date.includes('-') ? event.date.split(' - ')[1] : undefined
-                  }}
+                  dateRange={event.dateRange}
                   author={{
                     name: event.organizers[0]?.name || 'Event Creator',
                     avatar: event.organizers[0]?.avatar || elenaProfile,

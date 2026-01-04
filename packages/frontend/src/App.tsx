@@ -44,7 +44,7 @@ const App = () => (
           <Route path="/healer/:healerId" element={<AppLayout><HealerProfile /></AppLayout>} />
           <Route path="/home" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
-          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+          <Route path="/profile/:userId?" element={<AppLayout><Profile /></AppLayout>} />
           <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
           <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />

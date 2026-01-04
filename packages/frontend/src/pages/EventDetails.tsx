@@ -22,6 +22,9 @@ import { getEventById, deleteEvent } from "@/lib/events";
 import { elenaProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 import { supabase } from "@/integrations/supabase/client";
+import ThoughtsModal from "@/components/ThoughtsModal";
+import { getThoughtsByEventId } from "@/lib/thoughts";
+import { format } from "date-fns";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -48,6 +51,11 @@ const EventDetails = () => {
   const [editedEvent, setEditedEvent] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [organizer, setOrganizer] = useState<any>(null);
+  const [attendees, setAttendees] = useState<any[]>([]);
+  const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
+  const [loadedThoughts, setLoadedThoughts] = useState<any[]>([]);
+  const [thoughtsCount, setThoughtsCount] = useState(0);
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -138,7 +146,9 @@ const EventDetails = () => {
           postal_code: dbEvent.postal_code,
           country: dbEvent.country,
           location: [dbEvent.street, dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
-          date: dbEvent.date_to ? `${dbEvent.date} - ${dbEvent.date_to}` : dbEvent.date,
+          date: dbEvent.end_date 
+            ? `${format(new Date(dbEvent.start_date), 'd MMMM yyyy')} - ${format(new Date(dbEvent.end_date), 'd MMMM yyyy')}` 
+            : format(new Date(dbEvent.start_date), 'd MMMM yyyy'),
           time: dbEvent.time || 'TBD',
           tags: dbEvent.tags || [],
           image: dbEvent.image_url || spiritualBackground,
@@ -171,6 +181,94 @@ const EventDetails = () => {
     
     fetchEvent();
   }, [eventId]);
+
+  // Fetch organizer and attendees
+  useEffect(() => {
+    const fetchCommunity = async () => {
+      if (!event || !event.user_id) return;
+
+      // Fetch organizer profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', event.user_id)
+        .single();
+
+      if (profile) {
+        const fullName = profile.display_name || 
+                        `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 
+                        'Event Organizer';
+        const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location TBD';
+        
+        setOrganizer({
+          id: profile.id,
+          name: fullName,
+          avatar: profile.avatar_url || elenaProfile,
+          location: location
+        });
+      }
+
+      // Fetch enrollments
+      const { data: enrollments } = await (supabase as any)
+        .from('enrollments')
+        .select('*')
+        .eq('event_id', event.id)
+        .eq('status', 'confirmed');
+
+      if (enrollments && enrollments.length > 0) {
+        // Get user IDs from enrollments
+        const userIds = enrollments.map((e: any) => e.user_id);
+        
+        // Fetch profiles for these users
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, first_name, last_name, avatar_url, city, country, is_healer')
+          .in('id', userIds);
+        
+        // Create a map of user_id to profile
+        const profileMap = new Map();
+        (profiles || []).forEach((profile: any) => {
+          profileMap.set(profile.id, profile);
+        });
+        
+        const isOrganizer = currentUserId && event.user_id === currentUserId;
+        
+        const formattedAttendees = enrollments
+          .map((enrollment: any) => {
+            // Organizers can always see full information
+            if (!enrollment.allow_visible && !isOrganizer) {
+              // Show as anonymous if user didn't allow visibility and viewer is not organizer
+              return {
+                id: enrollment.user_id,
+                name: 'Anonymous',
+                avatar: null,
+                location: '',
+                isAnonymous: true
+              };
+            }
+            
+            const profile = profileMap.get(enrollment.user_id);
+            const fullName = profile?.display_name || 
+                            `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+                            'Anonymous User';
+            const location = [profile?.city, profile?.country].filter(Boolean).join(', ') || '';
+            
+            return {
+              id: enrollment.user_id,
+              name: fullName,
+              avatar: profile?.avatar_url || elenaProfile,
+              location: location,
+              isAnonymous: false,
+              isHealer: profile?.is_healer || false
+            };
+          });
+
+        setAttendees(formattedAttendees);
+      }
+    };
+
+    fetchCommunity();
+  }, [event]);
 
   const displayEvent = editedEvent || event;
 
@@ -300,9 +398,17 @@ const EventDetails = () => {
               variant="ghost" 
               size="sm" 
               className="flex flex-col items-center space-y-1 p-3 h-auto"
+              onClick={async () => {
+                if (eventId) {
+                  const thoughts = await getThoughtsByEventId(eventId);
+                  setLoadedThoughts(thoughts);
+                  setThoughtsCount(thoughts.length);
+                }
+                setThoughtsModalOpen(true);
+              }}
             >
               <MessageCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-              <span className="text-xs text-muted-foreground">Comment</span>
+              <span className="text-xs text-muted-foreground">Thoughts</span>
             </Button>
             <Button 
               variant="ghost" 
@@ -411,14 +517,14 @@ const EventDetails = () => {
                 <div className="space-y-6">
                   {/* Organizers */}
                   <div>
-                     <h3 className="text-sm font-medium text-muted-foreground mb-3">Organizers ({displayEvent.organizers.length})</h3>
+                     <h3 className="text-sm font-medium text-muted-foreground mb-3">Organizer ({organizer ? 1 : 0})</h3>
                      <div className="space-y-3">
-                       {displayEvent.organizers.map((organizer, index) => (
-                        <div key={index} className="flex items-center justify-between">
+                       {organizer && (
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Avatar 
                               className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
-                              onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                              onClick={() => navigate(`/healer/${organizer.id}`)}
                             >
                               <AvatarImage src={organizer.avatar} />
                               <AvatarFallback className="bg-primary/10">
@@ -428,7 +534,7 @@ const EventDetails = () => {
                             <div className="flex-1">
                               <div 
                                 className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => navigate(`/healer/${organizer.name.toLowerCase().replace(' ', '-')}`)}
+                                onClick={() => navigate(`/healer/${organizer.id}`)}
                               >
                                 {organizer.name}
                               </div>
@@ -462,20 +568,29 @@ const EventDetails = () => {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
 
                   {/* Attendees */}
                   <div>
                      <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                       Attendees ({displayEvent.attendees.length})
+                       Attendees ({attendees.length})
                      </h3>
                      <div className="space-y-3">
-                       {displayEvent.attendees.map((attendee, index) => (
+                       {attendees.length > 0 ? (
+                         attendees.map((attendee, index) => (
                          <div key={index} className="flex items-center justify-between">
                            <div className="flex items-center space-x-3">
-                             <Avatar className="h-8 w-8">
+                             <Avatar 
+                               className={`h-8 w-8 ${!attendee.isAnonymous ? 'cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all' : ''}`}
+                               onClick={() => {
+                                 if (!attendee.isAnonymous && attendee.id) {
+                                   const targetRoute = attendee.isHealer ? `/healer/${attendee.id}` : `/profile/${attendee.id}`;
+                                   navigate(targetRoute);
+                                 }
+                               }}
+                             >
                                {attendee.isAnonymous && !isHealerMode ? (
                                  <AvatarFallback className="bg-muted">
                                    <User className="h-4 w-4 text-muted-foreground" />
@@ -490,7 +605,15 @@ const EventDetails = () => {
                                )}
                              </Avatar>
                              <div className="flex-1">
-                               <div className="text-sm font-medium">
+                               <div 
+                                 className={`text-sm font-medium ${!attendee.isAnonymous ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                                 onClick={() => {
+                                   if (!attendee.isAnonymous && attendee.id) {
+                                     const targetRoute = attendee.isHealer ? `/healer/${attendee.id}` : `/profile/${attendee.id}`;
+                                     navigate(targetRoute);
+                                   }
+                                 }}
+                               >
                                  {attendee.name}
                                </div>
                                {attendee.isAnonymous && isHealerMode && (
@@ -532,8 +655,13 @@ const EventDetails = () => {
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
+                      ))
+                       ) : (
+                         <p className="text-sm text-muted-foreground text-center py-4">
+                           No attendees yet. Be the first to join!
+                         </p>
+                       )}
+                     </div>
                   </div>
 
                   {/* Group Chat Section */}
@@ -914,6 +1042,63 @@ const EventDetails = () => {
                         setSelectedAddOns([]);
                         setSelectedPrice("");
                         setRemarks("");
+                        
+                        // Refresh attendees list
+                        const { data: updatedEnrollments } = await (supabase as any)
+                          .from('enrollments')
+                          .select('*')
+                          .eq('event_id', event.id)
+                          .eq('status', 'confirmed');
+
+                        if (updatedEnrollments && updatedEnrollments.length > 0) {
+                          // Get user IDs from enrollments
+                          const userIds = updatedEnrollments.map((e: any) => e.user_id);
+                          
+                          // Fetch profiles for these users
+                          const { data: profiles } = await supabase
+                            .from('profiles')
+                            .select('id, display_name, first_name, last_name, avatar_url, city, country')
+                            .in('id', userIds);
+                          
+                          // Create a map of user_id to profile
+                          const profileMap = new Map();
+                          (profiles || []).forEach((profile: any) => {
+                            profileMap.set(profile.id, profile);
+                          });
+                          
+                          const isOrganizer = currentUserId && event.user_id === currentUserId;
+                          
+                          const formattedAttendees = updatedEnrollments
+                            .map((enrollment: any) => {
+                              // Organizers can always see full information
+                              if (!enrollment.allow_visible && !isOrganizer) {
+                                // Show as anonymous if user didn't allow visibility and viewer is not organizer
+                                return {
+                                  id: enrollment.user_id,
+                                  name: 'Anonymous',
+                                  avatar: null,
+                                  location: '',
+                                  isAnonymous: true
+                                };
+                              }
+                              
+                              const profile = profileMap.get(enrollment.user_id);
+                              const fullName = profile?.display_name || 
+                                              `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+                                              'Anonymous User';
+                              const location = [profile?.city, profile?.country].filter(Boolean).join(', ') || '';
+                              
+                              return {
+                                id: enrollment.user_id,
+                                name: fullName,
+                                avatar: profile?.avatar_url || elenaProfile,
+                                location: location,
+                                isAnonymous: false
+                              };
+                            });
+
+                          setAttendees(formattedAttendees);
+                        }
                       } catch (error) {
                         console.error('Error enrolling:', error);
                         toast.error("An error occurred. Please try again.");
@@ -1136,6 +1321,24 @@ const EventDetails = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Thoughts Modal */}
+        <ThoughtsModal
+          open={thoughtsModalOpen}
+          onOpenChange={setThoughtsModalOpen}
+          postId={eventId || ''}
+          postTitle={event.title}
+          thoughts={loadedThoughts}
+          isEvent={true}
+          onThoughtAdded={async () => {
+            if (eventId) {
+              const thoughts = await getThoughtsByEventId(eventId);
+              setLoadedThoughts(thoughts);
+              setThoughtsCount(thoughts.length);
+            }
+            toast.success("Thought added!");
+          }}
+        />
     </>
     );
   };

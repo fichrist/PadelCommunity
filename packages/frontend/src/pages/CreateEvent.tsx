@@ -19,8 +19,10 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 import { createEvent, updateEvent, getEventById } from "@/lib/events";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -36,9 +38,11 @@ const CreateEvent = () => {
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("");
-  const [date, setDate] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [date, setDate] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [time, setTime] = useState("");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [dateToPickerOpen, setDateToPickerOpen] = useState(false);
   const [prices, setPrices] = useState<{text: string, amount: string}[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
@@ -77,8 +81,8 @@ const CreateEvent = () => {
           setCity(dbEvent.city || "");
           setPostalCode(dbEvent.postal_code || "");
           setCountry(dbEvent.country || "");
-          setDate(dbEvent.date || "");
-          setDateTo(dbEvent.date_to || "");
+          setDate(dbEvent.start_date ? new Date(dbEvent.start_date) : undefined);
+          setDateTo(dbEvent.end_date ? new Date(dbEvent.end_date) : undefined);
           setTime(dbEvent.time || "");
           setPrices(dbEvent.prices || []);
           setTags(dbEvent.tags || []);
@@ -107,8 +111,8 @@ const CreateEvent = () => {
       if (titleParam) setTitle(titleParam);
       if (descriptionParam) setDescription(descriptionParam);
       if (fullDescriptionParam) setFullDescription(fullDescriptionParam);
-      if (dateParam) setDate(dateParam);
-      if (dateToParam) setDateTo(dateToParam);
+      if (dateParam) setDate(new Date(dateParam));
+      if (dateToParam) setDateTo(new Date(dateToParam));
       if (timeParam) setTime(timeParam);
       if (pricesParam) {
         try {
@@ -207,8 +211,8 @@ const CreateEvent = () => {
       city: city.trim(),
       postal_code: postalCode.trim() || undefined,
       country: country.trim() || undefined,
-      date: date.trim(),
-      date_to: dateTo.trim() || undefined,
+      start_date: date ? format(date, 'yyyy-MM-dd') : undefined,
+      end_date: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
       time: time.trim() || undefined,
       prices: prices,
       tags: tags,
@@ -220,7 +224,7 @@ const CreateEvent = () => {
     try {
       if (isEditMode && eventId) {
         // Update existing event
-        const result = await updateEvent(eventId, eventData);
+        const result = await updateEvent(eventId, eventData as any);
         
         if (result) {
           toast.success("Event updated successfully!");
@@ -230,7 +234,7 @@ const CreateEvent = () => {
         }
       } else {
         // Create new event
-        const result = await createEvent(eventData);
+        const result = await createEvent(eventData as any);
         
         if (result) {
           toast.success("Event created successfully!");
@@ -360,31 +364,61 @@ const CreateEvent = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="date">Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="date"
-                      placeholder="Event date..."
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="pl-10 bg-background/50"
-                    />
-                  </div>
+                  <Label>Date *</Label>
+                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-background/50",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {date ? format(date, 'd MMMM yyyy') : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={date}
+                        onSelect={(newDate) => {
+                          setDate(newDate);
+                          setDatePickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div>
-                  <Label htmlFor="dateTo">Date To (Optional)</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="dateTo"
-                      placeholder="End date (optional)..."
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="pl-10 bg-background/50"
-                    />
-                  </div>
+                  <Label>Date To (Optional)</Label>
+                  <Popover open={dateToPickerOpen} onOpenChange={setDateToPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-background/50",
+                          !dateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {dateTo ? format(dateTo, 'd MMMM yyyy') : "Select end date (optional)"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={(newDate) => {
+                          setDateTo(newDate);
+                          setDateToPickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div>

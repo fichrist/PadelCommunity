@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, Star, Play, MessageCircle, Heart, Phone, Mail, Facebook, Instagram, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPostsWithDetails } from "@/lib/posts";
+import { getThoughtsByHealerProfileId } from "@/lib/thoughts";
 import CommunityShareCard from "@/components/CommunityShareCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import { toast } from "sonner";
@@ -26,6 +27,8 @@ const HealerProfile = () => {
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [resharedShares, setResharedShares] = useState<string[]>([]);
   const [savedShares, setSavedShares] = useState<string[]>([]);
+  const [healerThoughts, setHealerThoughts] = useState<any[]>([]);
+  const [showHealerThoughts, setShowHealerThoughts] = useState(false);
 
 
   useEffect(() => {
@@ -92,6 +95,17 @@ const HealerProfile = () => {
           setShares([]);
         }
 
+        // Fetch healer thoughts count
+        console.log("Fetching healer thoughts...");
+        try {
+          const thoughts = await getThoughtsByHealerProfileId(healerId);
+          setHealerThoughts(thoughts);
+          console.log("Healer thoughts:", thoughts.length);
+        } catch (thoughtsError) {
+          console.error("Error fetching healer thoughts:", thoughtsError);
+          setHealerThoughts([]);
+        }
+
       } catch (error) {
         console.error("Error fetching healer data:", error);
         toast.error("Failed to load healer profile");
@@ -130,6 +144,19 @@ const HealerProfile = () => {
   // Construct location from profile fields
   const location = [profile.city, profile.country].filter(Boolean).join(', ') || "Location not specified";
 
+  // Function to load healer thoughts
+  const loadHealerThoughts = async () => {
+    if (!healerId) return;
+    try {
+      const thoughts = await getThoughtsByHealerProfileId(healerId);
+      setHealerThoughts(thoughts);
+      setShowHealerThoughts(true);
+    } catch (error) {
+      console.error("Error loading healer thoughts:", error);
+      toast.error("Failed to load thoughts");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -167,13 +194,12 @@ const HealerProfile = () => {
                   <h1 className="text-3xl font-bold mb-2">{displayName}</h1>
                   <p className="text-xl text-muted-foreground mb-4">{role}</p>
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className="flex items-center space-x-1">
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star key={star} className="h-5 w-5 fill-muted text-muted" />
-                        ))}
-                      </div>
-                      <span className="text-muted-foreground">(0 reviews)</span>
+                    <div 
+                      className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition-opacity" 
+                      onClick={loadHealerThoughts}
+                      title="Click to view and add thoughts"
+                    >
+                      <span className="text-muted-foreground">({healerThoughts.length} thoughts)</span>
                     </div>
                   </div>
                   <div className="flex space-x-3">
@@ -354,9 +380,9 @@ const HealerProfile = () => {
         )}
       </div>
 
-      {/* Thoughts Modal */}
+      {/* Thoughts Modal for Posts */}
       <ThoughtsModal
-        open={thoughtsModalOpen}
+        open={thoughtsModalOpen && !showHealerThoughts}
         onOpenChange={setThoughtsModalOpen}
         postId={selectedPost?.id || ''}
         postTitle={selectedPost?.title || ""}
@@ -364,6 +390,17 @@ const HealerProfile = () => {
         onThoughtAdded={() => {
           // Optionally refresh thoughts here
         }}
+      />
+
+      {/* Thoughts Modal for Healer Profile */}
+      <ThoughtsModal
+        open={showHealerThoughts}
+        onOpenChange={setShowHealerThoughts}
+        postId={healerId || ''}
+        postTitle={displayName}
+        thoughts={healerThoughts}
+        isHealerProfile={true}
+        onThoughtAdded={loadHealerThoughts}
       />
     </div>
   );
