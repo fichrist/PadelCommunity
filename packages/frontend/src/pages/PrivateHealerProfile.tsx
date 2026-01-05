@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Star, Play, MessageCircle, Heart, Phone, Mail, Facebook, Instagram, Edit } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, MapPin, Star, Play, MessageCircle, Heart, Phone, Mail, Facebook, Instagram, Edit, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPostsWithDetails } from "@/lib/posts";
 import { getThoughtsByHealerProfileId, getThoughtsByEventId } from "@/lib/thoughts";
@@ -14,8 +15,7 @@ import ThoughtsModal from "@/components/ThoughtsModal";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-const HealerProfile = () => {
-  const { healerId } = useParams();
+const PrivateHealerProfile = () => {
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,9 @@ const HealerProfile = () => {
   const [shares, setShares] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [pastEvents, setPastEvents] = useState<any[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [healerId, setHealerId] = useState<string | null>(null);
+  const [eventEnrollments, setEventEnrollments] = useState<Map<string, any[]>>(new Map());
+  const [eventsData, setEventsData] = useState<Map<string, any>>(new Map());
    
   // State for interactions
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
@@ -37,33 +39,36 @@ const HealerProfile = () => {
 
   useEffect(() => {
     const fetchHealerData = async () => {
-      if (!healerId) {
-        console.log("No healerId provided");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Fetching healer data for:", healerId);
+      console.log("Fetching healer data");
       setLoading(true);
 
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
+        if (!user) {
+          toast.error("Please log in to view your profile");
+          navigate('/');
+          return;
+        }
+        
+        const currentHealerId = user.id;
+        setHealerId(currentHealerId);
+
+        console.log("Fetching healer data for:", currentHealerId);
 
         // Fetch profile data
         console.log("Fetching profile...");
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', healerId)
+          .eq('id', currentHealerId)
           .single();
 
         console.log("Profile data:", profileData, "Error:", profileError);
 
         if (profileError) {
           if (profileError.code === 'PGRST116') {
-            console.error("Profile not found for ID:", healerId);
+            console.error("Profile not found for ID:", currentHealerId);
             setProfile(null);
             setLoading(false);
             return;
@@ -78,7 +83,7 @@ const HealerProfile = () => {
         const { data: healerData, error: healerError } = await (supabase as any)
           .from('healer_profiles')
           .select('*')
-          .eq('user_id', healerId)
+          .eq('user_id', currentHealerId)
           .single();
 
         console.log("Healer profile data:", healerData, "Error:", healerError);
@@ -91,7 +96,7 @@ const HealerProfile = () => {
         console.log("Fetching user posts...");
         try {
           const allPosts = await getPostsWithDetails();
-          const userPosts = allPosts.filter((post: any) => post.user_id === healerId);
+          const userPosts = allPosts.filter((post: any) => post.user_id === currentHealerId);
           console.log("User posts:", userPosts.length);
           setShares(userPosts);
         } catch (postError) {
@@ -102,7 +107,7 @@ const HealerProfile = () => {
         // Fetch healer thoughts count
         console.log("Fetching healer thoughts...");
         try {
-          const thoughts = await getThoughtsByHealerProfileId(healerId);
+          const thoughts = await getThoughtsByHealerProfileId(currentHealerId);
           setHealerThoughts(thoughts);
           console.log("Healer thoughts:", thoughts.length);
         } catch (thoughtsError) {
@@ -116,7 +121,7 @@ const HealerProfile = () => {
           const { data: events, error: eventsError } = await (supabase as any)
             .from('events')
             .select('*')
-            .eq('user_id', healerId)
+            .eq('user_id', currentHealerId)
             .order('start_date', { ascending: true });
 
           if (eventsError) throw eventsError;
@@ -174,7 +179,7 @@ const HealerProfile = () => {
                 end: event.end_date ? format(new Date(event.end_date), 'd MMMM yyyy') : undefined
               },
               author: { 
-                id: healerId,
+                id: currentHealerId,
                 name: eventAuthorName,
                 avatar: profileData.avatar_url || "",
                 role: eventAuthorRole,
@@ -198,6 +203,58 @@ const HealerProfile = () => {
           setUpcomingEvents(upcoming);
           setPastEvents(past);
           console.log("Upcoming events:", upcoming.length, "Past events:", past.length);
+          
+          // Store events data for enrollment tables
+          const eventsMap = new Map();
+          (events || []).forEach((event: any) => {
+            eventsMap.set(event.id, event);
+          });
+          setEventsData(eventsMap);
+          
+          // Fetch enrollments for all events
+          if (eventIds.length > 0) {
+            const { data: enrollmentsData, error: enrollmentsError } = await (supabase as any)
+              .from('enrollments')
+              .select('*')
+              .in('event_id', eventIds)
+              .eq('status', 'confirmed')
+              .order('enrollment_date', { ascending: true });
+            
+            if (enrollmentsError) {
+              console.error("Error fetching enrollments:", enrollmentsError);
+            } else if (enrollmentsData && enrollmentsData.length > 0) {
+              // Fetch profile data for all enrolled users
+              const userIds = enrollmentsData.map((e: any) => e.user_id);
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, display_name, first_name')
+                .in('id', userIds);
+              
+              // Create a map of user profiles
+              const profilesMap = new Map();
+              (profilesData || []).forEach((profile: any) => {
+                profilesMap.set(profile.id, profile);
+              });
+              
+              // Attach profiles to enrollments
+              const enrichedEnrollments = enrollmentsData.map((enrollment: any) => ({
+                ...enrollment,
+                profiles: profilesMap.get(enrollment.user_id)
+              }));
+              
+              // Group enrollments by event
+              const enrollmentsByEvent = new Map();
+              enrichedEnrollments.forEach((enrollment: any) => {
+                const eventId = enrollment.event_id;
+                if (!enrollmentsByEvent.has(eventId)) {
+                  enrollmentsByEvent.set(eventId, []);
+                }
+                enrollmentsByEvent.get(eventId).push(enrollment);
+              });
+              setEventEnrollments(enrollmentsByEvent);
+              console.log("Enrollments fetched:", enrichedEnrollments.length);
+            }
+          }
         } catch (eventsError) {
           console.error("Error fetching events:", eventsError);
           setUpcomingEvents([]);
@@ -255,6 +312,91 @@ const HealerProfile = () => {
     }
   };
 
+  // Function to render enrollment table for an event
+  const renderEnrollmentTable = (eventId: string) => {
+    const enrollments = eventEnrollments.get(eventId) || [];
+    const event = eventsData.get(eventId);
+    
+    if (!event || enrollments.length === 0) {
+      return null;
+    }
+
+    const prices = event.prices || [];
+    const additionalOptions = event.additional_options || [];
+    
+    // Calculate totals
+    const totals: any = {};
+    prices.forEach((price: any) => {
+      totals[price.label] = 0;
+    });
+    additionalOptions.forEach((option: any) => {
+      totals[option.label] = 0;
+    });
+
+    return (
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Enrollments for {event.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Participant</TableHead>
+                {prices.map((price: any) => (
+                  <TableHead key={price.label}>{price.label}</TableHead>
+                ))}
+                {additionalOptions.map((option: any) => (
+                  <TableHead key={option.label}>{option.label}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {enrollments.map((enrollment: any) => {
+                const participantName = enrollment.profiles?.display_name || enrollment.profiles?.first_name || 'Unknown';
+                const selectedPrice = enrollment.selected_price_option;
+                const selectedAddOns = enrollment.selected_add_ons || [];
+                
+                // Update totals
+                if (selectedPrice) {
+                  totals[selectedPrice] = (totals[selectedPrice] || 0) + 1;
+                }
+                selectedAddOns.forEach((addOnLabel: string) => {
+                  totals[addOnLabel] = (totals[addOnLabel] || 0) + 1;
+                });
+
+                return (
+                  <TableRow key={enrollment.id}>
+                    <TableCell className="font-medium">{participantName}</TableCell>
+                    {prices.map((price: any) => (
+                      <TableCell key={price.label}>
+                        {selectedPrice === price.label ? '✓' : ''}
+                      </TableCell>
+                    ))}
+                    {additionalOptions.map((option: any) => (
+                      <TableCell key={option.label}>
+                        {selectedAddOns.includes(option.label) ? '✓' : ''}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
+              <TableRow className="font-bold bg-muted/50">
+                <TableCell>Total</TableCell>
+                {prices.map((price: any) => (
+                  <TableCell key={price.label}>{totals[price.label] || 0}</TableCell>
+                ))}
+                {additionalOptions.map((option: any) => (
+                  <TableCell key={option.label}>{totals[option.label] || 0}</TableCell>
+                ))}
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -268,6 +410,22 @@ const HealerProfile = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => navigate(`/healer/${healerId}`)}
+                variant="outline"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Public Page
+              </Button>
+              <Button
+                onClick={() => navigate('/edit-healer-profile')}
+                variant="outline"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+            </div>
           </div>
         
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -413,31 +571,11 @@ const HealerProfile = () => {
         {upcomingEvents.length > 0 && (
           <div className="mb-12 mt-12">
             <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
-            <div className="relative">
-              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-                {upcomingEvents.map((event, index) => (
-                  <CommunityEventCard
-                    key={event.eventId}
-                    {...event}
-                    index={index}
-                    isHorizontal={true}
-                    onOpenThoughts={async (eventData) => {
-                      setSelectedPost(eventData);
-                      const thoughts = await getThoughtsByEventId(eventData.eventId);
-                      setThoughtsModalOpen(true);
-                    }}
-                    isReshared={false}
-                    onToggleReshare={() => {
-                      toast.success("Event reshared!");
-                    }}
-                    isSaved={false}
-                    onToggleSave={() => {
-                      toast.success("Saved to your private page!");
-                    }}
-                  />
-                ))}
+            {upcomingEvents.map((event) => (
+              <div key={`enrollment-${event.eventId}`}>
+                {renderEnrollmentTable(event.eventId)}
               </div>
-            </div>
+            ))}
           </div>
         )}
 
@@ -445,32 +583,11 @@ const HealerProfile = () => {
         {pastEvents.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6">Past Events</h2>
-            <div className="relative">
-              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-                {pastEvents.map((event, index) => (
-                  <CommunityEventCard
-                    key={event.eventId}
-                    {...event}
-                    index={index}
-                    isHorizontal={true}
-                    isPastEvent={true}
-                    onOpenThoughts={async (eventData) => {
-                      setSelectedPost(eventData);
-                      const thoughts = await getThoughtsByEventId(eventData.eventId);
-                      setThoughtsModalOpen(true);
-                    }}
-                    isReshared={false}
-                    onToggleReshare={() => {
-                      toast.success("Event reshared!");
-                    }}
-                    isSaved={false}
-                    onToggleSave={() => {
-                      toast.success("Saved to your private page!");
-                    }}
-                  />
-                ))}
+            {pastEvents.map((event) => (
+              <div key={`enrollment-${event.eventId}`}>
+                {renderEnrollmentTable(event.eventId)}
               </div>
-            </div>
+            ))}
           </div>
         )}
 
@@ -560,4 +677,4 @@ const HealerProfile = () => {
   );
 };
 
-export default HealerProfile;
+export default PrivateHealerProfile;

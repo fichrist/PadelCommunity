@@ -28,11 +28,6 @@ const Profile = () => {
   const [resharedShares, setResharedShares] = useState<string[]>([]);
   const [savedShares, setSavedShares] = useState<string[]>([]);
 
-  const interests = [
-    "Meditation", "Crystal Healing", "Astrology", "Chakras", 
-    "Sacred Geometry", "Yoga", "Mindfulness", "Energy Healing"
-  ];
-
   useEffect(() => {
     const fetchProfileData = async () => {
       setLoading(true);
@@ -265,29 +260,6 @@ const Profile = () => {
       </div>
 
       <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Spiritual Interests */}
-        <div className="mb-12">
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>Spiritual Interests</CardTitle>
-              <CardDescription>Topics that resonate with your soul</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {interests.map((interest) => (
-                  <Badge 
-                    key={interest} 
-                    variant="secondary" 
-                    className="bg-sage/20 text-sage-foreground hover:bg-sage/30 transition-colors cursor-pointer"
-                  >
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
           <div className="mb-12">

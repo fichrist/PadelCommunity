@@ -161,8 +161,8 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
                 .single();
               
               if (healerProfile && healerProfile.role) {
-                // Profile is complete, go to healer page
-                navigate(`/healer/${userId}`);
+                // Profile is complete, go to private healer page
+                navigate('/private-healer-profile');
               } else {
                 // Profile needs setup, go to edit page
                 navigate('/edit-healer-profile');

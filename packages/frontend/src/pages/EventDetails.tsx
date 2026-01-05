@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
+import CommunityEventCard from "@/components/CommunityEventCard";
 import { getEventById, deleteEvent } from "@/lib/events";
 import { elenaProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
@@ -56,6 +57,8 @@ const EventDetails = () => {
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [loadedThoughts, setLoadedThoughts] = useState<any[]>([]);
   const [thoughtsCount, setThoughtsCount] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
 
   const handleBroadcastMessage = async () => {
     if (!broadcastMessage.trim()) {
@@ -268,7 +271,108 @@ const EventDetails = () => {
     };
 
     fetchCommunity();
-  }, [event]);
+  }, [event, currentUserId]);
+
+  // Fetch other events from the same healer
+  useEffect(() => {
+    const fetchHealerEvents = async () => {
+      if (!organizer || !organizer.id) return;
+
+      try {
+        // Fetch all events from this healer
+        const { data: healerEvents, error } = await (supabase as any)
+          .from('events')
+          .select('*')
+          .eq('user_id', organizer.id)
+          .neq('id', eventId) // Exclude current event
+          .order('start_date', { ascending: true });
+
+        if (error) {
+          console.error("Error fetching healer events:", error);
+          return;
+        }
+
+        if (!healerEvents || healerEvents.length === 0) return;
+
+        // Get event IDs for fetching counts
+        const eventIds = healerEvents.map((e: any) => e.id);
+
+        // Fetch enrollment counts
+        const enrollmentCountsMap = new Map();
+        if (eventIds.length > 0) {
+          const { data: enrollmentCounts } = await (supabase as any)
+            .from('enrollments')
+            .select('event_id')
+            .in('event_id', eventIds)
+            .eq('status', 'confirmed');
+          
+          (enrollmentCounts || []).forEach((enrollment: any) => {
+            const currentCount = enrollmentCountsMap.get(enrollment.event_id) || 0;
+            enrollmentCountsMap.set(enrollment.event_id, currentCount + 1);
+          });
+        }
+
+        // Fetch thought counts
+        const thoughtCountsMap = new Map();
+        if (eventIds.length > 0) {
+          const { data: thoughtCounts } = await (supabase as any)
+            .from('thoughts')
+            .select('event_id')
+            .in('event_id', eventIds)
+            .not('event_id', 'is', null);
+          
+          (thoughtCounts || []).forEach((thought: any) => {
+            const currentCount = thoughtCountsMap.get(thought.event_id) || 0;
+            thoughtCountsMap.set(thought.event_id, currentCount + 1);
+          });
+        }
+
+        // Separate into upcoming and past
+        const now = new Date();
+        const upcoming: any[] = [];
+        const past: any[] = [];
+
+        healerEvents.forEach((evt: any) => {
+          const eventDate = new Date(evt.start_date);
+          const eventData = {
+            eventId: evt.id,
+            title: evt.title,
+            image: evt.image_url || spiritualBackground,
+            dateRange: { 
+              start: format(eventDate, 'd MMMM yyyy'),
+              end: evt.end_date ? format(new Date(evt.end_date), 'd MMMM yyyy') : undefined
+            },
+            author: { 
+              id: organizer.id,
+              name: organizer.name,
+              avatar: organizer.avatar,
+              role: 'Healer',
+              isHealer: true
+            },
+            location: `${evt.city || ''}${evt.city && evt.country ? ', ' : ''}${evt.country || ''}`.trim() || 'Location TBD',
+            attendees: enrollmentCountsMap.get(evt.id) || 0,
+            tags: evt.tags || [],
+            thought: evt.description || "",
+            comments: thoughtCountsMap.get(evt.id) || 0,
+            isPastEvent: eventDate < now
+          };
+
+          if (eventDate >= now) {
+            upcoming.push(eventData);
+          } else {
+            past.push(eventData);
+          }
+        });
+
+        setUpcomingEvents(upcoming);
+        setPastEvents(past);
+      } catch (error) {
+        console.error("Error fetching healer events:", error);
+      }
+    };
+
+    fetchHealerEvents();
+  }, [organizer, eventId]);
 
   const displayEvent = editedEvent || event;
 
@@ -796,43 +900,70 @@ const EventDetails = () => {
           </div>
         </div>
 
-        {/* Previous Events by Organizers - Bottom Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5" />
-              <span>Previous Events by Organizers</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {event.organizers.flatMap(organizer => 
-                organizer.previousEvents?.map((prevEvent, eventIndex) => (
-                  <EventCard
-                    key={`${organizer.name}-${eventIndex}`}
-                    eventId={`prev-${organizer.name}-${eventIndex}`}
-                    title={prevEvent.title}
-                    description="A past event by our experienced organizer"
-                    date={prevEvent.date}
-                    location={organizer.location}
-                    organizers={[{
-                      name: organizer.name,
-                      avatar: organizer.avatar,
-                      id: organizer.name.toLowerCase().replace(' ', '-')
-                    }]}
-                    attendees={prevEvent.attendees}
-                    category="Past Event"
-                    image={event.image}
-                    isPastEvent={true}
-                    averageRating={4.5}
-                    totalReviews={Math.floor(prevEvent.attendees * 0.6)}
-                    reviews={[]}
+        {/* Upcoming Events from this Healer */}
+        {upcomingEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Upcoming Events from this Healer</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {upcomingEvents.map((evt, index) => (
+                  <CommunityEventCard
+                    key={evt.eventId}
+                    {...evt}
+                    index={index}
+                    isHorizontal={true}
+                    onOpenThoughts={async (eventData) => {
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setLoadedThoughts(thoughts);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={false}
+                    onToggleReshare={() => {
+                      toast.success("Event reshared!");
+                    }}
+                    isSaved={false}
+                    onToggleSave={() => {
+                      toast.success("Saved to your private page!");
+                    }}
                   />
-                )) || []
-              )}
+                ))}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+
+        {/* Past Events from this Healer */}
+        {pastEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Past Events from this Healer</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {pastEvents.map((evt, index) => (
+                  <CommunityEventCard
+                    key={evt.eventId}
+                    {...evt}
+                    index={index}
+                    isHorizontal={true}
+                    isPastEvent={true}
+                    onOpenThoughts={async (eventData) => {
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setLoadedThoughts(thoughts);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={false}
+                    onToggleReshare={() => {
+                      toast.success("Event reshared!");
+                    }}
+                    isSaved={false}
+                    onToggleSave={() => {
+                      toast.success("Saved to your private page!");
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
         
         {/* Enrollment Modal */}
