@@ -142,7 +142,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-md border border-border">
         <DropdownMenuItem 
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate('/private-profile')}
           className="cursor-pointer flex items-center space-x-2 py-3"
         >
           <User className="h-4 w-4 text-primary" />

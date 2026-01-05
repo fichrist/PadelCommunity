@@ -225,10 +225,12 @@ const Community = () => {
           eventId: dbEvent.id,
           user_id: dbEvent.user_id,
           author: {
+            id: dbEvent.user_id,
             name: authorName,
             avatar: avatarUrl,
             followers: 0,
-            role: authorRole
+            role: authorRole,
+            isHealer: profile?.is_healer || false
           },
           title: dbEvent.title,
           thought: dbEvent.description,
@@ -253,6 +255,7 @@ const Community = () => {
       // Convert database posts to the format expected by the UI
       const formattedDbPosts = dbPosts.map((dbPost) => {
         // Provide default values if author is null
+        const profile = profileMap.get(dbPost.user_id);
         const authorName = dbPost.author?.display_name || dbPost.author?.first_name || "Anonymous";
         const authorRole = healerRoleMap.get(dbPost.user_id) || "Member";
         const avatarUrl = dbPost.author?.avatar_url || elenaProfile;
@@ -282,7 +285,8 @@ const Community = () => {
             name: authorName, 
             avatar: avatarUrl, 
             followers: 0, 
-            role: authorRole 
+            role: authorRole,
+            isHealer: profile?.is_healer || false
           },
           title: dbPost.title,
           description: dbPost.content,
@@ -637,9 +641,11 @@ const Community = () => {
                                        Follow
                                      </Button>
                                    </div>
-                                   <p className="text-xs text-muted-foreground">
-                                     {post.author.role}
-                                   </p>
+                                   {post.author.isHealer && (
+                                     <p className="text-xs text-muted-foreground">
+                                       {post.author.role}
+                                     </p>
+                                   )}
                                  </div>
                                </div>
                                
@@ -894,9 +900,11 @@ const Community = () => {
                                     Follow
                                   </Button>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {post.author.role}
-                                </p>
+                                {post.author.isHealer && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {post.author.role}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>

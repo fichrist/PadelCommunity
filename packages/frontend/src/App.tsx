@@ -10,6 +10,7 @@ import People from "./pages/People";
 import Community from "./pages/Community";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import PrivateProfile from "./pages/PrivateProfile";
 import EventDetails from "./pages/EventDetails";
 import EditableEventDetails from "./pages/EditableEventDetails";
 import HealerProfile from "./pages/HealerProfile";
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/home" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
           <Route path="/profile/:userId?" element={<AppLayout><Profile /></AppLayout>} />
+          <Route path="/private-profile" element={<AppLayout><PrivateProfile /></AppLayout>} />
           <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
           <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />

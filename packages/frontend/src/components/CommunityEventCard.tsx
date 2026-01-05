@@ -137,9 +137,11 @@ const CommunityEventCard = ({
                         Follow
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {author.role}
-                    </p>
+                    {author.isHealer && (
+                      <p className="text-xs text-muted-foreground">
+                        {author.role}
+                      </p>
+                    )}
                   </div>
                 </div>
                 

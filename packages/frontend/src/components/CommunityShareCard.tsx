@@ -17,6 +17,7 @@ interface CommunityShareCardProps {
     name: string;
     avatar: string;
     role: string;
+    isHealer?: boolean;
   };
   youtubeUrl?: string;
   comments: number;
@@ -133,10 +134,12 @@ const CommunityShareCard = ({
                     <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary font-medium hover:bg-transparent">
                       Follow
                     </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {author.role}
-                  </p>
+                    </div>
+                    {author.isHealer && (
+                      <p className="text-xs text-muted-foreground">
+                        {author.role}
+                      </p>
+                    )}
                 </div>
               </div>
             </div>

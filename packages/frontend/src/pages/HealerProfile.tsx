@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, Star, Play, MessageCircle, Heart, Phone, Mail, Facebook, Instagram, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPostsWithDetails } from "@/lib/posts";
-import { getThoughtsByHealerProfileId } from "@/lib/thoughts";
+import { getThoughtsByHealerProfileId, getThoughtsByEventId } from "@/lib/thoughts";
 import CommunityShareCard from "@/components/CommunityShareCard";
+import CommunityEventCard from "@/components/CommunityEventCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const HealerProfile = () => {
   const { healerId } = useParams();
@@ -20,8 +22,10 @@ const HealerProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [healerProfile, setHealerProfile] = useState<any>(null);
   const [shares, setShares] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  
+   
   // State for interactions
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
@@ -104,6 +108,100 @@ const HealerProfile = () => {
         } catch (thoughtsError) {
           console.error("Error fetching healer thoughts:", thoughtsError);
           setHealerThoughts([]);
+        }
+
+        // Fetch healer's events
+        console.log("Fetching healer events...");
+        try {
+          const { data: events, error: eventsError } = await (supabase as any)
+            .from('events')
+            .select('*')
+            .eq('user_id', healerId)
+            .order('start_date', { ascending: true });
+
+          if (eventsError) throw eventsError;
+
+          // Get event IDs to fetch counts
+          const eventIds = (events || []).map((e: any) => e.id);
+          
+          // Fetch thought counts for all events
+          const thoughtCountsMap = new Map();
+          if (eventIds.length > 0) {
+            const { data: thoughtCounts } = await (supabase as any)
+              .from('thoughts')
+              .select('event_id')
+              .in('event_id', eventIds)
+              .not('event_id', 'is', null);
+            
+            (thoughtCounts || []).forEach((thought: any) => {
+              const currentCount = thoughtCountsMap.get(thought.event_id) || 0;
+              thoughtCountsMap.set(thought.event_id, currentCount + 1);
+            });
+          }
+
+          // Fetch enrollment counts
+          const enrollmentCountsMap = new Map();
+          if (eventIds.length > 0) {
+            const { data: enrollmentCounts } = await (supabase as any)
+              .from('enrollments')
+              .select('event_id')
+              .in('event_id', eventIds)
+              .eq('status', 'confirmed');
+            
+            (enrollmentCounts || []).forEach((enrollment: any) => {
+              const currentCount = enrollmentCountsMap.get(enrollment.event_id) || 0;
+              enrollmentCountsMap.set(enrollment.event_id, currentCount + 1);
+            });
+          }
+
+          // Format events and separate into upcoming and past
+          const now = new Date();
+          const upcoming: any[] = [];
+          const past: any[] = [];
+
+          // Compute display name and role for events
+          const eventAuthorName = healerData?.name || profileData.display_name || profileData.first_name || "Healer";
+          const eventAuthorRole = healerData?.role || "Spiritual Practitioner";
+
+          (events || []).forEach((event: any) => {
+            const eventDate = new Date(event.start_date);
+            const eventData = {
+              eventId: event.id,
+              title: event.title,
+              image: event.image_url || "/src/assets/peaceful-background.jpg",
+              dateRange: { 
+                start: format(eventDate, 'd MMMM yyyy'),
+                end: event.end_date ? format(new Date(event.end_date), 'd MMMM yyyy') : undefined
+              },
+              author: { 
+                id: healerId,
+                name: eventAuthorName,
+                avatar: profileData.avatar_url || "",
+                role: eventAuthorRole,
+                isHealer: true
+              },
+              location: `${event.city || ''}${event.city && event.country ? ', ' : ''}${event.country || ''}`.trim() || 'Location TBD',
+              attendees: enrollmentCountsMap.get(event.id) || 0,
+              tags: event.tags || [],
+              thought: event.description || "",
+              comments: thoughtCountsMap.get(event.id) || 0,
+              isPastEvent: eventDate < now
+            };
+
+            if (eventDate >= now) {
+              upcoming.push(eventData);
+            } else {
+              past.push(eventData);
+            }
+          });
+
+          setUpcomingEvents(upcoming);
+          setPastEvents(past);
+          console.log("Upcoming events:", upcoming.length, "Past events:", past.length);
+        } catch (eventsError) {
+          console.error("Error fetching events:", eventsError);
+          setUpcomingEvents([]);
+          setPastEvents([]);
         }
 
       } catch (error) {
@@ -319,6 +417,71 @@ const HealerProfile = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Upcoming Events */}
+        {upcomingEvents.length > 0 && (
+          <div className="mb-12 mt-12">
+            <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {upcomingEvents.map((event, index) => (
+                  <CommunityEventCard
+                    key={event.eventId}
+                    {...event}
+                    index={index}
+                    isHorizontal={true}
+                    onOpenThoughts={async (eventData) => {
+                      setSelectedPost(eventData);
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={false}
+                    onToggleReshare={() => {
+                      toast.success("Event reshared!");
+                    }}
+                    isSaved={false}
+                    onToggleSave={() => {
+                      toast.success("Saved to your private page!");
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Past Events */}
+        {pastEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Past Events</h2>
+            <div className="relative">
+              <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
+                {pastEvents.map((event, index) => (
+                  <CommunityEventCard
+                    key={event.eventId}
+                    {...event}
+                    index={index}
+                    isHorizontal={true}
+                    isPastEvent={true}
+                    onOpenThoughts={async (eventData) => {
+                      setSelectedPost(eventData);
+                      const thoughts = await getThoughtsByEventId(eventData.eventId);
+                      setThoughtsModalOpen(true);
+                    }}
+                    isReshared={false}
+                    onToggleReshare={() => {
+                      toast.success("Event reshared!");
+                    }}
+                    isSaved={false}
+                    onToggleSave={() => {
+                      toast.success("Saved to your private page!");
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Shares Section */}
         {shares.length > 0 && (
