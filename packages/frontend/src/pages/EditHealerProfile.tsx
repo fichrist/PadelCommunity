@@ -19,12 +19,12 @@ const EditHealerProfile = () => {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState("");
   const [availableTags, setAvailableTags] = useState<{ id: string; name: string }[]>([]);
-  const [specialtiesOpen, setSpecialtiesOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
   
   // Form state
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
-  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [company, setCompany] = useState("");
   const [bio, setBio] = useState("");
   const [fullBio, setFullBio] = useState("");
@@ -45,13 +45,13 @@ const EditHealerProfile = () => {
       setUserId(user.id);
 
       // Fetch all tags from database
-      const { data: tags } = await (supabase as any)
+      const { data: tagsData } = await (supabase as any)
         .from('tags')
         .select('id, name')
         .order('name');
       
-      if (tags) {
-        setAvailableTags(tags as any);
+      if (tagsData) {
+        setAvailableTags(tagsData as any);
       }
 
       // Get profile for default name
@@ -70,7 +70,7 @@ const EditHealerProfile = () => {
       if (healerProfile) {
         setName(healerProfile.name || name);
         setRole(healerProfile.role || "");
-        setSpecialties(healerProfile.specialties || []);
+        setTags(healerProfile.tags || []);
         setCompany(healerProfile.company || "");
         setBio(healerProfile.bio || "");
         setFullBio(healerProfile.full_bio || "");
@@ -85,11 +85,11 @@ const EditHealerProfile = () => {
     fetchData();
   }, []);
 
-  const toggleSpecialty = (specialty: string) => {
-    if (specialties.includes(specialty)) {
-      setSpecialties(specialties.filter(s => s !== specialty));
+  const toggleTag = (tag: string) => {
+    if (tags.includes(tag)) {
+      setTags(tags.filter(t => t !== tag));
     } else {
-      setSpecialties([...specialties, specialty]);
+      setTags([...tags, tag]);
     }
   };
 
@@ -113,7 +113,7 @@ const EditHealerProfile = () => {
         user_id: userId,
         name: name.trim(),
         role: role.trim(),
-        specialties,
+        tags,
         company: company.trim() || null,
         bio: bio.trim(),
         full_bio: fullBio.trim(),
@@ -184,41 +184,41 @@ const EditHealerProfile = () => {
               />
             </div>
 
-            {/* Specialties */}
+            {/* Tags */}
             <div className="space-y-2">
-              <Label>Specialties</Label>
-              <Popover open={specialtiesOpen} onOpenChange={setSpecialtiesOpen}>
+              <Label>Tags</Label>
+              <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
-                    aria-expanded={specialtiesOpen}
+                    aria-expanded={tagsOpen}
                     className="w-full justify-between"
                   >
-                    {specialties.length > 0
-                      ? `${specialties.length} selected`
-                      : "Select specialties..."}
+                    {tags.length > 0
+                      ? `${tags.length} selected`
+                      : "Select tags..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search specialties..." />
+                    <CommandInput placeholder="Search tags..." />
                     <CommandList>
-                      <CommandEmpty>No specialty found.</CommandEmpty>
+                      <CommandEmpty>No tag found.</CommandEmpty>
                       <CommandGroup>
                         {availableTags.map((tag) => (
                           <CommandItem
                             key={tag.id}
                             value={tag.name}
                             onSelect={() => {
-                              toggleSpecialty(tag.name);
+                              toggleTag(tag.name);
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                specialties.includes(tag.name) ? "opacity-100" : "opacity-0"
+                                tags.includes(tag.name) ? "opacity-100" : "opacity-0"
                               )}
                             />
                             {tag.name}
@@ -230,17 +230,17 @@ const EditHealerProfile = () => {
                 </PopoverContent>
               </Popover>
               
-              {/* Display selected specialties as badges */}
-              {specialties.length > 0 && (
+              {/* Display selected tags as badges */}
+              {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {specialties.map((specialty) => (
+                  {tags.map((tag) => (
                     <Badge
-                      key={specialty}
+                      key={tag}
                       variant="default"
                       className="cursor-pointer"
-                      onClick={() => toggleSpecialty(specialty)}
+                      onClick={() => toggleTag(tag)}
                     >
-                      {specialty}
+                      {tag}
                       <X className="ml-1 h-3 w-3" />
                     </Badge>
                   ))}
@@ -248,7 +248,7 @@ const EditHealerProfile = () => {
               )}
               
               <p className="text-sm text-muted-foreground">
-                {specialties.length} specialt{specialties.length === 1 ? 'y' : 'ies'} selected
+                {tags.length} tag{tags.length === 1 ? '' : 's'} selected
               </p>
             </div>
 

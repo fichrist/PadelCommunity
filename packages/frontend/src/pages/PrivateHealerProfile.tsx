@@ -299,7 +299,7 @@ const PrivateHealerProfile = () => {
   const role = healerProfile?.role || "Spiritual Practitioner";
   const bio = healerProfile?.bio || "A dedicated healer committed to helping others on their spiritual journey.";
   const fullBio = healerProfile?.full_bio || bio;
-  const specialties = healerProfile?.specialties || [];
+  const tags = healerProfile?.tags || [];
   const videoUrl = healerProfile?.video;
   const location = formatAddressForDisplay(userAddress);
 
@@ -470,12 +470,12 @@ const PrivateHealerProfile = () => {
                 {bio}
               </p>
               
-              {specialties.length > 0 && (
+              {tags.length > 0 && (
                 <div className="mb-8">
                   <div className="flex flex-wrap gap-2">
-                    {specialties.map((specialty: string, index: number) => (
+                    {tags.map((tag: string, index: number) => (
                       <Badge key={index} variant="secondary">
-                        {specialty}
+                        {tag}
                       </Badge>
                     ))}
                   </div>

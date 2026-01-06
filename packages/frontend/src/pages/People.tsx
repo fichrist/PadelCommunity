@@ -8,12 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Bell } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Import centralized data
-import { healers as healersData } from "@/data/healers";
-import { users as usersData } from "@/data/users";
+import { supabase } from "@/lib/supabase";
+import { elenaProfile } from "@/data/healers";
 
 const People = () => {
   const [filter, setFilter] = useState("healers");
@@ -21,33 +19,102 @@ const People = () => {
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [followedUsers, setFollowedUsers] = useState<number[]>([0, 2]); // Example: following first and third healers
+  const [followedUsers, setFollowedUsers] = useState<string[]>([]); // Store user IDs
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
-  const [userToUnfollow, setUserToUnfollow] = useState<number | null>(null);
+  const [userToUnfollow, setUserToUnfollow] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [selectedIcons, setSelectedIcons] = useState<Record<number, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
+  const [selectedIcons, setSelectedIcons] = useState<Record<string, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
+  const [people, setPeople] = useState<any[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  // Use centralized data
-  const healers = [...healersData, ...usersData];
-  const simpleUsers = usersData.slice(4, 9); // Get last 5 users for simple users list
+  // Fetch people from database
+  useEffect(() => {
+    const fetchPeople = async () => {
+      // Fetch all profiles
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*');
 
-  const allUsers = healers;
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        return;
+      }
 
-  // Mock contact list - users in your contact list
-  const contactUsers = [0, 2, 6, 8]; // indices of users who are in contact list
+      if (!profiles) return;
 
-  const filteredHealers = filter === "healers" ? healers.filter(person => person.isHealer) : 
-    filter === "following" ? [...healers.filter((_, index) => followedUsers.includes(index)), ...simpleUsers.slice(0, 3)] :
-    filter === "followers" ? [...healers.filter(healer => healer.followers > 1000), ...simpleUsers] :
-    filter === "contacts" ? [...healers.filter((_, index) => contactUsers.includes(index)), ...simpleUsers.filter((_, index) => contactUsers.includes(healers.length + index))] :
-    healers;
+      // Get IDs of healers
+      const healerIds = profiles.filter(p => p.is_healer).map(p => p.id);
+
+      // Fetch healer profiles for healers
+      const { data: healerProfiles } = await supabase
+        .from('healer_profiles')
+        .select('*')
+        .in('user_id', healerIds);
+
+      // Create a map of user_id to healer profile
+      const healerProfileMap = new Map();
+      (healerProfiles || []).forEach((hp: any) => {
+        healerProfileMap.set(hp.user_id, hp);
+      });
+
+      // Extract all tags
+      const tagsSet = new Set<string>();
+      (healerProfiles || []).forEach((hp: any) => {
+        (hp.tags || []).forEach((tag: string) => tagsSet.add(tag));
+      });
+      setAllTags(Array.from(tagsSet).sort());
+
+      // Format people data
+      const formattedPeople = profiles.map((profile: any) => {
+        const healerProfile = healerProfileMap.get(profile.id);
+        const name = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
+        const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location not set';
+
+        return {
+          id: profile.id,
+          name,
+          role: healerProfile?.specialization || 'Member',
+          bio: healerProfile?.bio || profile.bio || '',
+          avatar: profile.avatar_url || elenaProfile,
+          location,
+          isHealer: profile.is_healer || false,
+          tags: healerProfile?.tags || [],
+          followers: 0, // Set to 0 as requested
+          isOnline: false // Could be enhanced later
+        };
+      });
+
+      setPeople(formattedPeople);
+    };
+
+    fetchPeople();
+  }, []);
+
+  // Mock contact list - users in your contact list (you can enhance this later)
+  const contactUserIds: string[] = [];
+
+  // Filter people
+  const filteredPeople = people.filter(person => {
+    if (filter === "healers") return person.isHealer;
+    if (filter === "following") return followedUsers.includes(person.id);
+    if (filter === "followers") return false; // Could be enhanced
+    if (filter === "contacts") return contactUserIds.includes(person.id);
+    return true;
+  });
+
+  // Apply tag filtering
+  const tagFilteredPeople = selectedTags.length > 0
+    ? filteredPeople.filter(person => 
+        selectedTags.some(tag => person.tags.includes(tag))
+      )
+    : filteredPeople;
 
   // Sort users based on selected sort option
-  const sortedUsers = [...filteredHealers].sort((a, b) => {
+  const sortedUsers = [...tagFilteredPeople].sort((a, b) => {
     let comparison = 0;
     if (sortBy === "alphabetical") {
       comparison = a.name.localeCompare(b.name);
@@ -56,16 +123,6 @@ const People = () => {
     }
     return sortOrder === "asc" ? comparison : -comparison;
   });
-
-  const searchResults = searchQuery.length >= 3 
-    ? allUsers.filter(user => 
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.location.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
-    : [];
-
-  const allTags = [...new Set(healersData.flatMap(healer => healer.tags))];
 
   return (
     <TooltipProvider>
@@ -319,38 +376,38 @@ const People = () => {
             {/* Main Content - People Grid */}
             <div className="lg:col-span-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedUsers.map((healer, index) => (
-                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
-                    onClick={() => navigate(`/healer/${index + 1}`)}
+                {sortedUsers.map((person) => (
+                  <Card key={person.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
+                    onClick={() => navigate(`/profile/${person.id}`)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start space-x-3">
                         <div className="relative">
                           <Avatar className="h-16 w-16">
-                            <AvatarImage src={healer.avatar} />
+                            <AvatarImage src={person.avatar} />
                             <AvatarFallback className="text-lg bg-primary/10">
-                              {healer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              {person.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>
-                          {healer.isOnline && (
+                          {person.isOnline && (
                             <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-semibold group-hover:text-primary transition-colors truncate">
-                            {healer.name}
+                            {person.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground truncate">{healer.role}</p>
+                          <p className="text-sm text-muted-foreground truncate">{person.role}</p>
                           <div className="flex items-center space-x-2 mt-1">
                             <div className="flex items-center space-x-1">
                               <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground truncate">{healer.location}</span>
+                              <span className="text-xs text-muted-foreground truncate">{person.location}</span>
                             </div>
                           </div>
                         </div>
                         <div className="relative flex items-center space-x-2">
-                           {followedUsers.includes(index) ? (
-                             <AlertDialog open={unfollowDialogOpen && userToUnfollow === index} onOpenChange={setUnfollowDialogOpen}>
+                           {followedUsers.includes(person.id) ? (
+                             <AlertDialog open={unfollowDialogOpen && userToUnfollow === person.id} onOpenChange={setUnfollowDialogOpen}>
                                <AlertDialogTrigger asChild>
                                  <Tooltip>
                                    <TooltipTrigger asChild>
@@ -360,7 +417,7 @@ const People = () => {
                                        className="p-2 h-auto hover:bg-red-50"
                                        onClick={(e) => {
                                          e.stopPropagation();
-                                         setUserToUnfollow(index);
+                                         setUserToUnfollow(person.id);
                                          setUnfollowDialogOpen(true);
                                        }}
                                      >
@@ -368,32 +425,30 @@ const People = () => {
                                      </Button>
                                    </TooltipTrigger>
                                    <TooltipContent>
-                                     <p>Follow</p>
+                                     <p>Unfollow</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Unfollow {healer.name}?</AlertDialogTitle>
+                                  <AlertDialogTitle>Unfollow {person.name}?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to unfollow {healer.name}? You will no longer see their updates in your feed.
+                                    Are you sure you want to unfollow {person.name}? You will no longer see their updates in your feed.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel onClick={() => {
                                     setUnfollowDialogOpen(false);
-                                    navigate('/people');
                                   }}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction 
                                      onClick={() => {
-                                       setFollowedUsers(prev => prev.filter(id => id !== index));
+                                       setFollowedUsers(prev => prev.filter(id => id !== person.id));
                                         setSelectedIcons(prev => ({
                                           ...prev,
-                                          [index]: { calendar: false, info: false, block: false, notification: false }
+                                          [person.id]: { calendar: false, info: false, block: false, notification: false }
                                         }));
                                        setUnfollowDialogOpen(false);
                                        setUserToUnfollow(null);
-                                       navigate('/people');
                                      }}
                                     className="bg-red-500 hover:bg-red-600"
                                   >
@@ -411,7 +466,7 @@ const People = () => {
                                    className="p-2 h-auto hover:bg-red-50"
                                    onClick={(e) => {
                                      e.stopPropagation();
-                                     setFollowedUsers(prev => [...prev, index]);
+                                     setFollowedUsers(prev => [...prev, person.id]);
                                    }}
                                  >
                                    <Heart className="h-4 w-4 text-red-500" />
@@ -432,15 +487,15 @@ const People = () => {
                                   e.stopPropagation();
                                   setSelectedIcons(prev => ({
                                     ...prev,
-                                    [index]: {
-                                      ...prev[index],
-                                      notification: !prev[index]?.notification
+                                    [person.id]: {
+                                      ...prev[person.id],
+                                      notification: !prev[person.id]?.notification
                                     }
                                   }));
                                 }}
                               >
                                 <Bell className={`h-4 w-4 transition-colors ${
-                                  selectedIcons[index]?.notification 
+                                  selectedIcons[person.id]?.notification 
                                     ? 'text-blue-500 fill-blue-500' 
                                     : 'text-muted-foreground hover:text-primary'
                                 }`} />
@@ -455,13 +510,13 @@ const People = () => {
                     </CardHeader>
                     
                     <CardContent className="flex flex-col h-full space-y-3">
-                      {/* Only show bio and specialties for healers */}
-                      {healer.isHealer !== false && (
+                      {/* Only show bio and tags for healers */}
+                      {person.isHealer && (
                         <>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{healer.bio}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
                           
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {healer.tags.slice(0, 3).map((tag, idx) => (
+                            {person.tags.slice(0, 3).map((tag: string, idx: number) => (
                               <Badge 
                                 key={idx} 
                                 variant="secondary" 
@@ -474,26 +529,13 @@ const People = () => {
                         </>
                       )}
                       
-                      {/* Bottom section with reviews and followers */}
+                      {/* Bottom section - Followers only */}
                       <div className="mt-auto space-y-2">
-                        {/* Reviews - only show for healers */}
-                        {healer.isHealer !== false && (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2 cursor-pointer hover:text-primary transition-colors">
-                              <div className="flex items-center space-x-1">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs text-muted-foreground">{healer.rating}</span>
-                                <span className="text-xs text-muted-foreground">({healer.reviews} reviews)</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
                         {/* Followers */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{healer.followers} followers</span>
+                            <span className="text-sm text-muted-foreground">{person.followers} followers</span>
                           </div>
                           
                           {/* Bottom right block icon */}
@@ -508,22 +550,22 @@ const People = () => {
                                     e.stopPropagation();
                                     setSelectedIcons(prev => ({
                                       ...prev,
-                                      [index]: {
-                                        ...prev[index],
-                                        block: !prev[index]?.block
+                                      [person.id]: {
+                                        ...prev[person.id],
+                                        block: !prev[person.id]?.block
                                       }
                                     }));
                                   }}
                                 >
                                   <Ban className={`h-4 w-4 transition-colors ${
-                                    selectedIcons[index]?.block 
+                                    selectedIcons[person.id]?.block 
                                       ? 'text-red-500 fill-red-500' 
                                       : 'text-muted-foreground hover:text-primary'
                                   }`} />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{selectedIcons[index]?.block ? 'Unblock' : 'Block'}</p>
+                                <p>{selectedIcons[person.id]?.block ? 'Unblock' : 'Block'}</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>

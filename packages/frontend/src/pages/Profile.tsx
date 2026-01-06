@@ -84,7 +84,7 @@ const Profile = () => {
           // Fetch healer profile data
           const { data: healerProfilesData } = await (supabase as any)
             .from('healer_profiles')
-            .select('user_id, specialties, tagline, role')
+            .select('user_id, tags, tagline, role')
             .in('user_id', healerIds);
           
           // Create a map of healer profile data
@@ -99,7 +99,7 @@ const Profile = () => {
               ...profile,
               role: healerProfile?.role || null,
               tagline: healerProfile?.tagline || profile.bio,
-              specialties: healerProfile?.specialties || []
+              tags: healerProfile?.tags || []
             };
           });
         }
