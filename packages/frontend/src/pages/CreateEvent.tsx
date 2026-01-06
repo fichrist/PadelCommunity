@@ -16,6 +16,7 @@ import elenaProfile from "@/assets/elena-profile.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { createEvent, updateEvent, getEventById } from "@/lib/events";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,10 +35,12 @@ const CreateEvent = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [fullDescription, setFullDescription] = useState("");
-  const [street, setStreet] = useState("");
+  const [streetName, setStreetName] = useState("");
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("");
+  const [locationAddress, setLocationAddress] = useState("");
+  const [selectedPlaceData, setSelectedPlaceData] = useState<any>(null);
   const [date, setDate] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [time, setTime] = useState("");
@@ -77,10 +80,7 @@ const CreateEvent = () => {
           setTitle(dbEvent.title || "");
           setDescription(dbEvent.description || "");
           setFullDescription(dbEvent.full_description || "");
-          setStreet(dbEvent.street || "");
-          setCity(dbEvent.city || "");
-          setPostalCode(dbEvent.postal_code || "");
-          setCountry(dbEvent.country || "");
+          setLocationAddress(dbEvent.formatted_address || "");
           setDate(dbEvent.start_date ? new Date(dbEvent.start_date) : undefined);
           setDateTo(dbEvent.end_date ? new Date(dbEvent.end_date) : undefined);
           setTime(dbEvent.time || "");
@@ -197,20 +197,22 @@ const CreateEvent = () => {
     }
   };
 
+  const handlePlaceSelected = (place: any) => {
+    console.log("Place selected:", place);
+    setSelectedPlaceData(place);
+  };
+
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim() || !city.trim() || !date) {
+    if (!title.trim() || !description.trim() || !locationAddress.trim() || !date) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    const eventData = {
+    // Prepare event data
+    const eventData: any = {
       title: title.trim(),
       description: description.trim(),
       full_description: fullDescription.trim(),
-      street: street.trim() || undefined,
-      city: city.trim(),
-      postal_code: postalCode.trim() || undefined,
-      country: country.trim() || undefined,
       start_date: date ? format(date, 'yyyy-MM-dd') : undefined,
       end_date: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
       time: time.trim() || undefined,
@@ -220,6 +222,45 @@ const CreateEvent = () => {
       image_url: eventImage || undefined,
       video_url: eventVideo || undefined
     };
+
+    // If a place was selected, parse and add location fields
+    if (selectedPlaceData) {
+      console.log("Saving address from selectedPlaceData:", selectedPlaceData);
+      
+      // Add formatted address and place_id
+      eventData.formatted_address = selectedPlaceData.formatted_address;
+      eventData.place_id = selectedPlaceData.place_id;
+      
+      // Extract coordinates
+      if (selectedPlaceData.geometry?.location) {
+        eventData.latitude = typeof selectedPlaceData.geometry.location.lat === 'function' 
+          ? selectedPlaceData.geometry.location.lat() 
+          : selectedPlaceData.geometry.location.lat;
+        eventData.longitude = typeof selectedPlaceData.geometry.location.lng === 'function'
+          ? selectedPlaceData.geometry.location.lng()
+          : selectedPlaceData.geometry.location.lng;
+      }
+      
+      // Parse address components
+      if (selectedPlaceData.address_components) {
+        selectedPlaceData.address_components.forEach((component: any) => {
+          const types = component.types;
+          
+          if (types.includes('route')) {
+            eventData.street_name = component.long_name;
+          }
+          if (types.includes('locality')) {
+            eventData.city = component.long_name;
+          }
+          if (types.includes('postal_code')) {
+            eventData.postal_code = component.long_name;
+          }
+          if (types.includes('country')) {
+            eventData.country = component.long_name;
+          }
+        });
+      }
+    }
 
     try {
       if (isEditMode && eventId) {
@@ -316,51 +357,17 @@ const CreateEvent = () => {
                 </div>
                 
                 <div className="md:col-span-2">
-                  <Label>Location *</Label>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="street" className="text-sm">Street</Label>
-                      <Input
-                        id="street"
-                        placeholder="Street address..."
-                        value={street}
-                        onChange={(e) => setStreet(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="city" className="text-sm">City *</Label>
-                        <Input
-                          id="city"
-                          placeholder="City..."
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="bg-background/50"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="postalCode" className="text-sm">Postal Code</Label>
-                        <Input
-                          id="postalCode"
-                          placeholder="Postal code..."
-                          value={postalCode}
-                          onChange={(e) => setPostalCode(e.target.value)}
-                          className="bg-background/50"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="country" className="text-sm">Country</Label>
-                      <Input
-                        id="country"
-                        placeholder="Country..."
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-                  </div>
+                  <Label htmlFor="location">Location *</Label>
+                  <LocationAutocomplete
+                    value={locationAddress}
+                    onChange={setLocationAddress}
+                    onPlaceSelected={handlePlaceSelected}
+                    placeholder="Start typing event address..."
+                    className="bg-background/50"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select from suggestions to automatically save location details
+                  </p>
                 </div>
                 
                 <div>

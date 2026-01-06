@@ -10,12 +10,14 @@ import CommunityEventCard from "@/components/CommunityEventCard";
 import CommunityShareCard from "@/components/CommunityShareCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import { getThoughtsByEventId, getThoughtsByPostId } from "@/lib/thoughts";
+import { getUserAddress, formatAddressForDisplay } from "@/lib/addresses";
 import { format } from "date-fns";
 
 const Profile = () => {
   const { userId } = useParams();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [userAddress, setUserAddress] = useState<any>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [shares, setShares] = useState<any[]>([]);
@@ -51,6 +53,10 @@ const Profile = () => {
 
         if (profileError) throw profileError;
         setProfile(profileData);
+
+        // Fetch user's address from addresses table
+        const address = await getUserAddress(profileUserId);
+        setUserAddress(address);
 
         // Fetch enrolled events with event details
         const { data: enrollments, error: enrollmentsError } = await (supabase as any)
@@ -229,7 +235,7 @@ const Profile = () => {
   }
 
   const displayName = profile.display_name || profile.first_name || "User";
-  const location = [profile.city, profile.country].filter(Boolean).join(', ') || "Location not set";
+  const location = formatAddressForDisplay(userAddress);
 
   return (
     <>

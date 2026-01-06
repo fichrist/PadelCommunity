@@ -13,10 +13,14 @@ export interface Profile {
   display_name: string | null;
   phone_number: string | null;
   avatar_url: string | null;
-  street: string | null;
+  place_id: string | null;
+  street_name: string | null;
   city: string | null;
   postal_code: string | null;
   country: string | null;
+  formatted_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_healer: boolean;
   bio: string | null;
   created_at: string;
@@ -233,14 +237,14 @@ export async function getHealers(): Promise<Profile[]> {
 }
 
 /**
- * Search profiles by name or location
+ * Search profiles by name
  */
 export async function searchProfiles(query: string): Promise<Profile[]> {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .or(`display_name.ilike.%${query}%,city.ilike.%${query}%,country.ilike.%${query}%`)
+      .or(`display_name.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
       .limit(20);
 
     if (error) {

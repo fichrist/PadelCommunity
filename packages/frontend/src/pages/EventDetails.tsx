@@ -53,6 +53,7 @@ const EventDetails = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [organizer, setOrganizer] = useState<any>(null);
+  const [organizerAddress, setOrganizerAddress] = useState<any>(null);
   const [attendees, setAttendees] = useState<any[]>([]);
   const [thoughtsModalOpen, setThoughtsModalOpen] = useState(false);
   const [loadedThoughts, setLoadedThoughts] = useState<any[]>([]);
@@ -144,11 +145,7 @@ const EventDetails = () => {
           title: dbEvent.title,
           description: dbEvent.description,
           fullDescription: dbEvent.full_description || dbEvent.description,
-          street: dbEvent.street,
-          city: dbEvent.city,
-          postal_code: dbEvent.postal_code,
-          country: dbEvent.country,
-          location: [dbEvent.street, dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
+          location: dbEvent.formatted_address || 'Location TBD',
           date: dbEvent.end_date 
             ? `${format(new Date(dbEvent.start_date), 'd MMMM yyyy')} - ${format(new Date(dbEvent.end_date), 'd MMMM yyyy')}` 
             : format(new Date(dbEvent.start_date), 'd MMMM yyyy'),
@@ -201,7 +198,9 @@ const EventDetails = () => {
         const fullName = profile.display_name || 
                         `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 
                         'Event Organizer';
-        const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location TBD';
+        
+        // Get location from profile fields
+        const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location not set';
         
         setOrganizer({
           id: profile.id,
@@ -222,10 +221,10 @@ const EventDetails = () => {
         // Get user IDs from enrollments
         const userIds = enrollments.map((e: any) => e.user_id);
         
-        // Fetch profiles for these users
+        // Fetch profiles for these users (including location fields)
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, display_name, first_name, last_name, avatar_url, city, country, is_healer')
+          .select('id, display_name, first_name, last_name, avatar_url, is_healer, city, country')
           .in('id', userIds);
         
         // Create a map of user_id to profile
@@ -254,6 +253,7 @@ const EventDetails = () => {
             const fullName = profile?.display_name || 
                             `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
                             'Anonymous User';
+            // Get location from profile fields
             const location = [profile?.city, profile?.country].filter(Boolean).join(', ') || '';
             
             return {

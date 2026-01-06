@@ -4,10 +4,14 @@ export interface EventData {
   title: string;
   description: string;
   full_description?: string;
-  city: string;
-  street?: string;
+  city?: string;
+  street_name?: string;
   postal_code?: string;
   country?: string;
+  formatted_address?: string;
+  place_id?: string;
+  latitude?: number;
+  longitude?: number;
   start_date: string;
   end_date?: string;
   time?: string;
@@ -34,10 +38,14 @@ export const createEvent = async (eventData: EventData) => {
         title: eventData.title,
         description: eventData.description,
         full_description: eventData.full_description || null,
-        city: eventData.city,
-        street: eventData.street || null,
+        city: eventData.city || null,
+        street_name: eventData.street_name || null,
         postal_code: eventData.postal_code || null,
         country: eventData.country || null,
+        formatted_address: eventData.formatted_address || null,
+        place_id: eventData.place_id || null,
+        latitude: eventData.latitude || null,
+        longitude: eventData.longitude || null,
         start_date: eventData.start_date,
         end_date: eventData.end_date || null,
         time: eventData.time || null,
@@ -71,9 +79,13 @@ export const updateEvent = async (eventId: string, eventData: Partial<EventData>
         description: eventData.description,
         full_description: eventData.full_description,
         city: eventData.city,
-        street: eventData.street,
+        street_name: eventData.street_name,
         postal_code: eventData.postal_code,
         country: eventData.country,
+        formatted_address: eventData.formatted_address,
+        place_id: eventData.place_id,
+        latitude: eventData.latitude,
+        longitude: eventData.longitude,
         start_date: eventData.start_date,
         end_date: eventData.end_date,
         time: eventData.time,

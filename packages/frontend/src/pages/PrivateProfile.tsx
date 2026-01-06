@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CommunityShareCard from "@/components/CommunityShareCard";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import { getThoughtsByEventId } from "@/lib/thoughts";
+import { getCurrentUserAddress, formatAddressForDisplay } from "@/lib/addresses";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +18,7 @@ const PrivateProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [userAddress, setUserAddress] = useState<any>(null);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [shares, setShares] = useState<any[]>([]);
   
@@ -52,6 +54,10 @@ const PrivateProfile = () => {
 
         if (profileError) throw profileError;
         setProfile(profileData);
+
+        // Fetch user's address from addresses table
+        const address = await getCurrentUserAddress();
+        setUserAddress(address);
 
         // Fetch enrolled events with event details
         const { data: enrollmentsData, error: enrollmentsError } = await (supabase as any)
@@ -232,7 +238,7 @@ const PrivateProfile = () => {
   }
 
   const displayName = profile.display_name || profile.first_name || "User";
-  const location = [profile.city, profile.country].filter(Boolean).join(', ') || "Location not set";
+  const location = formatAddressForDisplay(userAddress);
 
   const upcomingEnrollments = enrollments.filter(e => !e.isPast);
   const pastEnrollments = enrollments.filter(e => e.isPast);

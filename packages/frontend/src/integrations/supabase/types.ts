@@ -14,6 +14,193 @@ export type Database = {
   }
   public: {
     Tables: {
+      enrollments: {
+        Row: {
+          allow_visible: boolean | null
+          created_at: string
+          enrollment_date: string
+          event_id: string
+          id: string
+          remarks: string | null
+          selected_add_ons: Json | null
+          selected_price_option: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_visible?: boolean | null
+          created_at?: string
+          enrollment_date?: string
+          event_id: string
+          id?: string
+          remarks?: string | null
+          selected_add_ons?: Json | null
+          selected_price_option: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_visible?: boolean | null
+          created_at?: string
+          enrollment_date?: string
+          event_id?: string
+          id?: string
+          remarks?: string | null
+          selected_add_ons?: Json | null
+          selected_price_option?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          additional_options: Json | null
+          city: string | null
+          country: string | null
+          created_at: string
+          description: string
+          end_date: string | null
+          formatted_address: string | null
+          full_description: string | null
+          id: string
+          image_url: string | null
+          latitude: number | null
+          longitude: number | null
+          place_id: string | null
+          postal_code: string | null
+          prices: Json | null
+          start_date: string
+          street_name: string | null
+          tags: string[] | null
+          time: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          additional_options?: Json | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description: string
+          end_date?: string | null
+          formatted_address?: string | null
+          full_description?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
+          postal_code?: string | null
+          prices?: Json | null
+          start_date: string
+          street_name?: string | null
+          tags?: string[] | null
+          time?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          additional_options?: Json | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          formatted_address?: string | null
+          full_description?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
+          postal_code?: string | null
+          prices?: Json | null
+          start_date?: string
+          street_name?: string | null
+          tags?: string[] | null
+          time?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      healer_profiles: {
+        Row: {
+          bio: string | null
+          company: string | null
+          created_at: string | null
+          email: string | null
+          facebook: string | null
+          full_bio: string | null
+          instagram: string | null
+          phone_number: string | null
+          rating: number | null
+          role: string | null
+          specialties: string[] | null
+          updated_at: string | null
+          user_id: string
+          video: string | null
+        }
+        Insert: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          facebook?: string | null
+          full_bio?: string | null
+          instagram?: string | null
+          phone_number?: string | null
+          rating?: number | null
+          role?: string | null
+          specialties?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          video?: string | null
+        }
+        Update: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          facebook?: string | null
+          full_bio?: string | null
+          instagram?: string | null
+          phone_number?: string | null
+          rating?: number | null
+          role?: string | null
+          specialties?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          video?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "healer_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           content: string
@@ -62,12 +249,16 @@ export type Database = {
           created_at: string
           display_name: string | null
           first_name: string | null
+          formatted_address: string | null
           id: string
           is_healer: boolean | null
           last_name: string | null
+          latitude: number | null
+          longitude: number | null
           phone_number: string | null
+          place_id: string | null
           postal_code: string | null
-          street: string | null
+          street_name: string | null
           updated_at: string
         }
         Insert: {
@@ -78,12 +269,16 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          formatted_address?: string | null
           id: string
           is_healer?: boolean | null
           last_name?: string | null
+          latitude?: number | null
+          longitude?: number | null
           phone_number?: string | null
+          place_id?: string | null
           postal_code?: string | null
-          street?: string | null
+          street_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -94,13 +289,38 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          formatted_address?: string | null
           id?: string
           is_healer?: boolean | null
           last_name?: string | null
+          latitude?: number | null
+          longitude?: number | null
           phone_number?: string | null
+          place_id?: string | null
           postal_code?: string | null
-          street?: string | null
+          street_name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -108,28 +328,51 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          event_id: string | null
+          healer_profile_id: string | null
           id: string
-          post_id: string
+          parent_thought_id: string | null
+          post_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          event_id?: string | null
+          healer_profile_id?: string | null
           id?: string
-          post_id: string
+          parent_thought_id?: string | null
+          post_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          event_id?: string | null
+          healer_profile_id?: string | null
           id?: string
-          post_id?: string
+          parent_thought_id?: string | null
+          post_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "thoughts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thoughts_parent_thought_id_fkey"
+            columns: ["parent_thought_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "thoughts_post_id_fkey"
             columns: ["post_id"]

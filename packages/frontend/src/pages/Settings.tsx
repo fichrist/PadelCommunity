@@ -31,6 +31,7 @@ const Settings = () => {
   const [country, setCountry] = useState("");
   const [isHealer, setIsHealer] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [selectedPlaceData, setSelectedPlaceData] = useState<any>(null);
 
   useEffect(() => {
     fetchUserData();
@@ -50,12 +51,13 @@ const Settings = () => {
           setFirstName(profile.first_name || "");
           setLastName(profile.last_name || "");
           setPhoneNumber(profile.phone_number || "");
-          setStreet(profile.street || "");
-          setCity(profile.city || "");
-          setPostalCode(profile.postal_code || "");
-          setCountry(profile.country || "");
           setIsHealer(profile.is_healer || false);
           setAvatarUrl(profile.avatar_url || "");
+          // Get address from profile fields
+          setCountry(profile.formatted_address || "");
+          setCity(profile.city || "");
+          setStreet(profile.street_name || "");
+          setPostalCode(profile.postal_code || "");
         }
       }
     } catch (error) {
@@ -122,22 +124,67 @@ const Settings = () => {
     }
   };
 
+  const handlePlaceSelected = (place: any) => {
+    console.log("Place selected:", place);
+    // Store the place data in state - will be saved when user clicks "Save Changes"
+    setSelectedPlaceData(place);
+    console.log("Place data stored in state");
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Update profile in profiles table
-      const success = await updateProfile({
+      // Prepare update data
+      const updates: any = {
         first_name: firstName,
         last_name: lastName,
         phone_number: phoneNumber,
-        street: street,
-        city: city,
-        postal_code: postalCode,
-        country: country,
         is_healer: isHealer,
-      });
+      };
 
-      if (!success) {
+      // If a place was selected, parse and add location fields
+      if (selectedPlaceData) {
+        console.log("Saving address from selectedPlaceData:", selectedPlaceData);
+        
+        // Parse address components
+        updates.formatted_address = selectedPlaceData.formatted_address;
+        updates.place_id = selectedPlaceData.place_id;
+        
+        // Extract coordinates
+        if (selectedPlaceData.geometry?.location) {
+          updates.latitude = typeof selectedPlaceData.geometry.location.lat === 'function' 
+            ? selectedPlaceData.geometry.location.lat() 
+            : selectedPlaceData.geometry.location.lat;
+          updates.longitude = typeof selectedPlaceData.geometry.location.lng === 'function'
+            ? selectedPlaceData.geometry.location.lng()
+            : selectedPlaceData.geometry.location.lng;
+        }
+        
+        // Parse address components
+        if (selectedPlaceData.address_components) {
+          selectedPlaceData.address_components.forEach((component: any) => {
+            const types = component.types;
+            
+            if (types.includes('route')) {
+              updates.street_name = component.long_name;
+            }
+            if (types.includes('locality')) {
+              updates.city = component.long_name;
+            }
+            if (types.includes('postal_code')) {
+              updates.postal_code = component.long_name;
+            }
+            if (types.includes('country')) {
+              updates.country = component.long_name;
+            }
+          });
+        }
+      }
+
+      // Update profile with all data
+      const profileSuccess = await updateProfile(updates);
+
+      if (!profileSuccess) {
         throw new Error("Failed to update profile");
       }
 
@@ -289,50 +336,17 @@ const Settings = () => {
                   <h3 className="text-sm font-semibold">Address</h3>
                   
                   <div>
-                    <Label htmlFor="street">Street Address</Label>
+                    <Label htmlFor="country">Address</Label>
                     <LocationAutocomplete
-                      value={street}
-                      onChange={setStreet}
-                      placeholder="Start typing your street address..."
+                      value={country}
+                      onChange={setCountry}
+                      onPlaceSelected={handlePlaceSelected}
+                      placeholder="Start typing your address..."
                       className="bg-background/50"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Start typing and select from suggestions for accurate address
+                      Select from suggestions, then click "Save Changes" to save your address
                     </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input 
-                        id="city" 
-                        placeholder="City" 
-                        className="bg-background/50"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="postalCode">Postal Code</Label>
-                      <Input 
-                        id="postalCode" 
-                        placeholder="Postal/ZIP code" 
-                        className="bg-background/50"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input 
-                      id="country" 
-                      placeholder="Country" 
-                      className="bg-background/50"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                    />
                   </div>
                 </div>
 

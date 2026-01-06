@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, MapPin, Star, Play, MessageCircle, Heart, Phone, Mail, Facebook, Instagram, Edit, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUserAddress, formatAddressForDisplay } from "@/lib/addresses";
 import { getPostsWithDetails } from "@/lib/posts";
 import { getThoughtsByHealerProfileId, getThoughtsByEventId } from "@/lib/thoughts";
 import CommunityShareCard from "@/components/CommunityShareCard";
@@ -20,6 +21,7 @@ const PrivateHealerProfile = () => {
   
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [userAddress, setUserAddress] = useState<any>(null);
   const [healerProfile, setHealerProfile] = useState<any>(null);
   const [shares, setShares] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -77,6 +79,10 @@ const PrivateHealerProfile = () => {
         }
         
         setProfile(profileData);
+
+        // Fetch user's address from addresses table
+        const address = await getCurrentUserAddress();
+        setUserAddress(address);
 
         // Fetch healer profile data
         console.log("Fetching healer profile...");
@@ -295,9 +301,7 @@ const PrivateHealerProfile = () => {
   const fullBio = healerProfile?.full_bio || bio;
   const specialties = healerProfile?.specialties || [];
   const videoUrl = healerProfile?.video;
-  
-  // Construct location from profile fields
-  const location = [profile.city, profile.country].filter(Boolean).join(', ') || "Location not specified";
+  const location = formatAddressForDisplay(userAddress);
 
   // Function to load healer thoughts
   const loadHealerThoughts = async () => {
