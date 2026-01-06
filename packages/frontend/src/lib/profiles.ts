@@ -23,6 +23,7 @@ export interface Profile {
   longitude: number | null;
   is_healer: boolean;
   bio: string | null;
+  intentions: string[] | null;
   created_at: string;
   updated_at: string;
 }

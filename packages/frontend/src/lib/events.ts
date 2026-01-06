@@ -17,6 +17,7 @@ export interface EventData {
   time?: string;
   prices?: { text: string; amount: string }[];
   tags?: string[];
+  intentions?: string[];
   additional_options?: { name: string; price: string; description: string }[];
   image_url?: string;
   video_url?: string;
@@ -51,6 +52,7 @@ export const createEvent = async (eventData: EventData) => {
         time: eventData.time || null,
         prices: eventData.prices || [],
         tags: eventData.tags || [],
+        intentions: eventData.intentions || [],
         additional_options: eventData.additional_options || [],
         image_url: eventData.image_url || null,
         video_url: eventData.video_url || null
@@ -91,6 +93,7 @@ export const updateEvent = async (eventId: string, eventData: Partial<EventData>
         time: eventData.time,
         prices: eventData.prices,
         tags: eventData.tags,
+        intentions: eventData.intentions,
         additional_options: eventData.additional_options,
         image_url: eventData.image_url,
         video_url: eventData.video_url,

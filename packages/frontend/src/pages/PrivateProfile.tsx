@@ -4,7 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MapPin, MessageCircle, Edit, X, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MapPin, MessageCircle, Edit, X, Calendar, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import CommunityShareCard from "@/components/CommunityShareCard";
@@ -28,10 +31,12 @@ const PrivateProfile = () => {
   const [resharedShares, setResharedShares] = useState<string[]>([]);
   const [savedShares, setSavedShares] = useState<string[]>([]);
 
-  const interests = [
-    "Meditation", "Crystal Healing", "Astrology", "Chakras", 
-    "Sacred Geometry", "Yoga", "Mindfulness", "Energy Healing"
-  ];
+  // Intentions state
+  const [isEditingIntentions, setIsEditingIntentions] = useState(false);
+  const [availableIntentions, setAvailableIntentions] = useState<any[]>([]);
+  const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
+  const [intentionsOpen, setIntentionsOpen] = useState(false);
+  const intentions = profile?.intentions || [];
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -180,6 +185,16 @@ const PrivateProfile = () => {
           setShares(formattedShares);
         }
 
+        // Fetch available intentions from database
+        const { data: intentionsData, error: intentionsError } = await (supabase as any)
+          .from('intentions')
+          .select('name')
+          .order('name', { ascending: true });
+
+        if (!intentionsError && intentionsData) {
+          setAvailableIntentions(intentionsData);
+        }
+
       } catch (error) {
         console.error("Error fetching profile data:", error);
         toast.error("Failed to load profile data");
@@ -190,6 +205,50 @@ const PrivateProfile = () => {
 
     fetchProfileData();
   }, [navigate]);
+
+  const handleEditIntentions = () => {
+    setSelectedIntentions([...intentions]);
+    setIsEditingIntentions(true);
+  };
+
+  const handleCancelEditIntentions = () => {
+    setIsEditingIntentions(false);
+    setSelectedIntentions([]);
+  };
+
+  const handleSaveIntentions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to update intentions");
+        return;
+      }
+
+      const { error } = await (supabase as any)
+        .from('profiles')
+        .update({ intentions: selectedIntentions })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, intentions: selectedIntentions });
+      setIsEditingIntentions(false);
+      toast.success("Intentions updated successfully");
+    } catch (error) {
+      console.error("Error updating intentions:", error);
+      toast.error("Failed to update intentions");
+    }
+  };
+
+  const toggleIntention = (intentionName: string) => {
+    setSelectedIntentions(prev => {
+      if (prev.includes(intentionName)) {
+        return prev.filter(i => i !== intentionName);
+      } else {
+        return [...prev, intentionName];
+      }
+    });
+  };
 
   const handleCancelEnrollment = async (enrollmentId: string, eventTitle: string) => {
     if (!window.confirm(`Are you sure you want to cancel your enrollment for "${eventTitle}"?`)) {
@@ -272,25 +331,125 @@ const PrivateProfile = () => {
       </div>
 
       <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Spiritual Interests */}
+        {/* Current Intensions */}
         <div className="mb-12">
           <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>Spiritual Interests</CardTitle>
-              <CardDescription>Topics that resonate with your soul</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle>Current Intensions</CardTitle>
+                <CardDescription>Your spiritual intentions and focus areas</CardDescription>
+              </div>
+              {!isEditingIntentions && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleEditIntentions}
+                  className="ml-auto"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {interests.map((interest) => (
-                  <Badge 
-                    key={interest} 
-                    variant="secondary" 
-                    className="bg-sage/20 text-sage-foreground hover:bg-sage/30 transition-colors cursor-pointer"
-                  >
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
+              {!isEditingIntentions ? (
+                <div className="flex flex-wrap gap-2">
+                  {intentions.length > 0 ? (
+                    intentions.map((intention) => (
+                      <Badge 
+                        key={intention} 
+                        variant="default" 
+                        className="bg-purple-500 hover:bg-purple-600 transition-colors"
+                      >
+                        {intention}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No intentions set yet. Click Edit to add your spiritual intentions.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Popover open={intentionsOpen} onOpenChange={setIntentionsOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={intentionsOpen}
+                        className="w-full justify-between"
+                      >
+                        {selectedIntentions.length > 0
+                          ? `${selectedIntentions.length} intention${selectedIntentions.length === 1 ? '' : 's'} selected`
+                          : "Select intentions..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search intentions..." />
+                        <CommandList>
+                          <CommandEmpty>No intention found.</CommandEmpty>
+                          <CommandGroup>
+                            {availableIntentions.map((intention) => (
+                              <CommandItem
+                                key={intention.name}
+                                value={intention.name}
+                                onSelect={() => {
+                                  toggleIntention(intention.name);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedIntentions.includes(intention.name) ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                {intention.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Display selected intentions as badges */}
+                  {selectedIntentions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedIntentions.map((intention) => (
+                        <Badge
+                          key={intention}
+                          variant="default"
+                          className="cursor-pointer bg-purple-500 hover:bg-purple-600"
+                          onClick={() => toggleIntention(intention)}
+                        >
+                          {intention}
+                          <X className="ml-1 h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-muted-foreground">
+                    {selectedIntentions.length} intention{selectedIntentions.length === 1 ? '' : 's'} selected
+                  </p>
+                  
+                  <div className="flex justify-end space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEditIntentions}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveIntentions}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

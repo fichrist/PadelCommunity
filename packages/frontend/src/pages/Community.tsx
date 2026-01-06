@@ -237,6 +237,7 @@ const Community = () => {
           description: dbEvent.full_description || dbEvent.description,
           location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
           tags: dbEvent.tags || [],
+          intentions: dbEvent.intentions || [],
           attendees: enrollmentCount,
           connectionsGoing: [],
           timeAgo: 'Just now',
@@ -702,10 +703,21 @@ const Community = () => {
                     <div className="px-3">
                       {/* Tags first for events */}
                       {post.type === 'event' && (
-                        <div className="flex flex-wrap gap-1 mb-3">
+                        <div className="flex flex-wrap gap-1 mb-2">
                           {post.tags.map((tag, tagIndex) => (
                             <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
                               {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Intensions below tags for events */}
+                      {post.type === 'event' && post.intentions && post.intentions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {post.intentions.map((intention, intentionIndex) => (
+                            <Badge key={intentionIndex} variant="default" className="text-xs bg-purple-500 hover:bg-purple-600 transition-colors">
+                              {intention}
                             </Badge>
                           ))}
                         </div>

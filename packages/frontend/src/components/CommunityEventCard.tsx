@@ -27,6 +27,7 @@ interface CommunityEventCardProps {
   location: string;
   attendees: number;
   tags: string[];
+  intentions?: string[];
   connectionsGoing?: string[];
   isPastEvent?: boolean;
   averageRating?: number;
@@ -52,6 +53,7 @@ const CommunityEventCard = ({
   location,
   attendees,
   tags,
+  intentions = [],
   connectionsGoing = [],
   isPastEvent = false,
   averageRating,
@@ -157,13 +159,24 @@ const CommunityEventCard = ({
         {/* Content */}
         <div className="px-3">
           {/* Tags first for events */}
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1 mb-2">
             {tags.map((tag, tagIndex) => (
               <Badge key={tagIndex} variant="secondary" className="text-xs cursor-pointer hover:bg-primary/20 transition-colors">
                 {tag}
               </Badge>
             ))}
           </div>
+
+          {/* Intensions below tags */}
+          {intentions && intentions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {intentions.map((intention, intentionIndex) => (
+                <Badge key={intentionIndex} variant="default" className="text-xs bg-purple-500 hover:bg-purple-600 transition-colors">
+                  {intention}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Event content */}
           <p className="text-sm text-foreground/90 leading-relaxed mb-3">

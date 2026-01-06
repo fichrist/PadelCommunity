@@ -151,6 +151,7 @@ const EventDetails = () => {
             : format(new Date(dbEvent.start_date), 'd MMMM yyyy'),
           time: dbEvent.time || 'TBD',
           tags: dbEvent.tags || [],
+          intentions: dbEvent.intentions || [],
           image: dbEvent.image_url || spiritualBackground,
           price: priceOptions.length > 0 ? priceOptions[0].price : '€25',
           organizers: [{
@@ -352,6 +353,7 @@ const EventDetails = () => {
             location: `${evt.city || ''}${evt.city && evt.country ? ', ' : ''}${evt.country || ''}`.trim() || 'Location TBD',
             attendees: enrollmentCountsMap.get(evt.id) || 0,
             tags: evt.tags || [],
+            intentions: evt.intentions || [],
             thought: evt.description || "",
             comments: thoughtCountsMap.get(evt.id) || 0,
             isPastEvent: eventDate < now
@@ -488,13 +490,24 @@ const EventDetails = () => {
           </div>
 
           {/* Tags under image */}
-          <div className="flex flex-wrap gap-2 justify-center mb-8">
+          <div className="flex flex-wrap gap-2 justify-center mb-4">
             {displayEvent.tags.map((tag, index) => (
               <Badge key={index} variant="secondary" className="text-sm cursor-pointer hover:bg-primary/20 transition-colors px-3 py-1">
                 {tag}
               </Badge>
             ))}
           </div>
+
+          {/* Intensions under tags */}
+          {displayEvent.intentions && displayEvent.intentions.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center mb-8">
+              {displayEvent.intentions.map((intention, index) => (
+                <Badge key={index} variant="default" className="text-sm bg-purple-500 hover:bg-purple-600 transition-colors px-3 py-1">
+                  {intention}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Social buttons */}
           <div className="flex items-center justify-center space-x-6 mb-8">

@@ -54,10 +54,13 @@ const CreateEvent = () => {
   const [additionalOptions, setAdditionalOptions] = useState<{name: string, price: string, description: string}[]>([]);
   const [availableTags, setAvailableTags] = useState<{ id: string; name: string }[]>([]);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [intentions, setIntentions] = useState<string[]>([]);
+  const [availableIntentions, setAvailableIntentions] = useState<{ name: string }[]>([]);
+  const [intentionsOpen, setIntentionsOpen] = useState(false);
 
-  // Fetch available tags from database
+  // Fetch available tags and intentions from database
   useEffect(() => {
-    const fetchTags = async () => {
+    const fetchTagsAndIntentions = async () => {
       const { data: dbTags } = await (supabase as any)
         .from('tags')
         .select('id, name')
@@ -66,9 +69,18 @@ const CreateEvent = () => {
       if (dbTags) {
         setAvailableTags(dbTags as any);
       }
+
+      const { data: dbIntentions } = await (supabase as any)
+        .from('intentions')
+        .select('name')
+        .order('name');
+      
+      if (dbIntentions) {
+        setAvailableIntentions(dbIntentions as any);
+      }
     };
     
-    fetchTags();
+    fetchTagsAndIntentions();
   }, []);
 
   // Fetch event data when in edit mode
@@ -86,6 +98,7 @@ const CreateEvent = () => {
           setTime(dbEvent.time || "");
           setPrices(dbEvent.prices || []);
           setTags(dbEvent.tags || []);
+          setIntentions(dbEvent.intentions || []);
           setAdditionalOptions(dbEvent.additional_options || []);
           setEventImage(dbEvent.image_url || null);
           setEventVideo(dbEvent.video_url || null);
@@ -141,6 +154,14 @@ const CreateEvent = () => {
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const toggleIntention = (intention: string) => {
+    if (intentions.includes(intention)) {
+      setIntentions(intentions.filter(i => i !== intention));
+    } else {
+      setIntentions([...intentions, intention]);
+    }
   };
 
   const handleAddPrice = () => {
@@ -218,6 +239,7 @@ const CreateEvent = () => {
       time: time.trim() || undefined,
       prices: prices,
       tags: tags,
+      intentions: intentions,
       additional_options: additionalOptions,
       image_url: eventImage || undefined,
       video_url: eventVideo || undefined
@@ -657,6 +679,74 @@ const CreateEvent = () => {
                 
                 <p className="text-sm text-muted-foreground">
                   {tags.length} tag{tags.length === 1 ? '' : 's'} selected
+                </p>
+              </div>
+
+              {/* Intensions */}
+              <div className="space-y-2">
+                <Label>Event Intensions</Label>
+                <Popover open={intentionsOpen} onOpenChange={setIntentionsOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={intentionsOpen}
+                      className="w-full justify-between"
+                    >
+                      {intentions.length > 0
+                        ? `${intentions.length} intention${intentions.length === 1 ? '' : 's'} selected`
+                        : "Select intentions..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search intentions..." />
+                      <CommandList>
+                        <CommandEmpty>No intention found.</CommandEmpty>
+                        <CommandGroup>
+                          {availableIntentions.map((intention) => (
+                            <CommandItem
+                              key={intention.name}
+                              value={intention.name}
+                              onSelect={() => {
+                                toggleIntention(intention.name);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  intentions.includes(intention.name) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {intention.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Display selected intentions as badges */}
+                {intentions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {intentions.map((intention) => (
+                      <Badge
+                        key={intention}
+                        variant="default"
+                        className="cursor-pointer bg-purple-500 hover:bg-purple-600"
+                        onClick={() => toggleIntention(intention)}
+                      >
+                        {intention}
+                        <X className="ml-1 h-3 w-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                <p className="text-sm text-muted-foreground">
+                  {intentions.length} intention{intentions.length === 1 ? '' : 's'} selected
                 </p>
               </div>
 

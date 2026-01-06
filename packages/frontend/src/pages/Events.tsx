@@ -21,10 +21,25 @@ import { getThoughtsByEventId } from "@/lib/thoughts";
 import { elenaProfile, davidProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+// Haversine formula to calculate distance between two lat/lng points in km
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 const Events = () => {
   const [filter, setFilter] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
@@ -42,43 +57,160 @@ const Events = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [connectionPopoverOpen, setConnectionPopoverOpen] = useState<string | null>(null);
   const [events, setEvents] = useState<any[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([
-    "Movement", "Dance", "Yoga", "Exhibition", "Festival", "Garden",
-    "Workshop", "Education", "Sacred Geometry", "Sound Bath", "Chakras",
-    "Energy Work", "Healing", "Ceremony", "Full Moon", "Meditation",
-    "Morning Practice", "Nature", "Walking", "Mindfulness"
-  ]);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allIntentions, setAllIntentions] = useState<string[]>([]);
+  const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  // Fetch user's location and coordinates on mount
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('city, latitude, longitude')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.city) {
+          setSelectedLocation(profile.city);
+          if (profile.latitude && profile.longitude) {
+            setSelectedLocationCoords({ lat: profile.latitude, lng: profile.longitude });
+          }
+        }
+      }
+    };
+    
+    fetchUserLocation();
+  }, []);
+
+  // Geocode location when it changes (using Nominatim - free API)
+  useEffect(() => {
+    const geocodeLocation = async () => {
+      if (!selectedLocation) {
+        setSelectedLocationCoords(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(selectedLocation)}&format=json&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          setSelectedLocationCoords({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon)
+          });
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      }
+    };
+
+    geocodeLocation();
+  }, [selectedLocation]);
 
   // Fetch events from database
   useEffect(() => {
     const fetchEvents = async () => {
       const dbEvents = await getAllEvents();
       
+      // Extract unique tags and intentions from all events
+      const tagsSet = new Set<string>();
+      const intentionsSet = new Set<string>();
+      
+      dbEvents.forEach((dbEvent: any) => {
+        (dbEvent.tags || []).forEach((tag: string) => tagsSet.add(tag));
+        (dbEvent.intentions || []).forEach((intention: string) => intentionsSet.add(intention));
+      });
+      
+      setAllTags(Array.from(tagsSet).sort());
+      setAllIntentions(Array.from(intentionsSet).sort());
+      
+      // Get unique user IDs
+      const userIds = [...new Set(dbEvents.map((e: any) => e.user_id).filter(Boolean))] as string[];
+      
+      // Fetch profiles for all event creators
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, display_name, avatar_url, is_healer')
+        .in('id', userIds);
+      
+      // Create a map of user_id to profile
+      const profileMap = new Map();
+      (profiles || []).forEach((profile: any) => {
+        profileMap.set(profile.id, profile);
+      });
+      
+      // Fetch thought counts for all events
+      const eventIds = dbEvents.map((e: any) => e.id);
+      const { data: thoughtCounts } = await supabase
+        .from('thoughts')
+        .select('event_id')
+        .in('event_id', eventIds)
+        .not('event_id', 'is', null);
+      
+      // Create a map of event_id to thought count
+      const thoughtCountMap = new Map();
+      (thoughtCounts || []).forEach((thought: any) => {
+        const currentCount = thoughtCountMap.get(thought.event_id) || 0;
+        thoughtCountMap.set(thought.event_id, currentCount + 1);
+      });
+      
+      // Fetch enrollment counts for all events
+      const { data: enrollmentCounts } = await supabase
+        .from('enrollments')
+        .select('event_id')
+        .in('event_id', eventIds)
+        .eq('status', 'confirmed');
+      
+      // Create a map of event_id to enrollment count
+      const enrollmentCountMap = new Map();
+      (enrollmentCounts || []).forEach((enrollment: any) => {
+        const currentCount = enrollmentCountMap.get(enrollment.event_id) || 0;
+        enrollmentCountMap.set(enrollment.event_id, currentCount + 1);
+      });
+      
       // Format events for display
-      const formattedEvents = dbEvents.map((dbEvent: any) => ({
-        eventId: dbEvent.id,
-        title: dbEvent.title,
-        description: dbEvent.description,
-        location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
-        dateRange: {
-          start: dbEvent.start_date ? format(new Date(dbEvent.start_date), 'd MMMM yyyy') : 'TBD',
-          end: dbEvent.end_date ? format(new Date(dbEvent.end_date), 'd MMMM yyyy') : undefined
-        },
-        time: dbEvent.time,
-        tags: dbEvent.tags || [],
-        attendees: 10, // Default as requested
-        connectionsGoing: [],
-        comments: 0, // Default as requested
-        image: dbEvent.image_url || spiritualBackground,
-        isPastEvent: dbEvent.start_date ? new Date(dbEvent.start_date) < new Date() : false,
-        organizers: [{
-          id: 'organizer-1',
-          name: 'Event Creator',
-          avatar: elenaProfile
-        }],
-        thoughts: []
-      }));
+      const formattedEvents = dbEvents.map((dbEvent: any) => {
+        const profile = profileMap.get(dbEvent.user_id);
+        const organizerName = profile?.display_name || 
+                             `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+                             'Event Creator';
+        
+        return {
+          eventId: dbEvent.id,
+          title: dbEvent.title,
+          description: dbEvent.description,
+          location: [dbEvent.city, dbEvent.country].filter(Boolean).join(', ') || 'Location TBD',
+          latitude: dbEvent.latitude,
+          longitude: dbEvent.longitude,
+          dateRange: {
+            start: dbEvent.start_date ? format(new Date(dbEvent.start_date), 'd MMMM yyyy') : 'TBD',
+            end: dbEvent.end_date ? format(new Date(dbEvent.end_date), 'd MMMM yyyy') : undefined
+          },
+          startDate: dbEvent.start_date ? new Date(dbEvent.start_date) : null,
+          endDate: dbEvent.end_date ? new Date(dbEvent.end_date) : dbEvent.start_date ? new Date(dbEvent.start_date) : null,
+          time: dbEvent.time,
+          tags: dbEvent.tags || [],
+          intentions: dbEvent.intentions || [],
+          attendees: enrollmentCountMap.get(dbEvent.id) || 0,
+          connectionsGoing: [],
+          comments: thoughtCountMap.get(dbEvent.id) || 0,
+          image: dbEvent.image_url || spiritualBackground,
+          isPastEvent: dbEvent.start_date ? new Date(dbEvent.start_date) < new Date() : false,
+          organizers: [{
+            id: dbEvent.user_id,
+            name: organizerName,
+            avatar: profile?.avatar_url || elenaProfile,
+            isHealer: profile?.is_healer || false
+          }],
+          thoughts: []
+        };
+      });
       
       setEvents(formattedEvents);
     };
@@ -86,9 +218,114 @@ const Events = () => {
     fetchEvents();
   }, []);
 
-  const filteredEvents = filter === "all" ? events : 
-    filter === "past" ? events.filter(event => event.isPastEvent) :
-    events.filter(event => !event.isPastEvent);
+  // Filter events by time filter, tags, intentions, and date range
+  const filteredEvents = events.filter(event => {
+    // Time filter
+    if (filter === "past" && !event.isPastEvent) return false;
+    if (filter === "future" && event.isPastEvent) return false;
+    
+    // Date range filter - check if event overlaps with selected date range
+    if (selectedDate) {
+      // If a date filter is selected but event has no start date, hide it
+      if (!event.startDate) {
+        console.log("Hiding event (no start date):", event.title);
+        return false;
+      }
+      
+      console.log("Checking event:", { 
+        title: event.title, 
+        startDate: event.startDate, 
+        endDate: event.endDate,
+        selectedDate 
+      });
+      let filterStartDate: Date | null = null;
+      let filterEndDate: Date | null = null;
+      
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Start of today
+      
+      if (selectedDate === "today") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "tomorrow") {
+        filterStartDate = new Date(now);
+        filterStartDate.setDate(filterStartDate.getDate() + 1);
+        filterEndDate = new Date(filterStartDate);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "this-week") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setDate(filterEndDate.getDate() + (6 - now.getDay())); // End of this week (Saturday)
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "next-week") {
+        filterStartDate = new Date(now);
+        filterStartDate.setDate(filterStartDate.getDate() + (7 - now.getDay())); // Start of next week (Sunday)
+        filterEndDate = new Date(filterStartDate);
+        filterEndDate.setDate(filterEndDate.getDate() + 6); // End of next week (Saturday)
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "this-month") {
+        filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "custom" && customDateFrom && customDateTo) {
+        filterStartDate = new Date(customDateFrom);
+        filterStartDate.setHours(0, 0, 0, 0);
+        filterEndDate = new Date(customDateTo);
+        filterEndDate.setHours(23, 59, 59, 999);
+      }
+      
+      // Check if event dates overlap with filter dates
+      if (filterStartDate && filterEndDate) {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = event.endDate ? new Date(event.endDate) : new Date(event.startDate);
+        eventEnd.setHours(23, 59, 59, 999);
+        
+        // Events overlap if: event starts before filter ends AND event ends after filter starts
+        const overlaps = eventStart <= filterEndDate && eventEnd >= filterStartDate;
+        if (!overlaps) return false;
+      }
+    }
+    
+    // Tags filter - event must have at least one of the selected tags
+    if (selectedTags.length > 0) {
+      const hasMatchingTag = selectedTags.some(selectedTag => 
+        event.tags.includes(selectedTag)
+      );
+      if (!hasMatchingTag) return false;
+    }
+    
+    // Intentions filter - event must have at least one of the selected intentions
+    if (selectedIntentions.length > 0) {
+      const hasMatchingIntention = selectedIntentions.some(selectedIntention => 
+        event.intentions.includes(selectedIntention)
+      );
+      if (!hasMatchingIntention) return false;
+    }
+    
+    // Radius filter - event must be within selected radius
+    if (selectedRadius && selectedLocationCoords) {
+      // If event has no coordinates, hide it when radius is selected
+      if (!event.latitude || !event.longitude) {
+        return false;
+      }
+      
+      // Calculate distance between selected location and event
+      const distance = calculateDistance(
+        selectedLocationCoords.lat,
+        selectedLocationCoords.lng,
+        event.latitude,
+        event.longitude
+      );
+      
+      const radiusKm = parseFloat(selectedRadius);
+      if (distance > radiusKm) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <>
@@ -155,6 +392,7 @@ const Events = () => {
                           setSelectedRadius("");
                           setSelectedDate("");
                           setSelectedTags([]);
+                          setSelectedIntentions([]);
                           setShowCustomDatePicker(false);
                           setCustomDateFrom(undefined);
                           setCustomDateTo(undefined);
@@ -201,10 +439,10 @@ const Events = () => {
                         <Select 
                           value={selectedDate} 
                           onValueChange={(value) => {
+                            setSelectedDate(value);
                             if (value === "custom") {
                               setShowCustomDatePicker(true);
                             } else {
-                              setSelectedDate(value);
                               setShowCustomDatePicker(false);
                               setCustomDateFrom(undefined);
                               setCustomDateTo(undefined);
@@ -249,103 +487,57 @@ const Events = () => {
                       </div>
                     </div>
 
-                    {/* What Section - Tags */}
+                    {/* What Section - All Tags from Database */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Tag className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">What</span>
                       </div>
                       
-                      {/* Dance Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Dance</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Movement", "Dance", "Yoga"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-1">
+                        {allTags.map((tag) => (
+                          <Badge 
+                            key={tag}
+                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                            onClick={() => {
+                              setSelectedTags(prev => 
+                                prev.includes(tag) 
+                                  ? prev.filter(t => t !== tag)
+                                  : [...prev, tag]
+                              );
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
+                    </div>
 
-                      {/* Exhibition/Festival Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Exhibition/Festival</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Exhibition", "Festival", "Garden"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                    {/* Why Section - Intentions from Database */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Heart className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Why</span>
                       </div>
-
-                      {/* Workshop Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Workshop</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Workshop", "Education", "Sacred Geometry", "Sound Bath", "Chakras", "Energy Work", "Healing"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Ceremony Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Ceremony</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Ceremony", "Full Moon", "Meditation", "Morning Practice", "Nature", "Walking", "Mindfulness"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {allIntentions.map((intention) => (
+                          <Badge 
+                            key={intention}
+                            variant={selectedIntentions.includes(intention) ? "default" : "secondary"}
+                            className="text-xs cursor-pointer bg-purple-500 hover:bg-purple-600 transition-colors"
+                            onClick={() => {
+                              setSelectedIntentions(prev => 
+                                prev.includes(intention) 
+                                  ? prev.filter(i => i !== intention)
+                                  : [...prev, intention]
+                              );
+                            }}
+                          >
+                            {intention}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
 
@@ -365,6 +557,7 @@ const Events = () => {
                   image={event.image}
                   dateRange={event.dateRange}
                   author={{
+                    id: event.organizers[0]?.id || 'organizer-1',
                     name: event.organizers[0]?.name || 'Event Creator',
                     avatar: event.organizers[0]?.avatar || elenaProfile,
                     role: 'Event Organizer'
@@ -372,6 +565,7 @@ const Events = () => {
                   location={event.location}
                   attendees={event.attendees}
                   tags={event.tags}
+                  intentions={event.intentions}
                   connectionsGoing={event.connectionsGoing}
                   isPastEvent={event.isPastEvent}
                   averageRating={event.averageRating}
@@ -418,8 +612,22 @@ const Events = () => {
           postId={selectedEvent?.eventId || selectedEvent?.id || ''}
           postTitle={selectedEvent?.title || ""}
           thoughts={selectedEvent?.thoughts || []}
-          onThoughtAdded={() => {
-            // Optionally refresh thoughts here
+          isEvent={true}
+          onThoughtAdded={async () => {
+            // Refresh thoughts after adding
+            if (selectedEvent?.eventId) {
+              const updatedThoughts = await getThoughtsByEventId(selectedEvent.eventId);
+              setSelectedEvent({ ...selectedEvent, thoughts: updatedThoughts });
+              
+              // Update the comment count in events list
+              setEvents(prevEvents => prevEvents.map(e => 
+                e.eventId === selectedEvent.eventId 
+                  ? { ...e, comments: updatedThoughts.length }
+                  : e
+              ));
+              
+              toast.success("Thought added!");
+            }
           }}
         />
 
