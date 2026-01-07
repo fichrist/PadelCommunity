@@ -22,7 +22,6 @@ const EditHealerProfile = () => {
   const [tagsOpen, setTagsOpen] = useState(false);
   
   // Form state
-  const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [company, setCompany] = useState("");
@@ -54,12 +53,6 @@ const EditHealerProfile = () => {
         setAvailableTags(tagsData as any);
       }
 
-      // Get profile for default name
-      const profile = await getCurrentProfile();
-      if (profile) {
-        setName(profile.display_name || profile.first_name || "");
-      }
-
       // Check if healer profile exists
       const { data: healerProfile } = await (supabase as any)
         .from('healer_profiles')
@@ -68,7 +61,6 @@ const EditHealerProfile = () => {
         .single();
 
       if (healerProfile) {
-        setName(healerProfile.name || name);
         setRole(healerProfile.role || "");
         setTags(healerProfile.tags || []);
         setCompany(healerProfile.company || "");
@@ -111,7 +103,6 @@ const EditHealerProfile = () => {
 
       const profileData = {
         user_id: userId,
-        name: name.trim(),
         role: role.trim(),
         tags,
         company: company.trim() || null,
@@ -162,17 +153,6 @@ const EditHealerProfile = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Display Name *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name as you want it displayed"
-              />
-            </div>
-
             {/* Role */}
             <div className="space-y-2">
               <Label htmlFor="role">Role/Title *</Label>

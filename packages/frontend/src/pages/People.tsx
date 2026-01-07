@@ -7,14 +7,29 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { elenaProfile } from "@/data/healers";
 
+// Haversine formula to calculate distance between two lat/lng points in km
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
 const People = () => {
-  const [filter, setFilter] = useState("healers");
+  const [filter, setFilter] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
@@ -29,6 +44,8 @@ const People = () => {
   const [selectedIcons, setSelectedIcons] = useState<Record<string, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
   const [people, setPeople] = useState<any[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [onlyShowHealers, setOnlyShowHealers] = useState(false);
+  const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
 
   // Fetch people from database
@@ -77,10 +94,12 @@ const People = () => {
         return {
           id: profile.id,
           name,
-          role: healerProfile?.specialization || 'Member',
+          role: healerProfile?.role || 'Member',
           bio: healerProfile?.bio || profile.bio || '',
           avatar: profile.avatar_url || elenaProfile,
           location,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
           isHealer: profile.is_healer || false,
           tags: healerProfile?.tags || [],
           followers: 0, // Set to 0 as requested
@@ -94,12 +113,40 @@ const People = () => {
     fetchPeople();
   }, []);
 
+  // Geocode location when it changes (using Nominatim - free API)
+  useEffect(() => {
+    const geocodeLocation = async () => {
+      if (!selectedLocation) {
+        setSelectedLocationCoords(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(selectedLocation)}&format=json&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          setSelectedLocationCoords({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon)
+          });
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      }
+    };
+
+    geocodeLocation();
+  }, [selectedLocation]);
+
   // Mock contact list - users in your contact list (you can enhance this later)
   const contactUserIds: string[] = [];
 
   // Filter people
   const filteredPeople = people.filter(person => {
-    if (filter === "healers") return person.isHealer;
+    if (filter === "all") return true; // Show all people
     if (filter === "following") return followedUsers.includes(person.id);
     if (filter === "followers") return false; // Could be enhanced
     if (filter === "contacts") return contactUserIds.includes(person.id);
@@ -113,8 +160,41 @@ const People = () => {
       )
     : filteredPeople;
 
+  // Apply name search filtering
+  const nameFilteredPeople = searchQuery.trim() !== ""
+    ? tagFilteredPeople.filter(person =>
+        person.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : tagFilteredPeople;
+
+  // Apply "only show healers" filter
+  const healerFilteredPeople = onlyShowHealers
+    ? nameFilteredPeople.filter(person => person.isHealer)
+    : nameFilteredPeople;
+
+  // Apply distance/radius filtering
+  const distanceFilteredPeople = (selectedRadius && selectedLocationCoords)
+    ? healerFilteredPeople.filter(person => {
+        // If person has no coordinates, hide them when radius is selected
+        if (!person.latitude || !person.longitude) {
+          return false;
+        }
+        
+        // Calculate distance between selected location and person's location
+        const distance = calculateDistance(
+          selectedLocationCoords.lat,
+          selectedLocationCoords.lng,
+          person.latitude,
+          person.longitude
+        );
+        
+        const radiusKm = parseFloat(selectedRadius);
+        return distance <= radiusKm;
+      })
+    : healerFilteredPeople;
+
   // Sort users based on selected sort option
-  const sortedUsers = [...tagFilteredPeople].sort((a, b) => {
+  const sortedUsers = [...distanceFilteredPeople].sort((a, b) => {
     let comparison = 0;
     if (sortBy === "alphabetical") {
       comparison = a.name.localeCompare(b.name);
@@ -165,27 +245,12 @@ const People = () => {
               {/* Centered Filters */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
                 <Button
-                  variant={filter === "healers" ? "default" : "ghost"}
+                  variant={filter === "all" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setFilter("healers")}
+                  onClick={() => setFilter("all")}
                   className="px-3 py-1 rounded-full h-7 text-xs"
                 >
-                  Healers
-                </Button>
-                <Button
-                  variant={filter === "contacts" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setFilter("contacts");
-                    // Clear other filters when contacts is selected
-                    setSelectedLocation("");
-                    setSelectedRadius("");
-                    setSelectedSpecialty("");
-                    setSelectedTags([]);
-                  }}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Contacts
+                  All
                 </Button>
                 <Button
                   variant={filter === "following" ? "default" : "ghost"}
@@ -234,6 +299,8 @@ const People = () => {
                           setSelectedRadius("");
                           setSelectedSpecialty("");
                           setSelectedTags([]);
+                          setSearchQuery("");
+                          setOnlyShowHealers(false);
                         }}
                       >
                         Clear
@@ -241,6 +308,24 @@ const People = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Who Section - Name Search */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Who</span>
+                      </div>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search by name..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-8 text-sm"
+                        />
+                      </div>
+                    </div>
+
                     {/* Where Section */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
@@ -267,104 +352,49 @@ const People = () => {
                       </Select>
                     </div>
 
-
-                    {/* What Section - Specialties */}
+                    {/* What Section - Tags */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Tag className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">What</span>
                       </div>
                       
-                      {/* Dance Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Dance</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Movement Therapy", "Ecstatic Dance", "Dance Therapy", "Movement Meditation", "Sacred Dance"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-1">
+                        {allTags.map((tag) => (
+                          <Badge 
+                            key={tag}
+                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+                            onClick={() => {
+                              setSelectedTags(prev => {
+                                const newTags = prev.includes(tag) 
+                                  ? prev.filter(t => t !== tag)
+                                  : [...prev, tag];
+                                
+                                // Automatically enable "Only show healers" when tags are selected
+                                if (newTags.length > 0) {
+                                  setOnlyShowHealers(true);
+                                }
+                                
+                                return newTags;
+                              });
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
-
-                      {/* Exhibition/Festival Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Exhibition/Festival</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Art", "Exhibition", "Festival", "Spirituality", "Cosmic"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Workshop Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Workshop</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Sound Healing", "Crystal Healing", "Energy Healing", "Reiki", "Chakra Balancing", "Astrology", "Sacred Geometry", "Theta Healing", "Life Coaching", "Breathwork"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Ceremony Category */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Ceremony</p>
-                        <div className="flex flex-wrap gap-1">
-                          {allTags.filter(tag => ["Meditation", "Mindfulness", "Shamanic Healing", "Ancient Wisdom", "Emotional Healing", "Inner Peace", "Nature", "Forest", "Earth Connection", "Ocean", "Self-Discovery", "Astronomy"].includes(tag)).map((tag) => (
-                            <Badge 
-                              key={tag}
-                              variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                              className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => {
-                                setSelectedTags(prev => 
-                                  prev.includes(tag) 
-                                    ? prev.filter(t => t !== tag)
-                                    : [...prev, tag]
-                                );
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                      
+                      {/* Only Show Healers Toggle */}
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Switch
+                          id="only-healers"
+                          checked={onlyShowHealers}
+                          onCheckedChange={setOnlyShowHealers}
+                        />
+                        <Label htmlFor="only-healers" className="text-sm cursor-pointer">
+                          Only show healers
+                        </Label>
                       </div>
                     </div>
 
@@ -378,7 +408,7 @@ const People = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedUsers.map((person) => (
                   <Card key={person.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
-                    onClick={() => navigate(`/profile/${person.id}`)}
+                    onClick={() => navigate(person.isHealer ? `/healer/${person.id}` : `/profile/${person.id}`)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start space-x-3">
@@ -516,7 +546,7 @@ const People = () => {
                           <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
                           
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {person.tags.slice(0, 3).map((tag: string, idx: number) => (
+                            {person.tags.map((tag: string, idx: number) => (
                               <Badge 
                                 key={idx} 
                                 variant="secondary" 
