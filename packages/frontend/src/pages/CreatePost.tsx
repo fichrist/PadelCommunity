@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, X, Search, Link as LinkIcon, Image as ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
-import { createPost } from "@/lib/posts";
+import { createPost, uploadPostImage, uploadPostVideo } from "@/lib/posts";
 import {
   Command,
   CommandEmpty,
@@ -66,8 +66,11 @@ const CreatePost = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [postImage, setPostImage] = useState<string | null>(null);
-  const [postVideo, setPostVideo] = useState<string | null>(null);
+  const [postImage, setPostImage] = useState<File | null>(null);
+  const [postVideo, setPostVideo] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredTags = AVAILABLE_TAGS.filter(tag => 
     tag.toLowerCase().includes(searchValue.toLowerCase()) && 
@@ -92,11 +95,22 @@ const CreatePost = () => {
         toast.error("Please select an image file");
         return;
       }
+
+      // Validate file size (max 10MB)
+      const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`Image must be smaller than 10MB. Your image is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
+        return;
+      }
+
+      setPostImage(file);
+      setPostVideo(null); // Clear video if image is uploaded
+      setVideoPreview(null);
+
+      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPostImage(result);
-        setPostVideo(null); // Clear video if image is uploaded
+        setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -109,11 +123,22 @@ const CreatePost = () => {
         toast.error("Please select a video file");
         return;
       }
+
+      // Validate file size (max 50MB)
+      const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+      if (file.size > MAX_VIDEO_SIZE) {
+        toast.error(`Video must be smaller than 50MB. Your video is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
+        return;
+      }
+
+      setPostVideo(file);
+      setPostImage(null); // Clear image if video is uploaded
+      setImagePreview(null);
+
+      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPostVideo(result);
-        setPostImage(null); // Clear image if video is uploaded
+        setVideoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -122,6 +147,8 @@ const CreatePost = () => {
   const handleRemoveMedia = () => {
     setPostImage(null);
     setPostVideo(null);
+    setImagePreview(null);
+    setVideoPreview(null);
   };
 
   const handleSubmit = async () => {
@@ -130,26 +157,59 @@ const CreatePost = () => {
       return;
     }
 
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    const toastId = toast.loading("Creating post...");
+
     try {
-      // Save the post to the database
+      let imageUrl: string | undefined = undefined;
+      let videoUrl: string | undefined = undefined;
+
+      // Upload image if provided
+      if (postImage) {
+        toast.loading("Uploading image...", { id: toastId });
+        imageUrl = await uploadPostImage(postImage) || undefined;
+        if (!imageUrl) {
+          toast.error("Failed to upload image. Please try again.", { id: toastId });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Upload video if provided
+      if (postVideo) {
+        toast.loading("Uploading video...", { id: toastId });
+        videoUrl = await uploadPostVideo(postVideo) || undefined;
+        if (!videoUrl) {
+          toast.error("Failed to upload video. Please try again.", { id: toastId });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Save the post to the database with uploaded URLs
+      toast.loading("Saving post...", { id: toastId });
       const result = await createPost({
         title: title.trim(),
         content: thought.trim(),
         url: url.trim() || undefined,
         tags: selectedTags,
-        image_url: postImage || undefined,
-        video_url: postVideo || undefined,
+        image_url: imageUrl,
+        video_url: videoUrl,
       });
 
       if (result.success) {
-        toast.success("Post created successfully!");
+        toast.success("Post created successfully!", { id: toastId });
         navigate('/community');
       } else {
-        toast.error(result.error || "Failed to create post");
+        toast.error(result.error || "Failed to create post", { id: toastId });
+        setIsSubmitting(false);
       }
     } catch (error: any) {
       console.error("Error creating post:", error);
-      toast.error("An unexpected error occurred");
+      toast.error("An unexpected error occurred", { id: toastId });
+      setIsSubmitting(false);
     }
   };
 
@@ -247,9 +307,9 @@ const CreatePost = () => {
                   />
                   <label htmlFor="post-image" className="cursor-pointer">
                     <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors bg-background/30">
-                      {postImage ? (
+                      {imagePreview ? (
                         <div className="relative">
-                          <img src={postImage} alt="Post" className="w-full h-32 object-cover rounded-lg" />
+                          <img src={imagePreview} alt="Post" className="w-full h-32 object-cover rounded-lg" />
                           <Button
                             type="button"
                             variant="destructive"
@@ -283,9 +343,9 @@ const CreatePost = () => {
                   />
                   <label htmlFor="post-video" className="cursor-pointer">
                     <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors bg-background/30">
-                      {postVideo ? (
+                      {videoPreview ? (
                         <div className="relative">
-                          <video src={postVideo} className="w-full h-32 object-cover rounded-lg" controls />
+                          <video src={videoPreview} className="w-full h-32 object-cover rounded-lg" controls />
                           <Button
                             type="button"
                             variant="destructive"
@@ -381,14 +441,19 @@ const CreatePost = () => {
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => navigate('/community')}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} className="min-w-32">
-                Publish Post
+              <Button
+                onClick={handleSubmit}
+                className="min-w-32"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Publishing..." : "Publish Post"}
               </Button>
             </div>
           </CardContent>
