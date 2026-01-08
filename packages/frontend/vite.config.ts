@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -7,13 +7,18 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8443,
+    port: 8080,
+    allowedHosts: [
+      "localhost",
+      ".local",  // Alle *.local domains
+      "192.168.50.57",  // Je specifieke IP
+      "glowcommunity.duckdns.org"  // Als je ngrok gebruikt
+    ]
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+    ...(mode === 'development' ? [componentTagger()] : []),
+  ] as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
