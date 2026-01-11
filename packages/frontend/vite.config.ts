@@ -12,7 +12,6 @@ export default defineConfig(({ mode }) => ({
       "localhost",
       ".local",  // Alle *.local domains
       "192.168.50.57",  // Je specifieke IP
-      "glowcommunity.duckdns.org"  // Als je ngrok gebruikt
     ]
   },
   plugins: [
