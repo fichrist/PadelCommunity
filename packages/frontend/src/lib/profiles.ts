@@ -21,7 +21,10 @@ export interface Profile {
   formatted_address: string | null;
   latitude: number | null;
   longitude: number | null;
-  is_healer: boolean;
+  ranking: string | null;
+  tp_membership_number: string | null;
+  tp_user_id: number | null;
+  playtomic_user_id: string | null;
   bio: string | null;
   intentions: string[] | null;
   created_at: string;
@@ -84,26 +87,48 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
  * Update the current user's profile
  */
 export async function updateProfile(updates: Partial<Profile>): Promise<boolean> {
+  console.log('[updateProfile] Starting update with:', updates);
+
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    console.log('[updateProfile] About to call getUser...');
+
+    // Try calling getUser directly
+    const authResponse = await supabase.auth.getUser();
+
+    console.log('[updateProfile] getUser completed');
+    console.log('[updateProfile] Auth response:', authResponse);
+
+    const user = authResponse?.data?.user;
+
     if (!user) {
+      console.error('[updateProfile] No authenticated user found');
+      console.error('[updateProfile] Full auth response:', authResponse);
       throw new Error('No authenticated user');
     }
 
-    const { error } = await supabase
+    console.log('[updateProfile] User ID:', user.id);
+
+    console.log('[updateProfile] About to update database...');
+
+    const updateResponse = await supabase
       .from('profiles')
       .update(updates)
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select();
 
-    if (error) {
-      console.error('Error updating profile:', error);
+    console.log('[updateProfile] Database update completed');
+
+    if (updateResponse.error) {
+      console.error('[updateProfile] Database error:', updateResponse.error);
+      console.error('[updateProfile] Error details:', JSON.stringify(updateResponse.error, null, 2));
       return false;
     }
 
+    console.log('[updateProfile] Update successful, returned data:', updateResponse.data);
     return true;
   } catch (error) {
-    console.error('Error in updateProfile:', error);
+    console.error('[updateProfile] Caught exception:', error);
+    console.error('[updateProfile] Exception stack:', error instanceof Error ? error.stack : 'No stack trace');
     return false;
   }
 }
@@ -215,18 +240,17 @@ export async function deleteAvatar(): Promise<boolean> {
 }
 
 /**
- * Get all healers (for healer directory)
+ * Get all users (formerly healers directory - deprecated)
  */
 export async function getHealers(): Promise<Profile[]> {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('is_healer', true)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching healers:', error);
+      console.error('Error fetching profiles:', error);
       return [];
     }
 

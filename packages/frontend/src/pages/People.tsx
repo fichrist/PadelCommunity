@@ -13,7 +13,6 @@ import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserChec
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { elenaProfile } from "@/data/healers";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -44,7 +43,6 @@ const People = () => {
   const [selectedIcons, setSelectedIcons] = useState<Record<string, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
   const [people, setPeople] = useState<any[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [onlyShowHealers, setOnlyShowHealers] = useState(false);
   const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
 
@@ -63,47 +61,23 @@ const People = () => {
 
       if (!profiles) return;
 
-      // Get IDs of healers
-      const healerIds = profiles.filter(p => p.is_healer).map(p => p.id);
-
-      // Fetch healer profiles for healers
-      const { data: healerProfiles } = await supabase
-        .from('healer_profiles')
-        .select('*')
-        .in('user_id', healerIds);
-
-      // Create a map of user_id to healer profile
-      const healerProfileMap = new Map();
-      (healerProfiles || []).forEach((hp: any) => {
-        healerProfileMap.set(hp.user_id, hp);
-      });
-
-      // Extract all tags
-      const tagsSet = new Set<string>();
-      (healerProfiles || []).forEach((hp: any) => {
-        (hp.tags || []).forEach((tag: string) => tagsSet.add(tag));
-      });
-      setAllTags(Array.from(tagsSet).sort());
-
       // Format people data
       const formattedPeople = profiles.map((profile: any) => {
-        const healerProfile = healerProfileMap.get(profile.id);
         const name = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
         const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location not set';
 
         return {
           id: profile.id,
           name,
-          role: healerProfile?.role || 'Member',
-          bio: healerProfile?.bio || profile.bio || '',
-          avatar: profile.avatar_url || elenaProfile,
+          role: 'Member',
+          bio: profile.bio || '',
+          avatar: profile.avatar_url || '/placeholder-avatar.png',
           location,
           latitude: profile.latitude,
           longitude: profile.longitude,
-          isHealer: profile.is_healer || false,
-          tags: healerProfile?.tags || [],
-          followers: 0, // Set to 0 as requested
-          isOnline: false // Could be enhanced later
+          tags: [],
+          followers: 0,
+          isOnline: false
         };
       });
 
@@ -167,14 +141,9 @@ const People = () => {
       )
     : tagFilteredPeople;
 
-  // Apply "only show healers" filter
-  const healerFilteredPeople = onlyShowHealers
-    ? nameFilteredPeople.filter(person => person.isHealer)
-    : nameFilteredPeople;
-
   // Apply distance/radius filtering
   const distanceFilteredPeople = (selectedRadius && selectedLocationCoords)
-    ? healerFilteredPeople.filter(person => {
+    ? nameFilteredPeople.filter(person => {
         // If person has no coordinates, hide them when radius is selected
         if (!person.latitude || !person.longitude) {
           return false;
@@ -191,7 +160,7 @@ const People = () => {
         const radiusKm = parseFloat(selectedRadius);
         return distance <= radiusKm;
       })
-    : healerFilteredPeople;
+    : nameFilteredPeople;
 
   // Sort users based on selected sort option
   const sortedUsers = [...distanceFilteredPeople].sort((a, b) => {
@@ -211,7 +180,7 @@ const People = () => {
         <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Beautiful souls</h1>
+              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Players</h1>
               
               {/* Sort Options - Completely Right Aligned */}
               <div className="ml-auto flex items-center space-x-3">
@@ -371,10 +340,6 @@ const People = () => {
                                   ? prev.filter(t => t !== tag)
                                   : [...prev, tag];
                                 
-                                // Automatically enable "Only show healers" when tags are selected
-                                if (newTags.length > 0) {
-                                  setOnlyShowHealers(true);
-                                }
                                 
                                 return newTags;
                               });
@@ -383,18 +348,6 @@ const People = () => {
                             {tag}
                           </Badge>
                         ))}
-                      </div>
-                      
-                      {/* Only Show Healers Toggle */}
-                      <div className="flex items-center space-x-2 pt-2">
-                        <Switch
-                          id="only-healers"
-                          checked={onlyShowHealers}
-                          onCheckedChange={setOnlyShowHealers}
-                        />
-                        <Label htmlFor="only-healers" className="text-sm cursor-pointer">
-                          Only show healers
-                        </Label>
                       </div>
                     </div>
 
@@ -408,7 +361,7 @@ const People = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedUsers.map((person) => (
                   <Card key={person.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
-                    onClick={() => navigate(person.isHealer ? `/healer/${person.id}` : `/profile/${person.id}`)}
+                    onClick={() => navigate(`/profile/${person.id}`)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start space-x-3">
@@ -540,23 +493,8 @@ const People = () => {
                     </CardHeader>
                     
                     <CardContent className="flex flex-col h-full space-y-3">
-                      {/* Only show bio and tags for healers */}
-                      {person.isHealer && (
-                        <>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
-                          
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {person.tags.map((tag: string, idx: number) => (
-                              <Badge 
-                                key={idx} 
-                                variant="secondary" 
-                                className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </>
+                      {person.bio && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
                       )}
                       
                       {/* Bottom section - Followers only */}

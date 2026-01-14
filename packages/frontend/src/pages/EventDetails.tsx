@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import EventCard from "@/components/EventCard";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import { getEventById, deleteEvent } from "@/lib/events";
-import { elenaProfile } from "@/data/healers";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import ThoughtsModal from "@/components/ThoughtsModal";
@@ -225,7 +224,7 @@ const EventDetails = () => {
         // Fetch profiles for these users (including location fields)
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, display_name, first_name, last_name, avatar_url, is_healer, city, country')
+          .select('id, display_name, first_name, last_name, avatar_url, city, country')
           .in('id', userIds);
         
         // Create a map of user_id to profile
@@ -262,8 +261,7 @@ const EventDetails = () => {
               name: fullName,
               avatar: profile?.avatar_url || elenaProfile,
               location: location,
-              isAnonymous: false,
-              isHealer: profile?.is_healer || false
+              isAnonymous: false
             };
           });
 

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X, Heart, Repeat2, Share2, ExternalLink, Copy, Check } from "lucide-react";
+import { Search, Filter, Plus, Users, Calendar, User, MessageCircle, MapPin, Clock, Tag, UserCheck, BookOpen, X, Heart, Repeat2, Share2, ExternalLink, Copy, Check, Trophy, Edit2, Save, Loader2, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,23 +17,50 @@ import ThoughtsModal from "@/components/ThoughtsModal";
 import ReviewModal from "@/components/ReviewModal";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import { getAllEvents } from "@/lib/events";
-import { getThoughtsByEventId } from "@/lib/thoughts";
-import { elenaProfile, davidProfile } from "@/data/healers";
+import { getThoughtsByEventId, getThoughtsByMatchId } from "@/lib/thoughts";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng/2) * Math.sin(dLng/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
+};
+
+// Helper function to get available ranking levels based on user's ranking
+const getAvailableRankingLevels = (userRanking: string | null): string[] => {
+  if (!userRanking) return [];
+
+  // Extract numeric value from ranking (e.g., "P450" -> 450)
+  const rankingMatch = userRanking.match(/P?(\d+)/i);
+  if (!rankingMatch) return [];
+
+  const rankingValue = parseInt(rankingMatch[1]);
+
+  const allLevels = [
+    { value: 'p50-p100', min: 50, max: 100 },
+    { value: 'p100-p200', min: 100, max: 200 },
+    { value: 'p200-p300', min: 200, max: 300 },
+    { value: 'p300-p400', min: 300, max: 400 },
+    { value: 'p400-p500', min: 400, max: 500 },
+    { value: 'p500-p700', min: 500, max: 700 },
+    { value: 'p700-p1000', min: 700, max: 1000 },
+    { value: 'p1000+', min: 1000, max: Infinity }
+  ];
+
+  // Filter levels that include the user's ranking
+  return allLevels
+    .filter(level => rankingValue >= level.min && rankingValue <= level.max)
+    .map(level => level.value);
 };
 
 const Events = () => {
@@ -46,6 +73,7 @@ const Events = () => {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedMatchLevels, setSelectedMatchLevels] = useState<string[]>([]);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [resharedEvents, setResharedEvents] = useState<string[]>([]);
   const [sharePopoverOpen, setSharePopoverOpen] = useState<string | null>(null);
@@ -60,7 +88,47 @@ const Events = () => {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allIntentions, setAllIntentions] = useState<string[]>([]);
   const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [newLevelForMatch, setNewLevelForMatch] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [hideFullyBooked, setHideFullyBooked] = useState(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [userRanking, setUserRanking] = useState<string | null>(null);
+  const [matchThoughtsModalOpen, setMatchThoughtsModalOpen] = useState(false);
+  const [selectedMatchForThoughts, setSelectedMatchForThoughts] = useState<any>(null);
+  const [matchThoughts, setMatchThoughts] = useState<any[]>([]);
+  const [profileImageModal, setProfileImageModal] = useState<{ open: boolean; imageUrl: string | null; name: string }>({ open: false, imageUrl: null, name: '' });
   const navigate = useNavigate();
+
+  // Fetch current user ID, ranking, and check tp_user_id
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+
+        // Check if tp_user_id is empty and fetch ranking
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('tp_user_id, ranking')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          if (!profile.tp_user_id) {
+            setShowSetupDialog(true);
+          }
+          setUserRanking(profile.ranking);
+
+          // Set default selected levels to all available levels
+          const availableLevels = getAvailableRankingLevels(profile.ranking);
+          setSelectedMatchLevels(availableLevels);
+        }
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Fetch user's location and coordinates on mount
   useEffect(() => {
@@ -72,7 +140,7 @@ const Events = () => {
           .select('city, latitude, longitude')
           .eq('id', user.id)
           .single();
-        
+
         if (profile?.city) {
           setSelectedLocation(profile.city);
           if (profile.latitude && profile.longitude) {
@@ -136,7 +204,7 @@ const Events = () => {
       // Fetch profiles for all event creators
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, display_name, avatar_url, is_healer')
+        .select('id, first_name, last_name, display_name, avatar_url')
         .in('id', userIds);
       
       // Create a map of user_id to profile
@@ -205,8 +273,7 @@ const Events = () => {
           organizers: [{
             id: dbEvent.user_id,
             name: organizerName,
-            avatar: profile?.avatar_url || elenaProfile,
-            isHealer: profile?.is_healer || false
+            avatar: profile?.avatar_url || elenaProfile
           }],
           thoughts: []
         };
@@ -217,6 +284,336 @@ const Events = () => {
     
     fetchEvents();
   }, []);
+
+  // Fetch matches from database - defined outside useEffect so it can be called from anywhere
+  const fetchMatches = async () => {
+    const { data: matchesData, error } = await supabase
+      .from('matches')
+      .select(`
+        *,
+        match_participants (
+          id,
+          playtomic_user_id,
+          added_by_profile_id,
+          name,
+          team_id,
+          gender,
+          level_value,
+          level_confidence,
+          price,
+          payment_status,
+          registration_date
+        )
+      `)
+      .order('match_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching matches:', error);
+      return;
+    }
+
+    // Get all unique playtomic_user_ids from participants
+    const playtomicUserIds = new Set<string>();
+    matchesData?.forEach(match => {
+      match.match_participants?.forEach((p: any) => {
+        if (p.playtomic_user_id) {
+          playtomicUserIds.add(p.playtomic_user_id);
+        }
+      });
+    });
+
+    // Fetch profiles for these playtomic_user_ids (including avatar_url)
+    let profilesMap = new Map<string, any>();
+    if (playtomicUserIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('playtomic_user_id, ranking, avatar_url')
+        .in('playtomic_user_id', Array.from(playtomicUserIds));
+
+      profiles?.forEach(profile => {
+        if (profile.playtomic_user_id) {
+          profilesMap.set(profile.playtomic_user_id, profile);
+        }
+      });
+    }
+
+    // Fetch thought counts for all matches
+    const matchIds = matchesData?.map(m => m.id) || [];
+    let thoughtCountMap = new Map<string, number>();
+    if (matchIds.length > 0) {
+      const { data: thoughtCounts } = await supabase
+        .from('thoughts')
+        .select('match_id')
+        .in('match_id', matchIds)
+        .not('match_id', 'is', null);
+
+      (thoughtCounts || []).forEach((thought: any) => {
+        const currentCount = thoughtCountMap.get(thought.match_id) || 0;
+        thoughtCountMap.set(thought.match_id, currentCount + 1);
+      });
+    }
+
+    // Attach profile rankings and avatar_url to participants and thought counts
+    const enrichedMatches = matchesData?.map(match => ({
+      ...match,
+      thoughts_count: thoughtCountMap.get(match.id) || 0,
+      match_participants: match.match_participants?.map((p: any) => {
+        const profile = p.playtomic_user_id ? profilesMap.get(p.playtomic_user_id) : null;
+        return {
+          ...p,
+          profile_ranking: profile?.ranking || null,
+          avatar_url: profile?.avatar_url || null
+        };
+      })
+    }));
+
+    setMatches(enrichedMatches || []);
+  };
+
+  // Initial fetch and real-time subscription for matches
+  useEffect(() => {
+    fetchMatches();
+
+    // Set up real-time subscription for match updates
+    const matchesChannel = supabase
+      .channel('matches-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches'
+        },
+        (payload) => {
+          console.log('🔄 Match updated via real-time:', payload);
+          // Refetch matches when any match is updated
+          fetchMatches();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'match_participants'
+        },
+        (payload) => {
+          console.log('🔄 Match participants updated via real-time:', payload);
+          // Refetch matches when participants are updated
+          fetchMatches();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Real-time subscription status:', status);
+      });
+
+    // Listen for auth state changes and refetch data when token is refreshed
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed, refetching matches...');
+        fetchMatches();
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔌 Cleaning up real-time subscription');
+      supabase.removeChannel(matchesChannel);
+      authSubscription.unsubscribe();
+    };
+  }, []);
+
+  // Function to add a level to a match
+  const handleAddLevelToMatch = async (matchId: string) => {
+    if (!newLevelForMatch) {
+      toast.error("Please select a level to add");
+      return;
+    }
+
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const currentLevels = match.match_levels || [];
+    if (currentLevels.includes(newLevelForMatch)) {
+      toast.error("This level is already added");
+      return;
+    }
+
+    const updatedLevels = [...currentLevels, newLevelForMatch];
+
+    const { error } = await supabase
+      .from('matches')
+      .update({ match_levels: updatedLevels })
+      .eq('id', matchId);
+
+    if (error) {
+      console.error('Error updating match levels:', error);
+      toast.error("Failed to add level");
+      return;
+    }
+
+    // Update local state
+    setMatches(matches.map(m =>
+      m.id === matchId ? { ...m, match_levels: updatedLevels } : m
+    ));
+    setNewLevelForMatch("");
+    toast.success("Level added successfully");
+  };
+
+  // Function to remove a level from a match
+  const handleRemoveLevelFromMatch = async (matchId: string, levelToRemove: string) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const updatedLevels = (match.match_levels || []).filter((level: string) => level !== levelToRemove);
+
+    if (updatedLevels.length === 0) {
+      toast.error("Match must have at least one level");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('matches')
+      .update({ match_levels: updatedLevels })
+      .eq('id', matchId);
+
+    if (error) {
+      console.error('Error updating match levels:', error);
+      toast.error("Failed to remove level");
+      return;
+    }
+
+    // Update local state
+    setMatches(matches.map(m =>
+      m.id === matchId ? { ...m, match_levels: updatedLevels } : m
+    ));
+    toast.success("Level removed successfully");
+  };
+
+  // Function to delete a match
+  const handleDeleteMatch = async (matchId: string) => {
+    // Use window.confirm for confirmation
+    const confirmed = window.confirm("Are you sure you want to delete this match?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      console.log('Deleting match:', matchId);
+
+      // First delete all participants
+      const { error: participantsError } = await supabase
+        .from('match_participants')
+        .delete()
+        .eq('match_id', matchId);
+
+      if (participantsError) {
+        console.error('Error deleting participants:', participantsError);
+        toast.error("Failed to delete match participants");
+        return;
+      }
+
+      console.log('Participants deleted, now deleting match');
+
+      // Then delete the match
+      const { error: matchError } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
+
+      if (matchError) {
+        console.error('Error deleting match:', matchError);
+        toast.error("Failed to delete match");
+        return;
+      }
+
+      console.log('Match deleted successfully');
+
+      // Update local state
+      setMatches(matches.filter(m => m.id !== matchId));
+      toast.success("Match deleted successfully");
+    } catch (error) {
+      console.error('Error deleting match:', error);
+      toast.error("Failed to delete match");
+    }
+  };
+
+  const handleAddPlayer = async (matchId: string) => {
+    if (!currentUserId) {
+      toast.error("You must be logged in to add a player");
+      return;
+    }
+
+    console.log('Adding player with:', { matchId, currentUserId });
+
+    // Insert a generic spot reservation with added_by_profile_id set to current user
+    const { data, error } = await supabase
+      .from('match_participants')
+      .insert({
+        match_id: matchId,
+        name: 'Spot reserved',
+        added_by_profile_id: currentUserId,
+        // playtomic_user_id is null
+      })
+      .select();
+
+    console.log('Insert result:', { data, error });
+
+    if (error) {
+      console.error('Error adding player:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      toast.error(`Failed to add player: ${error.message}`);
+      return;
+    }
+
+    toast.success("Player spot reserved!");
+    fetchMatches();
+  };
+
+  const handleDeleteParticipant = async (participantId: string) => {
+    if (!currentUserId) {
+      toast.error("You must be logged in to delete a participant");
+      return;
+    }
+
+    console.log('Deleting participant:', participantId);
+
+    const { error } = await supabase
+      .from('match_participants')
+      .delete()
+      .eq('id', participantId);
+
+    console.log('Delete result:', { error });
+
+    if (error) {
+      console.error('Error deleting participant:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      toast.error(`Failed to delete participant: ${error.message}`);
+      return;
+    }
+
+    toast.success("Participant removed!");
+    fetchMatches();
+  };
+
+  // Handle opening thoughts modal for a match
+  const handleOpenMatchThoughts = async (match: any) => {
+    setSelectedMatchForThoughts(match);
+    const thoughts = await getThoughtsByMatchId(match.id);
+    setMatchThoughts(thoughts);
+    setMatchThoughtsModalOpen(true);
+  };
+
+  // Refresh match thoughts and update thought count in matches list
+  const refreshMatchThoughts = async () => {
+    if (selectedMatchForThoughts) {
+      const thoughts = await getThoughtsByMatchId(selectedMatchForThoughts.id);
+      setMatchThoughts(thoughts);
+    }
+    // Also refresh matches to update the thought count
+    fetchMatches();
+  };
 
   // Filter events by time filter, tags, intentions, and date range
   const filteredEvents = events.filter(event => {
@@ -327,45 +724,120 @@ const Events = () => {
     return true;
   });
 
+  // Filter matches by match level, date range, and location
+  const filteredMatches = matches.filter(match => {
+    // Hide fully booked matches filter
+    if (hideFullyBooked && match.players_registered >= match.total_spots) {
+      return false;
+    }
+
+    // Match level filter - check if any of the match's levels are in the selected levels array
+    if (selectedMatchLevels.length > 0 && match.match_levels) {
+      const hasMatchingLevel = match.match_levels.some((level: string) =>
+        selectedMatchLevels.includes(level)
+      );
+      if (!hasMatchingLevel) {
+        return false;
+      }
+    }
+
+    // Date range filter
+    if (selectedDate && match.match_date) {
+      const matchDate = new Date(match.match_date);
+      let filterStartDate: Date | null = null;
+      let filterEndDate: Date | null = null;
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      if (selectedDate === "today") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "tomorrow") {
+        filterStartDate = new Date(now);
+        filterStartDate.setDate(filterStartDate.getDate() + 1);
+        filterEndDate = new Date(filterStartDate);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "this-week") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setDate(filterEndDate.getDate() + (6 - now.getDay()));
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "next-week") {
+        filterStartDate = new Date(now);
+        filterStartDate.setDate(filterStartDate.getDate() + (7 - now.getDay()));
+        filterEndDate = new Date(filterStartDate);
+        filterEndDate.setDate(filterEndDate.getDate() + 6);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "this-month") {
+        filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filterEndDate.setHours(23, 59, 59, 999);
+      } else if (selectedDate === "custom" && customDateFrom && customDateTo) {
+        filterStartDate = new Date(customDateFrom);
+        filterStartDate.setHours(0, 0, 0, 0);
+        filterEndDate = new Date(customDateTo);
+        filterEndDate.setHours(23, 59, 59, 999);
+      }
+
+      if (filterStartDate && filterEndDate) {
+        if (matchDate < filterStartDate || matchDate > filterEndDate) {
+          return false;
+        }
+      }
+    }
+
+    // Radius filter
+    if (selectedRadius && selectedLocationCoords) {
+      if (!match.latitude || !match.longitude) {
+        return false;
+      }
+
+      const distance = calculateDistance(
+        selectedLocationCoords.lat,
+        selectedLocationCoords.lng,
+        match.latitude,
+        match.longitude
+      );
+
+      const radiusKm = parseFloat(selectedRadius);
+      if (distance > radiusKm) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Refetch user data after setup dialog
+  const handleSetupComplete = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('tp_user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.tp_user_id) {
+        setShowSetupDialog(false);
+      }
+    }
+  };
+
   return (
     <>
+        {/* TP Member Setup Dialog */}
+        <TPMemberSetupDialog
+          open={showSetupDialog}
+          onOpenChange={setShowSetupDialog}
+          onSaveComplete={handleSetupComplete}
+        />
+
         {/* Events Filters - Sticky */}
         <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">All events</h1>
-              
-              {/* Centered Filters */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-                <Button
-                  variant={filter === "all" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("all")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={filter === "past" ? "default" : "ghost"}
-                  size="sm"  
-                  onClick={() => setFilter("past")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Past
-                </Button>
-                <Button
-                  variant={filter === "future" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("future")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Future
-                </Button>
-              </div>
-              
-              {/* Empty div for balance */}
-              <div></div>
-            </div>
           </div>
         </div>
 
@@ -383,16 +855,16 @@ const Events = () => {
                         <Filter className="h-4 w-4 text-primary" />
                         <span>Filters</span>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-6 px-2 text-xs"
                         onClick={() => {
                           setSelectedLocation("");
                           setSelectedRadius("");
                           setSelectedDate("");
-                          setSelectedTags([]);
-                          setSelectedIntentions([]);
+                          setSelectedMatchLevels(getAvailableRankingLevels(userRanking));
+                          setHideFullyBooked(false);
                           setShowCustomDatePicker(false);
                           setCustomDateFrom(undefined);
                           setCustomDateTo(undefined);
@@ -487,57 +959,54 @@ const Events = () => {
                       </div>
                     </div>
 
-                    {/* What Section - All Tags from Database */}
+                    {/* Match Level Section */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Tag className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">What</span>
+                        <Trophy className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Ranking *</span>
                       </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {allTags.map((tag) => (
-                          <Badge 
-                            key={tag}
-                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => {
-                              setSelectedTags(prev => 
-                                prev.includes(tag) 
-                                  ? prev.filter(t => t !== tag)
-                                  : [...prev, tag]
-                              );
-                            }}
-                          >
-                            {tag}
-                          </Badge>
+                      <div className="space-y-2">
+                        {getAvailableRankingLevels(userRanking).map((level) => (
+                          <div key={level} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`level-${level}`}
+                              checked={selectedMatchLevels.includes(level)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedMatchLevels([...selectedMatchLevels, level]);
+                                } else {
+                                  // Prevent unchecking if it's the last one
+                                  if (selectedMatchLevels.length > 1) {
+                                    setSelectedMatchLevels(selectedMatchLevels.filter(l => l !== level));
+                                  }
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`level-${level}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {level.replace('p', 'P').replace('-', ' - ').toUpperCase()}
+                            </label>
+                          </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Why Section - Intentions from Database */}
+                    {/* Hide Fully Booked Toggle */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Heart className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Why</span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {allIntentions.map((intention) => (
-                          <Badge 
-                            key={intention}
-                            variant={selectedIntentions.includes(intention) ? "default" : "secondary"}
-                            className="text-xs cursor-pointer bg-purple-500 hover:bg-purple-600 transition-colors"
-                            onClick={() => {
-                              setSelectedIntentions(prev => 
-                                prev.includes(intention) 
-                                  ? prev.filter(i => i !== intention)
-                                  : [...prev, intention]
-                              );
-                            }}
-                          >
-                            {intention}
-                          </Badge>
-                        ))}
+                        <Checkbox
+                          id="hide-fully-booked"
+                          checked={hideFullyBooked}
+                          onCheckedChange={(checked) => setHideFullyBooked(checked === true)}
+                        />
+                        <label
+                          htmlFor="hide-fully-booked"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Hide Fully Booked Matches
+                        </label>
                       </div>
                     </div>
 
@@ -546,9 +1015,260 @@ const Events = () => {
               </div>
             </div>
 
-            {/* Main Content - Events */}
-            <div className="lg:col-span-6 space-y-4">
-              {filteredEvents.map((event, index) => (
+            {/* Main Content - Events and Matches */}
+            <div className="lg:col-span-6 space-y-6">
+              {/* Matches Section */}
+              {filteredMatches.length > 0 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredMatches.map((match) => (
+                      <Card key={match.id} className="bg-card/90 backdrop-blur-sm border border-border hover:border-primary/50 transition-colors">
+                        <CardContent className="p-4 space-y-3 relative">
+                          {/* Delete button - top right corner */}
+                          {currentUserId === match.created_by && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteMatch(match.id);
+                              }}
+                              className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          {/* Loading state for pending matches */}
+                          {match.status === 'pending' && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 rounded px-3 py-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Retrieving data from playtomic...</span>
+                            </div>
+                          )}
+
+                          {/* Date and Venue */}
+                          <div className="space-y-1">
+                            {match.match_date && (
+                              <h3 className="font-semibold text-lg flex items-center">
+                                <Calendar className="h-5 w-5 mr-2" />
+                                {format(new Date(match.match_date), 'EEEE d MMM, HH:mm')}
+                                {match.duration && (() => {
+                                  const startDate = new Date(match.match_date);
+                                  const endDate = new Date(startDate.getTime() + match.duration * 60000);
+                                  return ` - ${format(endDate, 'HH:mm')}`;
+                                })()}
+                              </h3>
+                            )}
+                            <div className="text-base text-muted-foreground">{match.venue_name || 'Padel Match'}</div>
+                          </div>
+
+                          {/* Location */}
+                          {(match.city || match.location) && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {match.location || match.city}
+                            </div>
+                          )}
+
+                          {/* Court */}
+                          {match.court_number && (
+                            <div className="text-sm text-muted-foreground">
+                              Court: {match.court_number}
+                            </div>
+                          )}
+
+                          {/* Participants - always show 4 slots for consistent card height */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-sm font-medium">
+                                <Users className="h-4 w-4 mr-1" />
+                                Players ({match.match_participants?.length || 0}/{match.total_spots || 4})
+                              </div>
+                              {/* Go to Playtomic Button - only visible if user created match or added a participant */}
+                              {(currentUserId === match.created_by ||
+                                match.match_participants?.some((p: any) => p.added_by_profile_id === currentUserId)) && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => window.open(match.url, '_blank')}
+                                  className="h-6 text-xs"
+                                >
+                                  Go to playtomic
+                                </Button>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {/* Render existing participants */}
+                              {match.match_participants?.map((participant: any) => (
+                                <div
+                                  key={participant.id}
+                                  className="flex items-center justify-between text-sm bg-secondary/30 rounded px-2 py-1 h-7"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Avatar
+                                      className="h-5 w-5 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                      onClick={() => setProfileImageModal({
+                                        open: true,
+                                        imageUrl: participant.avatar_url,
+                                        name: participant.name || 'Player'
+                                      })}
+                                    >
+                                      <AvatarImage src={participant.avatar_url} />
+                                      <AvatarFallback className="text-[8px] bg-primary/10">
+                                        {participant.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>{participant.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {/* Show profile ranking if available, otherwise show level_value */}
+                                    {participant.profile_ranking ? (
+                                      <span className="text-xs text-muted-foreground font-medium">
+                                        {participant.profile_ranking}
+                                      </span>
+                                    ) : participant.level_value ? (
+                                      <span className="text-xs text-muted-foreground">
+                                        Level {participant.level_value.toFixed(1)}
+                                      </span>
+                                    ) : null}
+                                    {/* Delete button - only show if current user added this participant */}
+                                    {participant.added_by_profile_id === currentUserId && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDeleteParticipant(participant.id)}
+                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {/* Render empty slots as "New player" buttons */}
+                              {Array.from({ length: (match.total_spots || 4) - (match.match_participants?.length || 0) }).map((_, index) => (
+                                <Button
+                                  key={`empty-slot-${index}`}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAddPlayer(match.id)}
+                                  className="w-full h-7 text-sm border-dashed"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  New player
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Match Levels Badges and Go to Playtomic Button */}
+                          <div className="space-y-2">
+                            <span className="text-sm font-medium">Rankings:</span>
+
+                            {match.match_levels && match.match_levels.length > 0 && (
+                              <div className="flex flex-wrap gap-1 items-center justify-between">
+                                <div className="flex flex-wrap gap-1 items-center">
+                                  {[...match.match_levels].sort((a: string, b: string) => {
+                                    // Extract first number from level string (e.g., "p50-p100" -> 50)
+                                    const getFirstNum = (level: string) => {
+                                      const match = level.match(/\d+/);
+                                      return match ? parseInt(match[0]) : 0;
+                                    };
+                                    return getFirstNum(a) - getFirstNum(b);
+                                  }).map((level: string) => (
+                                    <Badge
+                                      key={level}
+                                      variant="secondary"
+                                      className="capitalize text-xs flex items-center gap-1"
+                                    >
+                                      {level}
+                                      {currentUserId === match.created_by && match.match_levels.length > 1 && (
+                                        <X
+                                          className="h-3 w-3 cursor-pointer hover:text-destructive ml-1"
+                                          onClick={() => handleRemoveLevelFromMatch(match.id, level)}
+                                        />
+                                      )}
+                                    </Badge>
+                                  ))}
+
+                                  {/* Add Level Button - only show if there are levels available to add */}
+                                  {currentUserId === match.created_by &&
+                                   (() => {
+                                     const availableLevels = getAvailableRankingLevels(userRanking).filter(level => !match.match_levels?.includes(level));
+                                     return availableLevels.length > 0 && (
+                                       <Button
+                                         variant="outline"
+                                         size="icon"
+                                         className="h-6 w-6 border-dashed"
+                                         onClick={async () => {
+                                           const levelToAdd = availableLevels[0];
+
+                                           // Add the level directly
+                                           const currentLevels = match.match_levels || [];
+                                           const updatedLevels = [...currentLevels, levelToAdd];
+
+                                           const { error } = await supabase
+                                             .from('matches')
+                                             .update({ match_levels: updatedLevels })
+                                             .eq('id', match.id);
+
+                                           if (error) {
+                                             console.error('Error updating match levels:', error);
+                                             toast.error("Failed to add ranking");
+                                             return;
+                                           }
+
+                                           toast.success("Ranking added!");
+                                           fetchMatches();
+                                         }}
+                                       >
+                                         <Plus className="h-3 w-3" />
+                                       </Button>
+                                     );
+                                   })()}
+                                </div>
+
+                                </div>
+                            )}
+                          </div>
+                        </CardContent>
+
+                        {/* Action Bar - same style as event cards */}
+                        <div className="px-4 py-2 border-t border-border">
+                          <div className="flex items-center">
+                            <button
+                              onClick={() => handleOpenMatchThoughts(match)}
+                              className="flex-1 flex items-center justify-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              <span>{match.thoughts_count || 0} Thoughts</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(match.url || `${window.location.origin}/events?match=${match.id}`);
+                                toast.success("Link copied to clipboard!");
+                              }}
+                              className="flex-1 flex items-center justify-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <Share2 className="h-4 w-4" />
+                              <span>Share</span>
+                            </button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Events Section */}
+              {filteredEvents.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-foreground font-comfortaa">Community Events</h2>
+                {filteredEvents.map((event, index) => (
                 <CommunityEventCard
                   key={event.eventId}
                   eventId={event.eventId}
@@ -601,6 +1321,8 @@ const Events = () => {
                   }}
                 />
               ))}
+              </div>
+              )}
             </div>
           </div>
         </div>
@@ -630,6 +1352,43 @@ const Events = () => {
             }
           }}
         />
+
+        {/* Match Thoughts Modal */}
+        <ThoughtsModal
+          open={matchThoughtsModalOpen}
+          onOpenChange={setMatchThoughtsModalOpen}
+          postId={selectedMatchForThoughts?.id || ''}
+          postTitle={selectedMatchForThoughts?.venue_name || selectedMatchForThoughts?.match_date ?
+            `${selectedMatchForThoughts?.venue_name || 'Match'} - ${selectedMatchForThoughts?.match_date ? format(new Date(selectedMatchForThoughts.match_date), 'd MMM HH:mm') : ''}` :
+            'Match'}
+          thoughts={matchThoughts}
+          isMatch={true}
+          onThoughtAdded={refreshMatchThoughts}
+        />
+
+        {/* Profile Image Modal */}
+        <Dialog open={profileImageModal.open} onOpenChange={(open) => setProfileImageModal({ ...profileImageModal, open })}>
+          <DialogContent className="sm:max-w-md flex flex-col items-center">
+            <DialogHeader>
+              <DialogTitle>{profileImageModal.name}</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center py-4">
+              {profileImageModal.imageUrl ? (
+                <img
+                  src={profileImageModal.imageUrl}
+                  alt={profileImageModal.name}
+                  className="max-w-full max-h-[60vh] rounded-lg object-contain"
+                />
+              ) : (
+                <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-6xl font-medium text-primary">
+                    {profileImageModal.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Review Modal */}
         <ReviewModal

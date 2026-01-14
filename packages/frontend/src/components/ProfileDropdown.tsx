@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Sparkles } from "lucide-react";
+import { User, Settings, LogOut, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,8 +24,6 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
   const [displayName, setDisplayName] = useState<string>(userName || "My Page");
   const [userEmail, setUserEmail] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
-  const [isHealer, setIsHealer] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     // Fetch the current user's information
@@ -43,13 +41,9 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
                      "My Page";
         setDisplayName(name);
         setUserEmail(user.email || "");
-        setUserId(user.id);
-        
+
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
-        
-        // Set healer status
-        setIsHealer(profile?.is_healer || false);
       }
     };
 
@@ -73,19 +67,13 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
                      "My Page";
         setDisplayName(name);
         setUserEmail(session.user.email || "");
-        setUserId(session.user.id);
-        
+
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
-        
-        // Set healer status
-        setIsHealer(profile?.is_healer || false);
       } else {
         setDisplayName("My Page");
         setUserEmail("");
         setAvatarUrl(undefined);
-        setIsHealer(false);
-        setUserId("");
       }
     });
 
@@ -141,49 +129,22 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-md border border-border">
-        <DropdownMenuItem 
-          onClick={() => navigate('/private-profile')}
-          className="cursor-pointer flex items-center space-x-2 py-3"
-        >
-          <User className="h-4 w-4 text-primary" />
-          <span>{displayName}</span>
-        </DropdownMenuItem>
-        
-        {/* Healer Page - only visible for healers */}
-        {isHealer && (
-          <DropdownMenuItem 
-            onClick={async () => {
-              // Check if healer profile has role set
-              const { data: healerProfile } = await (supabase as any)
-                .from('healer_profiles')
-                .select('role')
-                .eq('user_id', userId)
-                .single();
-              
-              if (healerProfile && healerProfile.role) {
-                // Profile is complete, go to private healer page
-                navigate('/private-healer-profile');
-              } else {
-                // Profile needs setup, go to edit page
-                navigate('/edit-healer-profile');
-              }
-            }}
-            className="cursor-pointer flex items-center space-x-2 py-3"
-          >
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>Healer Page</span>
-          </DropdownMenuItem>
-        )}
-        
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => navigate('/settings')}
           className="cursor-pointer flex items-center space-x-2 py-3"
         >
           <Settings className="h-4 w-4 text-primary" />
           <span>Settings</span>
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate('/admin')}
+          className="cursor-pointer flex items-center space-x-2 py-3"
+        >
+          <Shield className="h-4 w-4 text-primary" />
+          <span>Admin</span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={handleLogout}
           className="cursor-pointer flex items-center space-x-2 py-3 text-destructive focus:text-destructive"
         >

@@ -53,11 +53,33 @@ const SignupCard = () => {
         if (error) throw error;
         toast.success("Welcome back! You're now signed in.");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              email: email
+            }
+          }
         });
         if (error) throw error;
+
+        // Wait a moment for the trigger to create the profile
+        if (data.user) {
+          // The profile should be auto-created by the database trigger
+          // But let's verify it exists
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Profile might not exist yet, that's okay - the trigger handles it
+          }
+        }
+
         toast.success("Verification email sent! Check your inbox to complete signup.");
       }
     } catch (error: any) {
@@ -90,10 +112,10 @@ const SignupCard = () => {
     <Card className="w-full max-w-2xl mx-auto mb-6 bg-card/80 backdrop-blur-md border-border/50">
       <CardHeader className="text-center">
         <CardTitle className="text-xl font-semibold font-comfortaa">
-          Join Our Spiritual Community
+          Join Our Padel Community
         </CardTitle>
         <CardDescription className="text-base">
-          If you would like to follow healers and other beautiful souls or register for events, you can create an account.
+          If you would like to find matches and post open matches, create an account and get started.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

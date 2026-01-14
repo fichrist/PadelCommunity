@@ -5,7 +5,11 @@
       "Bash(supabase status:*)",
       "Bash(npm run db:push:*)",
       "Bash(supabase link:*)",
-      "Bash(supabase db push:*)"
+      "Bash(supabase db push:*)",
+      "Bash(supabase migration:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill //F //PID 30536)"
     ]
   }
 }

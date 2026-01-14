@@ -2,10 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, User, Upload, X } from "lucide-react";
+import { ArrowLeft, User, Upload, X, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,13 +12,14 @@ import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { getCurrentProfile, updateProfile, uploadAvatar, deleteAvatar } from "@/lib/profiles";
+import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Profile fields
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -29,9 +29,15 @@ const Settings = () => {
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("");
-  const [isHealer, setIsHealer] = useState(false);
+  const [ranking, setRanking] = useState<string>("");
+  const [tpMembershipNumber, setTpMembershipNumber] = useState<string>("");
+  const [tpUserId, setTpUserId] = useState<string>("");
+  const [playtomicUserId, setPlaytomicUserId] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [selectedPlaceData, setSelectedPlaceData] = useState<any>(null);
+
+  // TP Member Setup Dialog
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -39,29 +45,53 @@ const Settings = () => {
 
   const fetchUserData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      console.log("[fetchUserData] Starting fetch...");
+
+      const getUserPromise = supabase.auth.getUser();
+      console.log("[fetchUserData] Called getUser(), waiting for response...");
+
+      const result = await getUserPromise;
+      console.log("[fetchUserData] getUser() completed, result:", result);
+
+      const user = result.data?.user;
+
+      console.log("[fetchUserData] User:", user);
+
       if (user) {
+        console.log("[fetchUserData] User email:", user.email);
         setEmail(user.email || "");
-        
+
         // Fetch profile from profiles table
+        console.log("[fetchUserData] Fetching profile...");
         const profile = await getCurrentProfile();
-        
+
+        console.log("[fetchUserData] Profile:", profile);
+
         if (profile) {
           setFirstName(profile.first_name || "");
           setLastName(profile.last_name || "");
           setPhoneNumber(profile.phone_number || "");
-          setIsHealer(profile.is_healer || false);
+          setRanking(profile.ranking || "");
+          setTpMembershipNumber(profile.tp_membership_number || "");
+          setTpUserId(profile.tp_user_id || "");
+          setPlaytomicUserId(profile.playtomic_user_id || "");
           setAvatarUrl(profile.avatar_url || "");
           // Get address from profile fields
           setCountry(profile.formatted_address || "");
           setCity(profile.city || "");
           setStreet(profile.street_name || "");
           setPostalCode(profile.postal_code || "");
+
+          // Show setup dialog if tp_user_id is empty
+          if (!profile.tp_user_id) {
+            setShowSetupDialog(true);
+          }
         }
       }
+
+      console.log("[fetchUserData] Email state set to:", user?.email);
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("[fetchUserData] Error:", error);
       toast.error("Failed to load user data");
     }
   };
@@ -133,19 +163,31 @@ const Settings = () => {
 
   const handleSave = async () => {
     setLoading(true);
+    console.log("Starting save process...");
     try {
       // Prepare update data
+      // Validate mandatory fields
+      if (!ranking) {
+        toast.error("Ranking is required");
+        setLoading(false);
+        return;
+      }
+
       const updates: any = {
         first_name: firstName,
         last_name: lastName,
         phone_number: phoneNumber,
-        is_healer: isHealer,
+        ranking: ranking,
+        tp_membership_number: tpMembershipNumber,
+        tp_user_id: tpUserId ? parseInt(tpUserId) : null,
       };
+
+      console.log("Updates to save:", updates);
 
       // If a place was selected, parse and add location fields
       if (selectedPlaceData) {
         console.log("Saving address from selectedPlaceData:", selectedPlaceData);
-        
+
         // Parse address components
         updates.formatted_address = selectedPlaceData.formatted_address;
         updates.place_id = selectedPlaceData.place_id;
@@ -182,13 +224,22 @@ const Settings = () => {
       }
 
       // Update profile with all data
+      console.log("Calling updateProfile with:", updates);
       const profileSuccess = await updateProfile(updates);
+
+      console.log("Update result:", profileSuccess);
 
       if (!profileSuccess) {
         throw new Error("Failed to update profile");
       }
 
       toast.success("Profile updated successfully!");
+
+      // Refresh the profile data to show updated values
+      await fetchUserData();
+
+      // Navigate to events page
+      navigate('/events');
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");
@@ -199,6 +250,13 @@ const Settings = () => {
 
   return (
     <>
+        {/* TP Member Setup Dialog */}
+        <TPMemberSetupDialog
+          open={showSetupDialog}
+          onOpenChange={setShowSetupDialog}
+          onSaveComplete={fetchUserData}
+        />
+
         {/* Header */}
         <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-[57px] z-40">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -283,9 +341,9 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input 
-                      id="firstName" 
-                      placeholder="Enter your first name" 
+                    <Input
+                      id="firstName"
+                      placeholder="Enter your first name"
                       className="bg-background/50"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
@@ -293,16 +351,16 @@ const Settings = () => {
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input 
-                      id="lastName" 
-                      placeholder="Enter your last name" 
+                    <Input
+                      id="lastName"
+                      placeholder="Enter your last name"
                       className="bg-background/50"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input 
@@ -352,15 +410,39 @@ const Settings = () => {
 
                 <Separator className="my-4" />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Are you a healer?</Label>
-                    <p className="text-sm text-muted-foreground">Enable healer features and visibility</p>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <Label htmlFor="ranking">Ranking *</Label>
                   </div>
-                  <Switch 
-                    checked={isHealer} 
-                    onCheckedChange={setIsHealer}
+                  <Input
+                    id="ranking"
+                    type="text"
+                    value={ranking}
+                    className="bg-muted/50 cursor-not-allowed"
+                    placeholder="Use 'Look for TP Member' to set your ranking"
+                    readOnly
+                    disabled
+                    required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Your ranking will be automatically filled when you select your profile from the TP Member lookup above
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playtomicUserId">Playtomic User ID</Label>
+                  <Input
+                    id="playtomicUserId"
+                    type="text"
+                    value={playtomicUserId}
+                    className="bg-muted/50 cursor-not-allowed"
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your ID will be filled in automatically when you post your first match
+                  </p>
                 </div>
               </CardContent>
             </Card>

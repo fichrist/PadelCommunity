@@ -6,49 +6,19 @@ import { Bell, UserPlus, Heart, Ban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-// Import images
-import { elenaProfile, davidProfile, ariaProfile, phoenixProfile } from "@/data/healers";
+interface Follower {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  isFollowing: boolean;
+  isBlocked: boolean;
+  timeAgo: string;
+}
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [followers, setFollowers] = useState([
-    {
-      id: "1",
-      name: "Luna Sage",
-      avatar: elenaProfile,
-      role: "Meditation Teacher",
-      isFollowing: false,
-      isBlocked: false,
-      timeAgo: "2 hours ago"
-    },
-    {
-      id: "2", 
-      name: "River Flow",
-      avatar: davidProfile,
-      role: "Energy Healer",
-      isFollowing: false,
-      isBlocked: false,
-      timeAgo: "4 hours ago"
-    },
-    {
-      id: "3",
-      name: "Star Dreamer", 
-      avatar: ariaProfile,
-      role: "Astrologer",
-      isFollowing: true,
-      isBlocked: false,
-      timeAgo: "1 day ago"
-    },
-    {
-      id: "4",
-      name: "Ocean Mystic",
-      avatar: phoenixProfile,
-      role: "Reiki Master", 
-      isFollowing: false,
-      isBlocked: false,
-      timeAgo: "2 days ago"
-    }
-  ]);
+  const [followers, setFollowers] = useState<Follower[]>([]);
 
   const navigate = useNavigate();
 

@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string | null
+          last_read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          image_url: string | null
+          name: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           allow_visible: boolean | null
@@ -76,6 +146,7 @@ export type Database = {
           full_description: string | null
           id: string
           image_url: string | null
+          intentions: string[] | null
           latitude: number | null
           longitude: number | null
           place_id: string | null
@@ -101,6 +172,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           image_url?: string | null
+          intentions?: string[] | null
           latitude?: number | null
           longitude?: number | null
           place_id?: string | null
@@ -126,6 +198,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           image_url?: string | null
+          intentions?: string[] | null
           latitude?: number | null
           longitude?: number | null
           place_id?: string | null
@@ -154,7 +227,7 @@ export type Database = {
           phone_number: string | null
           rating: number | null
           role: string | null
-          specialties: string[] | null
+          tags: string[] | null
           updated_at: string | null
           user_id: string
           video: string | null
@@ -170,7 +243,7 @@ export type Database = {
           phone_number?: string | null
           rating?: number | null
           role?: string | null
-          specialties?: string[] | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id: string
           video?: string | null
@@ -186,7 +259,7 @@ export type Database = {
           phone_number?: string | null
           rating?: number | null
           role?: string | null
-          specialties?: string[] | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id?: string
           video?: string | null
@@ -197,6 +270,94 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intentions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -251,6 +412,8 @@ export type Database = {
           first_name: string | null
           formatted_address: string | null
           id: string
+          intentions: string[] | null
+          is_admin: boolean | null
           is_healer: boolean | null
           last_name: string | null
           latitude: number | null
@@ -271,6 +434,8 @@ export type Database = {
           first_name?: string | null
           formatted_address?: string | null
           id: string
+          intentions?: string[] | null
+          is_admin?: boolean | null
           is_healer?: boolean | null
           last_name?: string | null
           latitude?: number | null
@@ -291,6 +456,8 @@ export type Database = {
           first_name?: string | null
           formatted_address?: string | null
           id?: string
+          intentions?: string[] | null
+          is_admin?: boolean | null
           is_healer?: boolean | null
           last_name?: string | null
           latitude?: number | null

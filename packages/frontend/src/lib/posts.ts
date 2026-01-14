@@ -96,7 +96,7 @@ export async function getPostsWithDetails(): Promise<any[]> {
         // Fetch profile - use maybeSingle to avoid errors if not found
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, display_name, avatar_url, is_healer, bio')
+          .select('id, first_name, last_name, display_name, avatar_url, bio')
           .eq('id', post.user_id)
           .maybeSingle();
 

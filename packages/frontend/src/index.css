@@ -149,8 +149,20 @@ All colors MUST be HSL.
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari, Opera */
   }
+}
+
+/* Google Places Autocomplete dropdown - ensure it appears above dialogs/modals */
+.pac-container {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure pac-container items are clickable */
+.pac-item {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }

@@ -12,7 +12,14 @@ export default defineConfig(({ mode }) => ({
       "localhost",
       ".local",  // Alle *.local domains
       "192.168.50.57",  // Je specifieke IP
-    ]
+      "padelcommunity.duckdns.org"
+    ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      }
+    }
   },
   plugins: [
     react(),

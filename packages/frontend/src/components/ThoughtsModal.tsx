@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, Trash2, Reply, X } from "lucide-react";
-import { createThought, createEventThought, createHealerProfileThought, updateThought, deleteThought } from "@/lib/thoughts";
+import { createThought, createEventThought, createHealerProfileThought, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -30,6 +30,7 @@ interface ThoughtsModalProps {
   thoughts: Thought[];
   isEvent?: boolean;
   isHealerProfile?: boolean;
+  isMatch?: boolean;
   onThoughtAdded?: () => void;
 }
 
@@ -200,7 +201,7 @@ const ThoughtItem = ({
   );
 };
 
-const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEvent = false, isHealerProfile = false, onThoughtAdded }: ThoughtsModalProps) => {
+const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEvent = false, isHealerProfile = false, isMatch = false, onThoughtAdded }: ThoughtsModalProps) => {
   const [newThought, setNewThought] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -228,9 +229,11 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
 
     setIsSubmitting(true);
     try {
-      // Use the appropriate function based on context (event, healer profile, or post)
+      // Use the appropriate function based on context (match, event, healer profile, or post)
       let result;
-      if (isHealerProfile) {
+      if (isMatch) {
+        result = await createMatchThought(postId, newThought, replyingToThought?.id);
+      } else if (isHealerProfile) {
         result = await createHealerProfileThought(postId, newThought, replyingToThought?.id);
       } else if (isEvent) {
         result = await createEventThought(postId, newThought, replyingToThought?.id);

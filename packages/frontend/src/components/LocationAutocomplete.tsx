@@ -42,20 +42,28 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [apiLoaded, setApiLoaded] = useState(false);
-  
+  const [inputMounted, setInputMounted] = useState(false);
+
   // Use refs to avoid stale closures
   const onChangeRef = useRef(onChange);
   const onPlaceSelectedRef = useRef(onPlaceSelected);
-  
+
   // Update refs when callbacks change
   useEffect(() => {
     onChangeRef.current = onChange;
     onPlaceSelectedRef.current = onPlaceSelected;
   }, [onChange, onPlaceSelected]);
 
+  // Track when input is mounted
   useEffect(() => {
-    console.log("LocationAutocomplete useEffect running");
-    
+    if (inputRef.current) {
+      setInputMounted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("LocationAutocomplete useEffect running, inputMounted:", inputMounted);
+
     const initializeAutocomplete = async () => {
       console.log("initializeAutocomplete called");
       if (!inputRef.current) {
@@ -69,10 +77,11 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
 
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
       console.log("API Key exists?", !!apiKey);
-      
+
       // If no API key, just use regular input
       if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
         console.warn('Google Maps API key not configured');
+        setApiLoaded(true); // Mark as loaded so user can still type
         return;
       }
 
@@ -88,6 +97,12 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         console.log("Google Maps API loaded successfully");
         setApiLoaded(true);
 
+        // Double-check inputRef is still valid after async load
+        if (!inputRef.current) {
+          console.log("Input ref became null after API load");
+          return;
+        }
+
         console.log("Creating Autocomplete instance...");
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
           types: ['address'],
@@ -100,9 +115,14 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           console.log("=== PLACE_CHANGED EVENT FIRED ===");
           const place = autocomplete.getPlace();
           console.log("Place object:", place);
-          if (place.formatted_address) {
-            console.log("Calling onChange with:", place.formatted_address);
-            onChangeRef.current(place.formatted_address);
+
+          // Get the value directly from the input element (Google Places updates it)
+          const inputValue = inputRef.current?.value || '';
+          const addressValue = place.formatted_address || inputValue;
+
+          if (addressValue) {
+            console.log("Calling onChange with:", addressValue);
+            onChangeRef.current(addressValue);
             // Call the callback with full place object if provided
             console.log("onPlaceSelected callback exists?", !!onPlaceSelectedRef.current);
             if (onPlaceSelectedRef.current) {
@@ -110,30 +130,81 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
               onPlaceSelectedRef.current(place);
             }
           } else {
-            console.log("No formatted_address in place object");
+            console.log("No address value found");
           }
         });
 
         autocompleteRef.current = autocomplete;
       } catch (error) {
         console.warn('Google Maps API not available, falling back to regular input:', error);
+        setApiLoaded(true); // Mark as loaded so user can still type
       }
     };
 
-    initializeAutocomplete();
+    // Small delay to ensure DOM is ready, especially in dialogs
+    const timeoutId = setTimeout(() => {
+      initializeAutocomplete();
+    }, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, []); // Empty deps - initialize once, use refs for callbacks
+  }, [inputMounted]); // Re-run when input becomes mounted
+
+  // Handle manual input changes (for when user types without selecting from dropdown)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+
+  // Sync input value when the value prop changes from outside (e.g., form reset)
+  useEffect(() => {
+    if (inputRef.current && inputRef.current.value !== value) {
+      inputRef.current.value = value;
+    }
+  }, [value]);
+
+  // Fix for dialogs: add click handler to pac-container to prevent dialog from closing
+  useEffect(() => {
+    // Find and handle pac-container clicks
+    const handlePacContainerClick = (e: MouseEvent) => {
+      // Prevent the click from propagating to the dialog overlay
+      e.stopPropagation();
+    };
+
+    // Watch for pac-container being added to DOM
+    const observer = new MutationObserver(() => {
+      const pacContainer = document.querySelector('.pac-container') as HTMLElement;
+      if (pacContainer && !pacContainer.dataset.clickHandlerAdded) {
+        pacContainer.dataset.clickHandlerAdded = 'true';
+        pacContainer.addEventListener('mousedown', handlePacContainerClick, true);
+        pacContainer.addEventListener('click', handlePacContainerClick, true);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    return () => {
+      observer.disconnect();
+      const pacContainer = document.querySelector('.pac-container') as HTMLElement;
+      if (pacContainer) {
+        pacContainer.removeEventListener('mousedown', handlePacContainerClick, true);
+        pacContainer.removeEventListener('click', handlePacContainerClick, true);
+      }
+    };
+  }, [apiLoaded]);
 
   return (
     <div>
       <Input
         ref={inputRef}
         defaultValue={value}
+        onChange={handleInputChange}
         placeholder={placeholder}
         className={className}
       />

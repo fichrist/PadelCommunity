@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import SignupCard from "@/components/SignupCard";
-import { Sparkles } from "lucide-react";
-import spiritualBackground from "@/assets/spiritual-background.jpg";
+import { Trophy } from "lucide-react";
+import padelBackground from "@/assets/padel-background.jpg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -14,9 +14,9 @@ const Login = () => {
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Login - Current session:", session);
       if (session) {
-        // Redirect to community if already logged in
-        console.log("Login - Redirecting to /community");
-        navigate('/community', { replace: true });
+        // Redirect to events if already logged in
+        console.log("Login - Redirecting to /events");
+        navigate('/events', { replace: true });
       }
     };
 
@@ -26,9 +26,9 @@ const Login = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Login - Auth state changed:", event, "Session:", session);
       if (session) {
-        // Redirect to community when user logs in
-        console.log("Login - Redirecting to /community after sign in");
-        navigate('/community', { replace: true });
+        // Redirect to events when user logs in
+        console.log("Login - Redirecting to /events after sign in");
+        navigate('/events', { replace: true });
       }
     });
 
@@ -38,10 +38,10 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div 
+    <div
       className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-12"
       style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${spiritualBackground})`,
+        backgroundImage: `url(${padelBackground})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -50,16 +50,16 @@ const Login = () => {
       {/* Logo and Welcome Message */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-3 mb-4">
-          <Sparkles className="h-12 w-12 text-primary" />
+          <Trophy className="h-12 w-12 text-primary" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-comfortaa">
-            Spirit
+            Padel Community
           </h1>
         </div>
         <h2 className="text-3xl font-semibold text-white mb-2">
-          Welcome to Our Sacred Space
+          Find Your Perfect Match
         </h2>
         <p className="text-lg text-white/90 max-w-2xl mx-auto">
-          Connect with healers, join transformative events, and grow together in a community dedicated to spiritual awakening
+          Connect with padel players, join matches based on your location, time, and skill level
         </p>
       </div>
 
