@@ -3,10 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+interface PlayerResult {
+  name: string;
+  ranking: string | null;
+  club: string | null;
+  userId: string;
+}
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -16,6 +23,7 @@ const Admin = () => {
   const [firstName, setFirstName] = useState("Filip");
   const [lastName, setLastName] = useState("Christiaens");
   const [isLookingForRanking, setIsLookingForRanking] = useState(false);
+  const [searchResults, setSearchResults] = useState<PlayerResult[]>([]);
 
   const handleScrapeRanking = async () => {
     if (!userId.trim()) {
@@ -109,21 +117,14 @@ const Admin = () => {
     }
 
     setIsLookingForRanking(true);
+    setSearchResults([]);
 
     try {
-      // Get the current user's session token
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        throw new Error("You must be logged in");
-      }
-
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/look-for-tp-ranking`, {
+      const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
+      const response = await fetch(`${azureFunctionUrl}/api/lookForTpRanking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           firstName: firstName.trim(),
@@ -137,13 +138,25 @@ const Admin = () => {
         throw new Error(data.error || 'Failed to look up ranking');
       }
 
-      toast.success(`Found and saved ranking: ${data.data.ranking}`);
+      const players = data.data.players as PlayerResult[];
+
+      if (players.length === 0) {
+        toast.info("No players found with that name");
+      } else {
+        setSearchResults(players);
+        toast.success(`Found ${players.length} player(s)`);
+      }
     } catch (error: any) {
       console.error('Error looking for TP ranking:', error);
       toast.error(error.message || "Failed to look up ranking");
     } finally {
       setIsLookingForRanking(false);
     }
+  };
+
+  const handleSelectPlayer = (player: PlayerResult) => {
+    setUserId(player.userId);
+    toast.success(`Selected ${player.name} (${player.ranking || 'No ranking'})`);
   };
 
   return (
@@ -281,11 +294,46 @@ const Admin = () => {
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Search className="mr-2 h-4 w-4" />
                   Look For TP Ranking
                 </>
               )}
             </Button>
+
+            {searchResults.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <Label>Search Results</Label>
+                <div className="border rounded-md divide-y">
+                  {searchResults.map((player) => (
+                    <div
+                      key={player.userId}
+                      className="p-3 hover:bg-muted/50 cursor-pointer flex items-center justify-between"
+                      onClick={() => handleSelectPlayer(player)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">{player.name}</p>
+                          {player.club && (
+                            <p className="text-sm text-muted-foreground">{player.club}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {player.ranking ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {player.ranking}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No ranking</span>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">ID: {player.userId}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

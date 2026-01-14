@@ -38,7 +38,8 @@ const getAvailableRankingLevels = (userRanking: string | null): string[] => {
 // Function to fetch match details from Playtomic URL
 const fetchPlaytomicMatchDetails = async (url: string) => {
   try {
-    const response = await fetch('/api/scrape-playtomic', {
+    const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
+    const response = await fetch(`${azureFunctionUrl}/api/scrapePlaytomic`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,12 +47,14 @@ const fetchPlaytomicMatchDetails = async (url: string) => {
       body: JSON.stringify({ url }),
     });
 
-    if (!response.ok) {
-      console.warn('Could not fetch match details from URL');
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.warn('Could not fetch match details from URL:', data.error);
       return null;
     }
 
-    return await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching match details:', error);
     return null;

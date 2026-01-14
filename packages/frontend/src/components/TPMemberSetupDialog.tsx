@@ -29,9 +29,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
   const [addressCoords, setAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [lookingForTPMember, setLookingForTPMember] = useState(false);
-  const [tpPlayers, setTpPlayers] = useState<Array<{ info: string; ranking: string; userId: string | null }>>([]);
+  const [tpPlayers, setTpPlayers] = useState<Array<{ name: string; ranking: string | null; club: string | null; userId: string }>>([]);
   const [selectedTPPlayer, setSelectedTPPlayer] = useState<string>("");
-  const [selectedPlayerData, setSelectedPlayerData] = useState<{ ranking: string; userId: string } | null>(null);
+  const [selectedPlayerData, setSelectedPlayerData] = useState<{ ranking: string | null; userId: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleLookForTPMember = async () => {
@@ -46,21 +46,12 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
     setSelectedPlayerData(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
 
-      if (!session) {
-        throw new Error("You must be logged in");
-      }
-
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      console.log('Fetching from:', `${apiUrl}/api/look-for-tp-ranking`);
-      console.log('Token length:', session.access_token?.length);
-
-      const response = await fetch(`${apiUrl}/api/look-for-tp-ranking`, {
+      const response = await fetch(`${azureFunctionUrl}/api/lookForTpRanking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           firstName: firstName.trim(),
@@ -68,14 +59,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
       const data = await response.json();
-      console.log('API response:', data);
 
       if (!response.ok || !data.success) {
-        console.error('API error:', data);
         throw new Error(data.error || 'Failed to look up TP members');
       }
 
@@ -83,13 +69,12 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         setTpPlayers(data.data.players);
         toast.success(`Found ${data.data.players.length} player(s)`);
       } else {
-        toast.error('No players found with padel ranking');
+        toast.info('No players found with that name');
       }
     } catch (error: any) {
       console.error('Error looking for TP members:', error);
-      // Check if it's a network error
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        toast.error("Network error: Could not reach the API server. Make sure the backend is running.");
+        toast.error("Network error: Could not reach the Azure Function.");
       } else {
         toast.error(error.message || "Failed to look up TP members");
       }
@@ -100,14 +85,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
 
   const handlePlayerSelection = (value: string) => {
     setSelectedTPPlayer(value);
-    const selectedPlayer = tpPlayers.find(p => {
-      const displayValue = p.userId
-        ? `${p.info} - ID: ${p.userId}`
-        : p.info;
-      return displayValue === value;
-    });
+    const selectedPlayer = tpPlayers.find(p => p.userId === value);
 
-    if (selectedPlayer && selectedPlayer.userId) {
+    if (selectedPlayer) {
       setSelectedPlayerData({
         ranking: selectedPlayer.ranking,
         userId: selectedPlayer.userId
@@ -270,16 +250,14 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
                   <SelectValue placeholder="Select your account from the results" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tpPlayers.map((player, index) => {
-                    const displayValue = player.userId
-                      ? `${player.info} - ID: ${player.userId}`
-                      : player.info;
+                  {tpPlayers.map((player) => {
+                    const displayText = `${player.name}${player.club ? ` - ${player.club}` : ''} (${player.ranking || 'No ranking'})`;
                     return (
                       <SelectItem
-                        key={index}
-                        value={displayValue}
+                        key={player.userId}
+                        value={player.userId}
                       >
-                        {displayValue}
+                        {displayText}
                       </SelectItem>
                     );
                   })}

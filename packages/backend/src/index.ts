@@ -117,7 +117,7 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
-// Scrape Playtomic match details using Puppeteer
+// Scrape Playtomic match details 
 app.post('/api/scrape-playtomic', async (req, res) => {
   let browser;
   try {
