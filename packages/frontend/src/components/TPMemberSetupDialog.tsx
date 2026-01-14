@@ -48,7 +48,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
     try {
       const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
 
-      const response = await fetch(`${azureFunctionUrl}/api/lookForTpRanking`, {
+      const response = await fetch(`${azureFunctionUrl}/api/lookForTpPlayers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

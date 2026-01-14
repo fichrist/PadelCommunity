@@ -121,7 +121,7 @@ const Admin = () => {
 
     try {
       const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
-      const response = await fetch(`${azureFunctionUrl}/api/lookForTpRanking`, {
+      const response = await fetch(`${azureFunctionUrl}/api/lookForTpPlayers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,6 +138,10 @@ const Admin = () => {
         throw new Error(data.error || 'Failed to look up ranking');
       }
 
+      if (!data.data || !data.data.players) {
+        throw new Error('Invalid response from server');
+      }
+
       const players = data.data.players as PlayerResult[];
 
       if (players.length === 0) {
@@ -148,7 +152,11 @@ const Admin = () => {
       }
     } catch (error: any) {
       console.error('Error looking for TP ranking:', error);
-      toast.error(error.message || "Failed to look up ranking");
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        toast.error("Network error: Could not reach the Azure Function.");
+      } else {
+        toast.error(error.message || "Failed to look up ranking");
+      }
     } finally {
       setIsLookingForRanking(false);
     }

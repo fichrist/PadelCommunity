@@ -7,7 +7,7 @@ interface PlayerResult {
   userId: string;
 }
 
-interface LookForTpRankingRequest {
+interface LookForTpPlayersRequest {
   firstName: string;
   lastName: string;
 }
@@ -71,15 +71,15 @@ async function searchPlayers(firstName: string, lastName: string): Promise<Playe
   return players;
 }
 
-export async function lookForTpRanking(
+export async function lookForTpPlayers(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  context.log("Received look-for-tp-ranking request");
+  context.log("Received look-for-tp-players request");
 
   try {
     // Parse request body
-    const body = (await request.json()) as LookForTpRankingRequest;
+    const body = (await request.json()) as LookForTpPlayersRequest;
     context.log("Request body:", body);
 
     const { firstName, lastName } = body;
@@ -124,8 +124,8 @@ export async function lookForTpRanking(
   }
 }
 
-app.http("lookForTpRanking", {
+app.http("lookForTpPlayers", {
   methods: ["POST"],
   authLevel: "anonymous",
-  handler: lookForTpRanking,
+  handler: lookForTpPlayers,
 });
