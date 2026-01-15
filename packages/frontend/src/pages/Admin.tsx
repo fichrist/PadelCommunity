@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, Loader2, Search, User } from "lucide-react";
+import { ArrowLeft, Loader2, Search, User, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,98 +17,12 @@ interface PlayerResult {
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState("");
-  const [isScrapingRanking, setIsScrapingRanking] = useState(false);
-  const [isScrapingAllMembers, setIsScrapingAllMembers] = useState(false);
-  const [firstName, setFirstName] = useState("Filip");
-  const [lastName, setLastName] = useState("Christiaens");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isLookingForRanking, setIsLookingForRanking] = useState(false);
   const [searchResults, setSearchResults] = useState<PlayerResult[]>([]);
-
-  const handleScrapeRanking = async () => {
-    if (!userId.trim()) {
-      toast.error("Please enter a Tennis & Padel Vlaanderen user ID");
-      return;
-    }
-
-    setIsScrapingRanking(true);
-
-    try {
-      // Call the backend function to scrape the ranking
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/scrape-tennis-padel-ranking`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: userId.trim() }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to scrape ranking');
-      }
-
-      const data = await response.json();
-
-      // Update the current user's profile with the ranking
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error("You must be logged in");
-      }
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          ranking: data.ranking,
-          tp_membership_number: userId.trim()
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast.success(`Ranking ${data.ranking} and membership number saved successfully!`);
-      setUserId("");
-    } catch (error: any) {
-      console.error('Error scraping ranking:', error);
-      toast.error(error.message || "Failed to scrape ranking");
-    } finally {
-      setIsScrapingRanking(false);
-    }
-  };
-
-  const handleScrapeAllMembers = async () => {
-    setIsScrapingAllMembers(true);
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/scrape-all-tp-members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to scrape members');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(`Successfully scraped ${data.data.membersFound} members! ${data.data.errorsCount} errors encountered.`);
-      } else {
-        throw new Error('Scraping failed');
-      }
-    } catch (error: any) {
-      console.error('Error scraping all members:', error);
-      toast.error(error.message || "Failed to scrape all members");
-    } finally {
-      setIsScrapingAllMembers(false);
-    }
-  };
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerResult | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleLookForTPRanking = async () => {
     if (!firstName.trim() || !lastName.trim()) {
@@ -118,6 +32,7 @@ const Admin = () => {
 
     setIsLookingForRanking(true);
     setSearchResults([]);
+    setSelectedPlayer(null);
 
     try {
       const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
@@ -163,8 +78,47 @@ const Admin = () => {
   };
 
   const handleSelectPlayer = (player: PlayerResult) => {
-    setUserId(player.userId);
+    setSelectedPlayer(player);
     toast.success(`Selected ${player.name} (${player.ranking || 'No ranking'})`);
+  };
+
+  const handleSaveRanking = async () => {
+    if (!selectedPlayer) {
+      toast.error("Please select a player first");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          ranking: selectedPlayer.ranking,
+          tp_membership_number: selectedPlayer.userId,
+          tp_user_id: parseInt(selectedPlayer.userId),
+        } as any)
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Ranking ${selectedPlayer.ranking || 'N/A'} saved successfully!`);
+      setSelectedPlayer(null);
+      setSearchResults([]);
+      setFirstName("");
+      setLastName("");
+    } catch (error: any) {
+      console.error('Error saving ranking:', error);
+      toast.error(error.message || "Failed to save ranking");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -183,106 +137,36 @@ const Admin = () => {
           <h1 className="text-2xl font-bold">Admin</h1>
         </div>
 
-        {/* Ranking Scraper Card */}
+        {/* Look For TP Ranking Card */}
         <Card>
           <CardHeader>
             <CardTitle>Tennis & Padel Vlaanderen Ranking</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="userId">Membership Number</Label>
-              <Input
-                id="userId"
-                type="text"
-                placeholder="e.g., 295478"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                disabled={isScrapingRanking}
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter your Tennis & Padel Vlaanderen membership number to fetch and save your ranking
-              </p>
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="e.g., Filip"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={isLookingForRanking || isSaving}
+                />
+              </div>
 
-            <Button
-              onClick={handleScrapeRanking}
-              disabled={isScrapingRanking || !userId.trim()}
-              className="w-full"
-            >
-              {isScrapingRanking ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Fetching Ranking...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Fetch & Save Ranking
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Scrape All TP Members Card */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Scrape All TP Members</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Scrape member data for Tennis & Padel Vlaanderen user ID 8000 and store in the database
-            </p>
-
-            <Button
-              onClick={handleScrapeAllMembers}
-              disabled={isScrapingAllMembers}
-              className="w-full"
-              variant="secondary"
-            >
-              {isScrapingAllMembers ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Scraping Members...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Scrape All TP Members
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Look For TP Ranking Card */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Look For TP Ranking</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                type="text"
-                placeholder="e.g., Filip"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                disabled={isLookingForRanking}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                type="text"
-                placeholder="e.g., Christiaens"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                disabled={isLookingForRanking}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="e.g., Christiaens"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={isLookingForRanking || isSaving}
+                />
+              </div>
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -291,19 +175,18 @@ const Admin = () => {
 
             <Button
               onClick={handleLookForTPRanking}
-              disabled={isLookingForRanking || !firstName.trim() || !lastName.trim()}
+              disabled={isLookingForRanking || isSaving || !firstName.trim() || !lastName.trim()}
               className="w-full"
-              variant="secondary"
             >
               {isLookingForRanking ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Looking For Ranking...
+                  Searching...
                 </>
               ) : (
                 <>
                   <Search className="mr-2 h-4 w-4" />
-                  Look For TP Ranking
+                  Search for Player
                 </>
               )}
             </Button>
@@ -315,7 +198,11 @@ const Admin = () => {
                   {searchResults.map((player) => (
                     <div
                       key={player.userId}
-                      className="p-3 hover:bg-muted/50 cursor-pointer flex items-center justify-between"
+                      className={`p-3 cursor-pointer flex items-center justify-between transition-colors ${
+                        selectedPlayer?.userId === player.userId
+                          ? 'bg-primary/10'
+                          : 'hover:bg-muted/50'
+                      }`}
                       onClick={() => handleSelectPlayer(player)}
                     >
                       <div className="flex items-center gap-3">
@@ -341,6 +228,27 @@ const Admin = () => {
                   ))}
                 </div>
               </div>
+            )}
+
+            {selectedPlayer && (
+              <Button
+                onClick={handleSaveRanking}
+                disabled={isSaving}
+                className="w-full"
+                variant="default"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save {selectedPlayer.name}'s Ranking ({selectedPlayer.ranking || 'N/A'})
+                  </>
+                )}
+              </Button>
             )}
           </CardContent>
         </Card>

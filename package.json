@@ -6,12 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=packages/frontend & npm run dev --workspace=packages/backend",
+    "dev": "npm run dev --workspace=packages/frontend",
     "dev:frontend": "npm run dev --workspace=packages/frontend",
-    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:functions": "npm run start --workspace=packages/azure-functions",
     "build": "npm run build --workspaces",
     "build:frontend": "npm run build --workspace=packages/frontend",
-    "build:backend": "npm run build --workspace=packages/backend",
     "install:all": "npm install",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",

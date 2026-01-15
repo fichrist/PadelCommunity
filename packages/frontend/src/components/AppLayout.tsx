@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, User, MessageCircle, Plus, Trophy } from "lucide-react";
+import { Calendar, User, MessageCircle, Plus, Trophy, LogIn } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
@@ -9,6 +9,7 @@ import padelBackground from "@/assets/padel-background.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -27,11 +28,38 @@ const AppLayout = ({
 }: AppLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+      setAuthLoading(false);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
+
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -83,32 +111,44 @@ const AppLayout = ({
                     )}
                   </Button>
                 </div>
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
-                    onClick={() => navigate('/chat')}
-                  >
-                    <MessageCircle className={`h-9 w-9 ${isActive('/chat') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
-                    {isActive('/chat') && (
-                      <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                    )}
-                  </Button>
-                </div>
+                {isLoggedIn && (
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
+                      onClick={() => navigate('/chat')}
+                    >
+                      <MessageCircle className={`h-9 w-9 ${isActive('/chat') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
+                      {isActive('/chat') && (
+                        <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
-              
+
               {/* Right: Create Button + Profile */}
               <div className="flex items-center space-x-3">
-                {showCreateDropdown ? (
+                {isLoggedIn && (showCreateDropdown ? (
                   <CreateDropdown onCreateShare={onCreateShare || (() => {})} />
                 ) : (
                   <Button size="sm" className="rounded-full h-10 w-10 p-0">
                     <Plus className="h-5 w-5" />
                   </Button>
-                )}
-                {showNotifications && <NotificationDropdown />}
-                {showProfileDropdown ? (
+                ))}
+                {showNotifications && isLoggedIn && <NotificationDropdown />}
+                {isLoggedIn === false ? (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate('/login')}
+                    className="flex items-center space-x-2"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In</span>
+                  </Button>
+                ) : showProfileDropdown ? (
                   <ProfileDropdown userImage={elenaProfile} />
                 ) : (
                   <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">

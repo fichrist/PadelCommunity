@@ -49,40 +49,26 @@ export type Database = {
       conversations: {
         Row: {
           created_at: string | null
-          event_id: string | null
           id: string
-          image_url: string | null
           name: string | null
           type: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          event_id?: string | null
           id?: string
-          image_url?: string | null
           name?: string | null
           type: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          event_id?: string | null
           id?: string
-          image_url?: string | null
           name?: string | null
           type?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       enrollments: {
         Row: {
@@ -215,65 +201,6 @@ export type Database = {
         }
         Relationships: []
       }
-      healer_profiles: {
-        Row: {
-          bio: string | null
-          company: string | null
-          created_at: string | null
-          email: string | null
-          facebook: string | null
-          full_bio: string | null
-          instagram: string | null
-          phone_number: string | null
-          rating: number | null
-          role: string | null
-          tags: string[] | null
-          updated_at: string | null
-          user_id: string
-          video: string | null
-        }
-        Insert: {
-          bio?: string | null
-          company?: string | null
-          created_at?: string | null
-          email?: string | null
-          facebook?: string | null
-          full_bio?: string | null
-          instagram?: string | null
-          phone_number?: string | null
-          rating?: number | null
-          role?: string | null
-          tags?: string[] | null
-          updated_at?: string | null
-          user_id: string
-          video?: string | null
-        }
-        Update: {
-          bio?: string | null
-          company?: string | null
-          created_at?: string | null
-          email?: string | null
-          facebook?: string | null
-          full_bio?: string | null
-          instagram?: string | null
-          phone_number?: string | null
-          rating?: number | null
-          role?: string | null
-          tags?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-          video?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "healer_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       intentions: {
         Row: {
           created_at: string
@@ -292,6 +219,153 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      match_participants: {
+        Row: {
+          added_by_profile_id: string | null
+          created_at: string
+          gender: string | null
+          id: string
+          level_confidence: number | null
+          level_value: number | null
+          match_id: string
+          name: string
+          payment_status: string | null
+          playtomic_user_id: string | null
+          price: string | null
+          registration_date: string | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by_profile_id?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          level_confidence?: number | null
+          level_value?: number | null
+          match_id: string
+          name: string
+          payment_status?: string | null
+          playtomic_user_id?: string | null
+          price?: string | null
+          registration_date?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by_profile_id?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          level_confidence?: number | null
+          level_value?: number | null
+          match_id?: string
+          name?: string
+          payment_status?: string | null
+          playtomic_user_id?: string | null
+          price?: string | null
+          registration_date?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_participants_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_participants_profile_id_fkey"
+            columns: ["added_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          city: string | null
+          court_number: string | null
+          created_at: string
+          created_by: string
+          duration: number | null
+          id: string
+          latitude: number | null
+          location: string | null
+          longitude: number | null
+          match_date: string | null
+          match_levels: Database["public"]["Enums"]["match_level"][] | null
+          match_time: string | null
+          match_type: string | null
+          notes: string | null
+          organizer_name: string | null
+          players_registered: number | null
+          price_per_person: number | null
+          status: string | null
+          surface_type: string | null
+          total_price: number | null
+          total_spots: number | null
+          updated_at: string
+          url: string
+          venue_name: string | null
+        }
+        Insert: {
+          city?: string | null
+          court_number?: string | null
+          created_at?: string
+          created_by: string
+          duration?: number | null
+          id?: string
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          match_date?: string | null
+          match_levels?: Database["public"]["Enums"]["match_level"][] | null
+          match_time?: string | null
+          match_type?: string | null
+          notes?: string | null
+          organizer_name?: string | null
+          players_registered?: number | null
+          price_per_person?: number | null
+          status?: string | null
+          surface_type?: string | null
+          total_price?: number | null
+          total_spots?: number | null
+          updated_at?: string
+          url: string
+          venue_name?: string | null
+        }
+        Update: {
+          city?: string | null
+          court_number?: string | null
+          created_at?: string
+          created_by?: string
+          duration?: number | null
+          id?: string
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          match_date?: string | null
+          match_levels?: Database["public"]["Enums"]["match_level"][] | null
+          match_time?: string | null
+          match_type?: string | null
+          notes?: string | null
+          organizer_name?: string | null
+          players_registered?: number | null
+          price_per_person?: number | null
+          status?: string | null
+          surface_type?: string | null
+          total_price?: number | null
+          total_spots?: number | null
+          updated_at?: string
+          url?: string
+          venue_name?: string | null
         }
         Relationships: []
       }
@@ -362,6 +436,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
@@ -413,15 +520,17 @@ export type Database = {
           formatted_address: string | null
           id: string
           intentions: string[] | null
-          is_admin: boolean | null
-          is_healer: boolean | null
           last_name: string | null
           latitude: number | null
           longitude: number | null
           phone_number: string | null
           place_id: string | null
+          playtomic_user_id: string | null
           postal_code: string | null
+          ranking: string | null
           street_name: string | null
+          tp_membership_number: string | null
+          tp_user_id: number | null
           updated_at: string
         }
         Insert: {
@@ -435,15 +544,17 @@ export type Database = {
           formatted_address?: string | null
           id: string
           intentions?: string[] | null
-          is_admin?: boolean | null
-          is_healer?: boolean | null
           last_name?: string | null
           latitude?: number | null
           longitude?: number | null
           phone_number?: string | null
           place_id?: string | null
+          playtomic_user_id?: string | null
           postal_code?: string | null
+          ranking?: string | null
           street_name?: string | null
+          tp_membership_number?: string | null
+          tp_user_id?: number | null
           updated_at?: string
         }
         Update: {
@@ -457,15 +568,17 @@ export type Database = {
           formatted_address?: string | null
           id?: string
           intentions?: string[] | null
-          is_admin?: boolean | null
-          is_healer?: boolean | null
           last_name?: string | null
           latitude?: number | null
           longitude?: number | null
           phone_number?: string | null
           place_id?: string | null
+          playtomic_user_id?: string | null
           postal_code?: string | null
+          ranking?: string | null
           street_name?: string | null
+          tp_membership_number?: string | null
+          tp_user_id?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -496,8 +609,8 @@ export type Database = {
           content: string
           created_at: string
           event_id: string | null
-          healer_profile_id: string | null
           id: string
+          match_id: string | null
           parent_thought_id: string | null
           post_id: string | null
           updated_at: string
@@ -507,8 +620,8 @@ export type Database = {
           content: string
           created_at?: string
           event_id?: string | null
-          healer_profile_id?: string | null
           id?: string
+          match_id?: string | null
           parent_thought_id?: string | null
           post_id?: string | null
           updated_at?: string
@@ -518,8 +631,8 @@ export type Database = {
           content?: string
           created_at?: string
           event_id?: string | null
-          healer_profile_id?: string | null
           id?: string
+          match_id?: string | null
           parent_thought_id?: string | null
           post_id?: string | null
           updated_at?: string
@@ -531,6 +644,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thoughts_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
             referencedColumns: ["id"]
           },
           {
@@ -549,15 +669,77 @@ export type Database = {
           },
         ]
       }
+      tp_members: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          tp_membership_number: string | null
+          tp_user_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          tp_membership_number?: string | null
+          tp_user_id: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          tp_membership_number?: string | null
+          tp_user_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_tp_member: {
+        Args: {
+          p_name: string
+          p_tp_membership_number: string
+          p_tp_user_id: number
+        }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          tp_membership_number: string
+          tp_user_id: number
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      match_level:
+        | "beginner"
+        | "intermediate"
+        | "advanced"
+        | "professional"
+        | "p50-p100"
+        | "p100-p200"
+        | "p200-p300"
+        | "p300-p400"
+        | "p400-p500"
+        | "p500-p700"
+        | "p700-p1000"
+        | "p1000+"
+      padel_level:
+        | "P50"
+        | "P100"
+        | "P200"
+        | "P300"
+        | "P400"
+        | "P500"
+        | "P700"
+        | "P1000"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -684,6 +866,31 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      match_level: [
+        "beginner",
+        "intermediate",
+        "advanced",
+        "professional",
+        "p50-p100",
+        "p100-p200",
+        "p200-p300",
+        "p300-p400",
+        "p400-p500",
+        "p500-p700",
+        "p700-p1000",
+        "p1000+",
+      ],
+      padel_level: [
+        "P50",
+        "P100",
+        "P200",
+        "P300",
+        "P400",
+        "P500",
+        "P700",
+        "P1000",
+      ],
+    },
   },
 } as const

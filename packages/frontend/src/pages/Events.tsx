@@ -36,6 +36,18 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 };
 
+// All ranking levels
+const ALL_RANKING_LEVELS = [
+  { value: 'p50-p100', min: 50, max: 100 },
+  { value: 'p100-p200', min: 100, max: 200 },
+  { value: 'p200-p300', min: 200, max: 300 },
+  { value: 'p300-p400', min: 300, max: 400 },
+  { value: 'p400-p500', min: 400, max: 500 },
+  { value: 'p500-p700', min: 500, max: 700 },
+  { value: 'p700-p1000', min: 700, max: 1000 },
+  { value: 'p1000+', min: 1000, max: Infinity }
+];
+
 // Helper function to get available ranking levels based on user's ranking
 const getAvailableRankingLevels = (userRanking: string | null): string[] => {
   if (!userRanking) return [];
@@ -46,19 +58,8 @@ const getAvailableRankingLevels = (userRanking: string | null): string[] => {
 
   const rankingValue = parseInt(rankingMatch[1]);
 
-  const allLevels = [
-    { value: 'p50-p100', min: 50, max: 100 },
-    { value: 'p100-p200', min: 100, max: 200 },
-    { value: 'p200-p300', min: 200, max: 300 },
-    { value: 'p300-p400', min: 300, max: 400 },
-    { value: 'p400-p500', min: 400, max: 500 },
-    { value: 'p500-p700', min: 500, max: 700 },
-    { value: 'p700-p1000', min: 700, max: 1000 },
-    { value: 'p1000+', min: 1000, max: Infinity }
-  ];
-
   // Filter levels that include the user's ranking
-  return allLevels
+  return ALL_RANKING_LEVELS
     .filter(level => rankingValue >= level.min && rankingValue <= level.max)
     .map(level => level.value);
 };
@@ -68,7 +69,7 @@ const Events = () => {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
   const [selectedRadius, setSelectedRadius] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState("next-3-weeks");
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
@@ -99,58 +100,50 @@ const Events = () => {
   const [selectedMatchForThoughts, setSelectedMatchForThoughts] = useState<any>(null);
   const [matchThoughts, setMatchThoughts] = useState<any[]>([]);
   const [profileImageModal, setProfileImageModal] = useState<{ open: boolean; imageUrl: string | null; name: string }>({ open: false, imageUrl: null, name: '' });
+  const [userProfileLoaded, setUserProfileLoaded] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch current user ID, ranking, and check tp_user_id
+  // Fetch current user ID, ranking, location, and check tp_user_id
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
 
-        // Check if tp_user_id is empty and fetch ranking
+        // Fetch all profile data in one query
         const { data: profile } = await supabase
           .from('profiles')
-          .select('tp_user_id, ranking')
+          .select('tp_user_id, ranking, city, latitude, longitude')
           .eq('id', user.id)
           .single();
 
         if (profile) {
+          // Check tp_user_id
           if (!profile.tp_user_id) {
             setShowSetupDialog(true);
           }
+
+          // Set ranking
           setUserRanking(profile.ranking);
 
           // Set default selected levels to all available levels
           const availableLevels = getAvailableRankingLevels(profile.ranking);
           setSelectedMatchLevels(availableLevels);
+
+          // Set location
+          if (profile.city) {
+            setSelectedLocation(profile.city);
+            if (profile.latitude && profile.longitude) {
+              setSelectedLocationCoords({ lat: profile.latitude, lng: profile.longitude });
+            }
+          }
+
+          // Signal that profile is loaded so matches can be fetched
+          setUserProfileLoaded(true);
         }
       }
     };
     fetchCurrentUser();
-  }, []);
-
-  // Fetch user's location and coordinates on mount
-  useEffect(() => {
-    const fetchUserLocation = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('city, latitude, longitude')
-          .eq('id', user.id)
-          .single();
-
-        if (profile?.city) {
-          setSelectedLocation(profile.city);
-          if (profile.latitude && profile.longitude) {
-            setSelectedLocationCoords({ lat: profile.latitude, lng: profile.longitude });
-          }
-        }
-      }
-    };
-    
-    fetchUserLocation();
   }, []);
 
   // Geocode location when it changes (using Nominatim - free API)
@@ -370,10 +363,15 @@ const Events = () => {
     setMatches(enrichedMatches || []);
   };
 
-  // Initial fetch and real-time subscription for matches
+  // Fetch matches when user profile is loaded
   useEffect(() => {
-    fetchMatches();
+    if (userProfileLoaded) {
+      fetchMatches();
+    }
+  }, [userProfileLoaded]);
 
+  // Set up real-time subscription for matches
+  useEffect(() => {
     // Set up real-time subscription for match updates
     const matchesChannel = supabase
       .channel('matches-changes')
@@ -661,9 +659,10 @@ const Events = () => {
         filterEndDate = new Date(filterStartDate);
         filterEndDate.setDate(filterEndDate.getDate() + 6); // End of next week (Saturday)
         filterEndDate.setHours(23, 59, 59, 999);
-      } else if (selectedDate === "this-month") {
-        filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      } else if (selectedDate === "next-3-weeks") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setDate(filterEndDate.getDate() + 21); // 3 weeks = 21 days
         filterEndDate.setHours(23, 59, 59, 999);
       } else if (selectedDate === "custom" && customDateFrom && customDateTo) {
         filterStartDate = new Date(customDateFrom);
@@ -727,7 +726,8 @@ const Events = () => {
   // Filter matches by match level, date range, and location
   const filteredMatches = matches.filter(match => {
     // Hide fully booked matches filter
-    if (hideFullyBooked && match.players_registered >= match.total_spots) {
+    const participantCount = match.match_participants?.length || 0;
+    if (hideFullyBooked && participantCount >= match.total_spots) {
       return false;
     }
 
@@ -770,9 +770,10 @@ const Events = () => {
         filterEndDate = new Date(filterStartDate);
         filterEndDate.setDate(filterEndDate.getDate() + 6);
         filterEndDate.setHours(23, 59, 59, 999);
-      } else if (selectedDate === "this-month") {
-        filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      } else if (selectedDate === "next-3-weeks") {
+        filterStartDate = new Date(now);
+        filterEndDate = new Date(now);
+        filterEndDate.setDate(filterEndDate.getDate() + 21); // 3 weeks = 21 days
         filterEndDate.setHours(23, 59, 59, 999);
       } else if (selectedDate === "custom" && customDateFrom && customDateTo) {
         filterStartDate = new Date(customDateFrom);
@@ -929,7 +930,7 @@ const Events = () => {
                             <SelectItem value="tomorrow">Tomorrow</SelectItem>
                             <SelectItem value="this-week">This Week</SelectItem>
                             <SelectItem value="next-week">Next Week</SelectItem>
-                            <SelectItem value="this-month">This Month</SelectItem>
+                            <SelectItem value="next-3-weeks">Next 3 Weeks</SelectItem>
                             <SelectItem value="custom">Custom Range</SelectItem>
                           </SelectContent>
                         </Select>
@@ -963,7 +964,7 @@ const Events = () => {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Trophy className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Ranking *</span>
+                        <span className="text-sm font-medium">Ranking {currentUserId && '*'}</span>
                       </div>
                       <div className="space-y-2">
                         {getAvailableRankingLevels(userRanking).map((level) => (
@@ -1005,7 +1006,7 @@ const Events = () => {
                           htmlFor="hide-fully-booked"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
-                          Hide Fully Booked Matches
+                          Hide fully booked matches
                         </label>
                       </div>
                     </div>
@@ -1239,14 +1240,18 @@ const Events = () => {
                         {/* Action Bar - same style as event cards */}
                         <div className="px-4 py-2 border-t border-border">
                           <div className="flex items-center">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleOpenMatchThoughts(match)}
                               className="flex-1 flex items-center justify-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                             >
                               <MessageCircle className="h-4 w-4" />
                               <span>{match.thoughts_count || 0} Thoughts</span>
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => {
                                 navigator.clipboard.writeText(match.url || `${window.location.origin}/events?match=${match.id}`);
                                 toast.success("Link copied to clipboard!");
@@ -1255,7 +1260,7 @@ const Events = () => {
                             >
                               <Share2 className="h-4 w-4" />
                               <span>Share</span>
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </Card>

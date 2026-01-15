@@ -39,6 +39,9 @@ const getAvailableRankingLevels = (userRanking: string | null): string[] => {
 const fetchPlaytomicMatchDetails = async (url: string) => {
   try {
     const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
+    console.log('Calling Azure Function at:', `${azureFunctionUrl}/api/scrapePlaytomic`);
+    console.log('Scraping URL:', url);
+
     const response = await fetch(`${azureFunctionUrl}/api/scrapePlaytomic`, {
       method: 'POST',
       headers: {
@@ -47,7 +50,9 @@ const fetchPlaytomicMatchDetails = async (url: string) => {
       body: JSON.stringify({ url }),
     });
 
+    console.log('Azure Function response status:', response.status, response.statusText);
     const data = await response.json();
+    console.log('Azure Function response data:', data);
 
     if (!response.ok || !data.success) {
       console.warn('Could not fetch match details from URL:', data.error);
@@ -137,7 +142,7 @@ const CreateMatch = () => {
       }
 
       // Get match levels based on user's ranking
-      const matchLevels = getAvailableRankingLevels(userRanking);
+      const matchLevels = getAvailableRankingLevels(userRanking) as Array<"beginner" | "intermediate" | "advanced" | "professional" | "p50-p100" | "p100-p200" | "p200-p300" | "p300-p400" | "p400-p500" | "p500-p700" | "p700-p1000" | "p1000+">;
 
       // Create the match first
       const { data: matchData, error: insertError } = await supabase
@@ -162,6 +167,8 @@ const CreateMatch = () => {
           .then(async (details) => {
             if (details && details.data) {
               const matchDetails = details.data;
+
+              console.log('Fetched match details:', matchDetails);
 
               // Update the match with fetched details
               const { error: updateError } = await supabase
@@ -189,6 +196,13 @@ const CreateMatch = () => {
 
               if (updateError) {
                 console.error('Error updating match:', updateError);
+                // Even if match update fails, still try to update status
+                await supabase
+                  .from('matches')
+                  .update({ status: 'confirmed' })
+                  .eq('id', matchData.id);
+              } else {
+                console.log('Match details updated successfully');
               }
 
               // Insert participants if available
@@ -214,15 +228,28 @@ const CreateMatch = () => {
                 if (participantsError) {
                   console.error('Error inserting participants:', participantsError);
                 } else {
+                  console.log(`${matchDetails.participants.length} participants inserted successfully`);
                   toast.success(`Match details and ${matchDetails.participants.length} participants saved!`);
                 }
               } else {
                 toast.success("Match details updated successfully!");
               }
+            } else {
+              console.log('No match details returned from scraper, updating status anyway');
+              // If scraper didn't return details, still update status to confirmed
+              await supabase
+                .from('matches')
+                .update({ status: 'confirmed' })
+                .eq('id', matchData.id);
             }
           })
-          .catch((err) => {
+          .catch(async (err) => {
             console.error('Error updating match details:', err);
+            // Even if there's an error, update status to confirmed so the loading indicator disappears
+            await supabase
+              .from('matches')
+              .update({ status: 'confirmed' })
+              .eq('id', matchData.id);
           });
       }
 

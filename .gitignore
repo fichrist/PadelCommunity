@@ -7,6 +7,10 @@ dist
 bun.lockb
 package-lock.json
 
+# SSL certificates
+*.pem
+*.key
+
 # OS
 Thumbs.db
 .vscode/settings.json
