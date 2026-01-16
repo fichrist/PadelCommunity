@@ -1,0 +1,11 @@
+deploy azure functions via powershell
+az login
+cd packages/azure-functions
+func azure functionapp publish PadelCommunity
+
+
+run front end locally
+cd C:\PadelCommunity\packages\frontend
+npm run dev
+
+run azure-functions locally

@@ -77,8 +77,11 @@ async function fetchMatchFromApi(matchId: string): Promise<any> {
 
   const response = await fetch(apiUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
-      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': 'https://app.playtomic.io/',
+      'Origin': 'https://app.playtomic.io',
     },
   });
 

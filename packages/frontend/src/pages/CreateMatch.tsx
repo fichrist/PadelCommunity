@@ -39,7 +39,7 @@ const getAvailableRankingLevels = (userRanking: string | null): string[] => {
 const fetchPlaytomicMatchDetails = async (url: string) => {
   try {
     const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
-    console.log('Calling Azure Function at:', `${azureFunctionUrl}/api/scrapePlaytomic`);
+    console.log('Calling Azure Function at:', `${azureFunctionUrl}/api/y`);
     console.log('Scraping URL:', url);
 
     const response = await fetch(`${azureFunctionUrl}/api/scrapePlaytomic`, {

@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => ({
       "localhost",
       ".local",  // Alle *.local domains
       "192.168.50.57",  // Je specifieke IP
-      "padelcommunity.duckdns.org"
+      "padelcommunity.duckdns.org",
+      "padelcommunity.be"
     ],
   },
   plugins: [

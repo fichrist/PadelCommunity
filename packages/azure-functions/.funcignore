@@ -1,0 +1,22 @@
+# TypeScript source files (we deploy compiled JS)
+src/
+tsconfig.json
+
+# Dependencies (Azure will install these)
+node_modules/
+
+# Local settings
+local.settings.json
+.git*
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Development files
+*.ts
+*.map
+README.md
