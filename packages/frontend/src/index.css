@@ -46,13 +46,13 @@ All colors MUST be HSL.
     /* Enhanced Spiritual Design Tokens */
     --sage: 120 35% 82%;
     --sage-foreground: 120 30% 20%;
-    
+
     --earth: 35 45% 70%;
     --earth-foreground: 35 40% 20%;
-    
+
     --celestial: 240 60% 60%;
     --celestial-foreground: 240 30% 20%;
-    
+
     --lotus: 290 55% 70%;
     --lotus-foreground: 290 40% 20%;
 
@@ -62,7 +62,7 @@ All colors MUST be HSL.
     --gradient-celestial: linear-gradient(45deg, hsl(240, 60%, 60%), hsl(290, 55%, 70%));
     --gradient-aurora: linear-gradient(135deg, hsl(280, 45%, 35%), hsl(240, 60%, 60%), hsl(290, 55%, 70%));
     --gradient-ethereal: linear-gradient(180deg, hsl(35, 35%, 96%), hsl(35, 45%, 92%));
-    
+
     /* Soft mystical shadows */
     --shadow-gentle: 0 4px 25px hsla(280, 45%, 35%, 0.12);
     --shadow-peaceful: 0 8px 35px hsla(120, 35%, 50%, 0.08);
