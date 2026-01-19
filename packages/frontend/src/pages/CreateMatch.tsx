@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { processMatchParticipants } from "@/lib/matchParticipants";
 
 // Helper function to get available ranking levels based on user's ranking
 const getAvailableRankingLevels = (userRanking: string | null): string[] => {
@@ -160,100 +161,107 @@ const CreateMatch = () => {
 
       toast.success("Match created! Fetching details...");
 
-      // Try to fetch match details from the URL in the background
-      // This won't block the user experience if it fails
+      // Fetch match details and wait for completion before navigating
       if (matchData) {
-        fetchPlaytomicMatchDetails(url.trim())
-          .then(async (details) => {
-            if (details && details.data) {
-              const matchDetails = details.data;
+        try {
+          const details = await fetchPlaytomicMatchDetails(url.trim());
 
-              console.log('Fetched match details:', matchDetails);
+          if (details && details.data) {
+            const matchDetails = details.data;
 
-              // Update the match with fetched details
-              const { error: updateError } = await supabase
-                .from('matches')
-                .update({
-                  match_date: matchDetails.match_date,
-                  match_time: matchDetails.match_time,
-                  venue_name: matchDetails.venue_name,
-                  location: matchDetails.location,
-                  city: matchDetails.city,
-                  latitude: matchDetails.latitude,
-                  longitude: matchDetails.longitude,
-                  duration: matchDetails.duration,
-                  court_number: matchDetails.court_number,
-                  price_per_person: matchDetails.price_per_person,
-                  total_price: matchDetails.total_price,
-                  match_type: matchDetails.match_type,
-                  surface_type: matchDetails.surface_type,
-                  players_registered: matchDetails.players_registered,
-                  total_spots: matchDetails.total_spots,
-                  organizer_name: matchDetails.organizer_name,
-                  status: 'confirmed'
-                })
-                .eq('id', matchData.id);
+            console.log('Fetched match details:', matchDetails);
 
-              if (updateError) {
-                console.error('Error updating match:', updateError);
-                // Even if match update fails, still try to update status
-                await supabase
-                  .from('matches')
-                  .update({ status: 'confirmed' })
-                  .eq('id', matchData.id);
-              } else {
-                console.log('Match details updated successfully');
-              }
+            // Update the match with fetched details
+            const { error: updateError } = await supabase
+              .from('matches')
+              .update({
+                match_date: matchDetails.match_date,
+                match_time: matchDetails.match_time,
+                venue_name: matchDetails.venue_name,
+                location: matchDetails.location,
+                city: matchDetails.city,
+                latitude: matchDetails.latitude,
+                longitude: matchDetails.longitude,
+                duration: matchDetails.duration,
+                court_number: matchDetails.court_number,
+                price_per_person: matchDetails.price_per_person,
+                total_price: matchDetails.total_price,
+                match_type: matchDetails.match_type,
+                surface_type: matchDetails.surface_type,
+                players_registered: matchDetails.players_registered,
+                total_spots: matchDetails.total_spots,
+                organizer_name: matchDetails.organizer_name,
+                status: 'confirmed'
+              })
+              .eq('id', matchData.id);
 
-              // Insert participants if available
-              if (matchDetails.participants && matchDetails.participants.length > 0) {
-                const participantsToInsert = matchDetails.participants.map((p: any) => ({
-                  match_id: matchData.id,
-                  playtomic_user_id: p.playtomic_user_id,
-                  name: p.name,
-                  team_id: p.team_id,
-                  gender: p.gender,
-                  level_value: p.level_value,
-                  level_confidence: p.level_confidence,
-                  price: p.price,
-                  payment_status: p.payment_status,
-                  registration_date: p.registration_date,
-                  added_by_profile_id: user.id
-                }));
-
-                const { error: participantsError } = await supabase
-                  .from('match_participants')
-                  .insert(participantsToInsert);
-
-                if (participantsError) {
-                  console.error('Error inserting participants:', participantsError);
-                } else {
-                  console.log(`${matchDetails.participants.length} participants inserted successfully`);
-                  toast.success(`Match details and ${matchDetails.participants.length} participants saved!`);
-                }
-              } else {
-                toast.success("Match details updated successfully!");
-              }
-            } else {
-              console.log('No match details returned from scraper, updating status anyway');
-              // If scraper didn't return details, still update status to confirmed
+            if (updateError) {
+              console.error('Error updating match:', updateError);
+              // Even if match update fails, still try to update status
               await supabase
                 .from('matches')
                 .update({ status: 'confirmed' })
                 .eq('id', matchData.id);
+            } else {
+              console.log('Match details updated successfully');
             }
-          })
-          .catch(async (err) => {
-            console.error('Error updating match details:', err);
-            // Even if there's an error, update status to confirmed so the loading indicator disappears
+
+            // Insert participants if available
+            if (matchDetails.participants && matchDetails.participants.length > 0) {
+              const participantsToInsert = matchDetails.participants.map((p: any) => ({
+                match_id: matchData.id,
+                playtomic_user_id: p.playtomic_user_id,
+                name: p.name,
+                team_id: p.team_id,
+                gender: p.gender,
+                level_value: p.level_value,
+                level_confidence: p.level_confidence,
+                price: p.price,
+                payment_status: p.payment_status,
+                registration_date: p.registration_date,
+                added_by_profile_id: user.id
+              }));
+
+              const { data: insertedParticipants, error: participantsError } = await supabase
+                .from('match_participants')
+                .insert(participantsToInsert)
+                .select();
+
+              if (participantsError) {
+                console.error('Error inserting participants:', participantsError);
+              } else {
+                console.log(`${matchDetails.participants.length} participants inserted successfully`);
+
+                // Process participants: set playtomic_user_id on profiles and link to participants
+                if (insertedParticipants && insertedParticipants.length > 0) {
+                  await processMatchParticipants(insertedParticipants, user.id);
+                }
+
+                toast.success(`Match details and ${matchDetails.participants.length} participants saved!`);
+              }
+            } else {
+              toast.success("Match details updated successfully!");
+            }
+          } else {
+            console.log('No match details returned from scraper, updating status anyway');
+            // If scraper didn't return details, still update status to confirmed
             await supabase
               .from('matches')
               .update({ status: 'confirmed' })
               .eq('id', matchData.id);
-          });
+          }
+        } catch (err) {
+          console.error('Error updating match details:', err);
+          // Even if there's an error, update status to confirmed so the loading indicator disappears
+          await supabase
+            .from('matches')
+            .update({ status: 'confirmed' })
+            .eq('id', matchData.id);
+        }
       }
 
-      navigate('/events'); // Or navigate to a matches list page when available
+      // Navigate to events page and trigger a refetch (now happens AFTER match is fully updated)
+      navigate('/events', { state: { refetchData: true } });
     } catch (error: any) {
       console.error('Error creating match:', error);
       toast.error(error.message || "Failed to create match");

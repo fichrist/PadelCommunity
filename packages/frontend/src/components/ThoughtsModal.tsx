@@ -35,7 +35,11 @@ interface ThoughtsModalProps {
 }
 
 // Helper function to organize flat thoughts into a tree structure
-const organizeThoughtsTree = (thoughts: Thought[]): Thought[] => {
+const organizeThoughtsTree = (thoughts: Thought[] | undefined): Thought[] => {
+  if (!thoughts || !Array.isArray(thoughts)) {
+    return [];
+  }
+
   const thoughtsMap = new Map<string, Thought>();
   const rootThoughts: Thought[] = [];
 

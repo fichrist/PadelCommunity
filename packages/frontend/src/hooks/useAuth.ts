@@ -1,0 +1,122 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+/**
+ * Hook for authentication state and user profile management
+ * Platform-agnostic - works for both React Web and React Native
+ */
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  ranking: string | null;
+  tp_user_id: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  formatted_address: string | null;
+  phone_number: string | null;
+  [key: string]: any;
+}
+
+export interface UseAuthReturn {
+  currentUserId: string | null;
+  currentUser: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+/**
+ * Hook for managing authentication state and current user profile
+ */
+export const useAuth = (): UseAuthReturn => {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      setCurrentUser(profile);
+      return profile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (currentUserId) {
+      await fetchUserProfile(currentUserId);
+    }
+  };
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          setCurrentUserId(session.user.id);
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error fetching session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          setCurrentUserId(session.user.id);
+          await fetchUserProfile(session.user.id);
+        } else {
+          setCurrentUserId(null);
+          setCurrentUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentUserId(null);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
+
+  return {
+    currentUserId,
+    currentUser,
+    isLoading,
+    isAuthenticated: !!currentUserId,
+    signOut,
+    refreshProfile,
+  };
+};

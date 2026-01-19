@@ -23,8 +23,11 @@
     "db:types": "supabase gen types typescript --local > packages/shared/types/supabase.ts",
     "dev:all": "npm run supabase:start && npm run dev"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "tailwindcss": "^4.1.18"
   }
 }
