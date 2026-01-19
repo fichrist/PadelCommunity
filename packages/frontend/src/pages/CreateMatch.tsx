@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { processMatchParticipants } from "@/lib/matchParticipants";
+import { createMatchNotifications } from "@/lib/notifications";
 
 // Helper function to get available ranking levels based on user's ranking
 const getAvailableRankingLevels = (userRanking: string | null): string[] => {
@@ -206,6 +207,19 @@ const CreateMatch = () => {
               console.log('Match details updated successfully');
             }
 
+            // Create notifications for all users (except creator) based on their filters
+            await createMatchNotifications(
+              {
+                id: matchData.id,
+                venue_name: matchDetails.venue_name,
+                match_date: matchDetails.match_date,
+                latitude: matchDetails.latitude,
+                longitude: matchDetails.longitude,
+                match_levels: matchLevels,
+              },
+              user.id
+            );
+
             // Insert participants if available
             if (matchDetails.participants && matchDetails.participants.length > 0) {
               const participantsToInsert = matchDetails.participants.map((p: any) => ({
@@ -250,6 +264,15 @@ const CreateMatch = () => {
               .from('matches')
               .update({ status: 'confirmed' })
               .eq('id', matchData.id);
+
+            // Create notifications even if scraper didn't return details
+            await createMatchNotifications(
+              {
+                id: matchData.id,
+                match_levels: matchLevels,
+              },
+              user.id
+            );
           }
         } catch (err) {
           console.error('Error updating match details:', err);

@@ -51,6 +51,7 @@ import {
   Share2
 } from "lucide-react";
 import { formatParticipantName } from "@/lib/matchParticipants";
+import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
 
 const Events = () => {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const Events = () => {
   const geolocation = useGeolocation();
 
   // Date filtering
-  const dateFilter = useDateFiltering("next-3-weeks");
+  const dateFilter = useDateFiltering("");
 
   // Match level selection
   const levelSelection = useArraySelection<string>([]);
@@ -150,6 +151,31 @@ const Events = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, refetch, navigate, location.pathname]);
+
+  // Handle match query parameter from notifications
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const matchId = searchParams.get('match');
+
+    if (matchId && dbMatches) {
+      // Find the match in the loaded data
+      const match = dbMatches.find((m: any) => m.id === matchId);
+      if (match) {
+        // Open the thoughts modal for this match
+        setSelectedMatchForThoughts(match);
+        setMatchThoughtsModalOpen(true);
+
+        // Force refresh thoughts when opening from notification
+        // Use setTimeout to ensure the state update has completed
+        setTimeout(() => {
+          matchThoughts.fetchThoughts();
+        }, 0);
+
+        // Clear the query parameter
+        navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [location.search, dbMatches, navigate, location.pathname, matchThoughts]);
 
   // ========================================
   // DATA TRANSFORMATION
@@ -400,6 +426,13 @@ const Events = () => {
       return;
     }
 
+    // Create notifications for all other participants
+    await createParticipantJoinedNotifications(
+      matchId,
+      playerName,
+      currentUserId
+    );
+
     toast.success("Player spot reserved!");
 
     // Refetch only the updated match data with profile join
@@ -454,6 +487,11 @@ const Events = () => {
       return;
     }
 
+    // Get participant data before deletion to use for notification
+    const participant = match.match_participants?.find((p: any) => p.id === participantId);
+    const playerName = participant?.name || "A player";
+    const playerProfileId = participant?.player_profile_id;
+
     const { error } = await supabase
       .from("match_participants")
       .delete()
@@ -463,6 +501,15 @@ const Events = () => {
       console.error("Error deleting participant:", error);
       toast.error(`Failed to delete participant: ${error.message}`);
       return;
+    }
+
+    // Create notifications for all other participants (only if the participant had a profile)
+    if (playerProfileId) {
+      await createParticipantLeftNotifications(
+        match.id,
+        playerName,
+        playerProfileId
+      );
     }
 
     toast.success("Participant removed!");

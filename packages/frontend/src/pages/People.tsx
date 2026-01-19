@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Bell } from "lucide-react";
+import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -33,9 +33,10 @@ const People = () => {
   const [selectedRadius, setSelectedRadius] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [followedUsers, setFollowedUsers] = useState<string[]>([]); // Store user IDs
-  const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
-  const [userToUnfollow, setUserToUnfollow] = useState<string | null>(null);
+  const [favoriteUsers, setFavoriteUsers] = useState<string[]>([]); // Store user IDs
+  const [removeFavoriteDialogOpen, setRemoveFavoriteDialogOpen] = useState(false);
+  const [userToRemoveFavorite, setUserToRemoveFavorite] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [sortBy, setSortBy] = useState("alphabetical");
@@ -45,6 +46,28 @@ const People = () => {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
+
+  // Fetch current user and their favorites
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setCurrentUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('favorite_users')
+        .eq('id', user.id)
+        .single();
+
+      if (profile && profile.favorite_users) {
+        setFavoriteUsers(profile.favorite_users);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   // Fetch people from database
   useEffect(() => {
@@ -64,19 +87,20 @@ const People = () => {
       // Format people data
       const formattedPeople = profiles.map((profile: any) => {
         const name = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
+        const clubName = profile.club_name || 'No club';
+        // Location shows only city and country
         const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location not set';
 
         return {
           id: profile.id,
           name,
-          role: 'Member',
+          role: clubName,
           bio: profile.bio || '',
           avatar: profile.avatar_url || '/placeholder-avatar.png',
           location,
           latitude: profile.latitude,
           longitude: profile.longitude,
           tags: [],
-          followers: 0,
           isOnline: false
         };
       });
@@ -121,7 +145,7 @@ const People = () => {
   // Filter people
   const filteredPeople = people.filter(person => {
     if (filter === "all") return true; // Show all people
-    if (filter === "following") return followedUsers.includes(person.id);
+    if (filter === "following") return favoriteUsers.includes(person.id);
     if (filter === "followers") return false; // Could be enhanced
     if (filter === "contacts") return contactUserIds.includes(person.id);
     return true;
@@ -168,10 +192,38 @@ const People = () => {
     if (sortBy === "alphabetical") {
       comparison = a.name.localeCompare(b.name);
     } else if (sortBy === "followers") {
-      comparison = a.followers - b.followers;
+      comparison = 0; // No followers anymore
     }
     return sortOrder === "asc" ? comparison : -comparison;
   });
+
+  // Save favorites to database
+  const saveFavoritesToDB = async (newFavorites: string[]) => {
+    if (!currentUserId) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ favorite_users: newFavorites })
+      .eq('id', currentUserId);
+
+    if (error) {
+      console.error('Error saving favorites:', error);
+    }
+  };
+
+  // Add to favorites
+  const addToFavorites = async (userId: string) => {
+    const newFavorites = [...favoriteUsers, userId];
+    setFavoriteUsers(newFavorites);
+    await saveFavoritesToDB(newFavorites);
+  };
+
+  // Remove from favorites
+  const removeFromFavorites = async (userId: string) => {
+    const newFavorites = favoriteUsers.filter(id => id !== userId);
+    setFavoriteUsers(newFavorites);
+    await saveFavoritesToDB(newFavorites);
+  };
 
   return (
     <TooltipProvider>
@@ -389,53 +441,49 @@ const People = () => {
                           </div>
                         </div>
                         <div className="relative flex items-center space-x-2">
-                           {followedUsers.includes(person.id) ? (
-                             <AlertDialog open={unfollowDialogOpen && userToUnfollow === person.id} onOpenChange={setUnfollowDialogOpen}>
+                           {favoriteUsers.includes(person.id) ? (
+                             <AlertDialog open={removeFavoriteDialogOpen && userToRemoveFavorite === person.id} onOpenChange={setRemoveFavoriteDialogOpen}>
                                <AlertDialogTrigger asChild>
                                  <Tooltip>
                                    <TooltipTrigger asChild>
-                                     <Button 
-                                       variant="ghost" 
-                                       size="sm" 
-                                       className="p-2 h-auto hover:bg-red-50"
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       className="p-2 h-auto hover:bg-yellow-50"
                                        onClick={(e) => {
                                          e.stopPropagation();
-                                         setUserToUnfollow(person.id);
-                                         setUnfollowDialogOpen(true);
+                                         setUserToRemoveFavorite(person.id);
+                                         setRemoveFavoriteDialogOpen(true);
                                        }}
                                      >
-                                       <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+                                       <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                                      </Button>
                                    </TooltipTrigger>
                                    <TooltipContent>
-                                     <p>Unfollow</p>
+                                     <p>Remove from favorites</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Unfollow {person.name}?</AlertDialogTitle>
+                                  <AlertDialogTitle>Remove {person.name} from favorites?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to unfollow {person.name}? You will no longer see their updates in your feed.
+                                    Are you sure you want to remove {person.name} from your favorites?
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel onClick={() => {
-                                    setUnfollowDialogOpen(false);
+                                    setRemoveFavoriteDialogOpen(false);
                                   }}>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
+                                  <AlertDialogAction
                                      onClick={() => {
-                                       setFollowedUsers(prev => prev.filter(id => id !== person.id));
-                                        setSelectedIcons(prev => ({
-                                          ...prev,
-                                          [person.id]: { calendar: false, info: false, block: false, notification: false }
-                                        }));
-                                       setUnfollowDialogOpen(false);
-                                       setUserToUnfollow(null);
+                                       removeFromFavorites(person.id);
+                                       setRemoveFavoriteDialogOpen(false);
+                                       setUserToRemoveFavorite(null);
                                      }}
-                                    className="bg-red-500 hover:bg-red-600"
+                                    className="bg-yellow-500 hover:bg-yellow-600"
                                   >
-                                    Unfollow
+                                    Remove
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -443,51 +491,23 @@ const People = () => {
                            ) : (
                              <Tooltip>
                                <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="ghost" 
-                                   size="sm" 
-                                   className="p-2 h-auto hover:bg-red-50"
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   className="p-2 h-auto hover:bg-yellow-50"
                                    onClick={(e) => {
                                      e.stopPropagation();
-                                     setFollowedUsers(prev => [...prev, person.id]);
+                                     addToFavorites(person.id);
                                    }}
                                  >
-                                   <Heart className="h-4 w-4 text-red-500" />
+                                   <Star className="h-4 w-4 text-yellow-500" />
                                  </Button>
                                </TooltipTrigger>
                                <TooltipContent>
-                                 <p>Follow</p>
+                                 <p>Add to favorites</p>
                                </TooltipContent>
                              </Tooltip>
                            )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="p-2 h-auto hover:bg-muted/50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedIcons(prev => ({
-                                    ...prev,
-                                    [person.id]: {
-                                      ...prev[person.id],
-                                      notification: !prev[person.id]?.notification
-                                    }
-                                  }));
-                                }}
-                              >
-                                <Bell className={`h-4 w-4 transition-colors ${
-                                  selectedIcons[person.id]?.notification 
-                                    ? 'text-blue-500 fill-blue-500' 
-                                    : 'text-muted-foreground hover:text-primary'
-                                }`} />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Notifications</p>
-                            </TooltipContent>
-                          </Tooltip>
                         </div>
                       </div>
                     </CardHeader>
@@ -496,50 +516,39 @@ const People = () => {
                       {person.bio && (
                         <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
                       )}
-                      
-                      {/* Bottom section - Followers only */}
-                      <div className="mt-auto space-y-2">
-                        {/* Followers */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{person.followers} followers</span>
-                          </div>
-                          
-                          {/* Bottom right block icon */}
-                          <div className="flex justify-end">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="p-1 h-auto hover:bg-muted/50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedIcons(prev => ({
-                                      ...prev,
-                                      [person.id]: {
-                                        ...prev[person.id],
-                                        block: !prev[person.id]?.block
-                                      }
-                                    }));
-                                  }}
-                                >
-                                  <Ban className={`h-4 w-4 transition-colors ${
-                                    selectedIcons[person.id]?.block 
-                                      ? 'text-red-500 fill-red-500' 
-                                      : 'text-muted-foreground hover:text-primary'
-                                  }`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{selectedIcons[person.id]?.block ? 'Unblock' : 'Block'}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
+
+                      {/* Bottom section - Block icon only */}
+                      <div className="mt-auto flex justify-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-auto hover:bg-muted/50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedIcons(prev => ({
+                                  ...prev,
+                                  [person.id]: {
+                                    ...prev[person.id],
+                                    block: !prev[person.id]?.block
+                                  }
+                                }));
+                              }}
+                            >
+                              <Ban className={`h-4 w-4 transition-colors ${
+                                selectedIcons[person.id]?.block
+                                  ? 'text-red-500 fill-red-500'
+                                  : 'text-muted-foreground hover:text-primary'
+                              }`} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{selectedIcons[person.id]?.block ? 'Unblock' : 'Block'}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
-                      
+
                     </CardContent>
                   </Card>
                 ))}

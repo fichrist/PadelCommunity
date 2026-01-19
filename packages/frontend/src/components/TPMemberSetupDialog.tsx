@@ -31,7 +31,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
   const [lookingForTPMember, setLookingForTPMember] = useState(false);
   const [tpPlayers, setTpPlayers] = useState<Array<{ name: string; ranking: string | null; club: string | null; userId: string }>>([]);
   const [selectedTPPlayer, setSelectedTPPlayer] = useState<string>("");
-  const [selectedPlayerData, setSelectedPlayerData] = useState<{ ranking: string | null; userId: string } | null>(null);
+  const [selectedPlayerData, setSelectedPlayerData] = useState<{ ranking: string | null; userId: string; club: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleLookForTPMember = async () => {
@@ -90,7 +90,8 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
     if (selectedPlayer) {
       setSelectedPlayerData({
         ranking: selectedPlayer.ranking,
-        userId: selectedPlayer.userId
+        userId: selectedPlayer.userId,
+        club: selectedPlayer.club
       });
     } else {
       setSelectedPlayerData(null);
@@ -100,6 +101,11 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
   const handleSave = async () => {
     if (!selectedPlayerData) {
       toast.error("Please select a player from the results");
+      return;
+    }
+
+    if (!address.trim() || !addressCoords) {
+      toast.error("Please enter your address to filter matches in your neighbourhood");
       return;
     }
 
@@ -118,15 +124,11 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         ranking: selectedPlayerData.ranking,
         tp_membership_number: selectedPlayerData.userId,
         tp_user_id: parseInt(selectedPlayerData.userId),
+        club_name: selectedPlayerData.club,
+        formatted_address: address.trim(),
+        latitude: addressCoords.lat,
+        longitude: addressCoords.lng,
       };
-
-      if (address.trim()) {
-        updates.formatted_address = address.trim();
-        if (addressCoords) {
-          updates.latitude = addressCoords.lat;
-          updates.longitude = addressCoords.lng;
-        }
-      }
 
       if (phoneNumber.trim()) {
         updates.phone_number = phoneNumber.trim();
@@ -138,6 +140,32 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Get applicable ranking levels based on user's ranking
+      const { getAvailableRankingLevels: getRankingLevels } = await import('@/hooks');
+      const rankingLevels = getRankingLevels(selectedPlayerData.ranking);
+
+      // Create or update notification match filter with address and 30km radius
+      const { error: filterError } = await (supabase as any)
+        .from('notification_match_filters')
+        .upsert({
+          user_id: user.id,
+          location_enabled: true,
+          location_address: address.trim(),
+          location_latitude: addressCoords.lat,
+          location_longitude: addressCoords.lng,
+          location_radius_km: 30,
+          ranking_enabled: true,
+          ranking_levels: rankingLevels,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (filterError) {
+        console.error('Error saving notification filter:', filterError);
+        // Don't fail the whole operation if filter save fails
+      }
 
       toast.success("Profile setup complete!");
       onSaveComplete();
@@ -155,7 +183,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
   };
 
   const canLookup = firstName.trim() && lastName.trim();
-  const canSave = selectedPlayerData !== null;
+  const canSave = selectedPlayerData !== null && address.trim() && addressCoords !== null;
 
   // Handle interact outside - prevent closing when clicking on Google Places dropdown
   const handleInteractOutside = (event: Event) => {
@@ -201,7 +229,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dialog-address">Address (optional)</Label>
+            <Label htmlFor="dialog-address">Address *</Label>
             <LocationAutocomplete
               value={address}
               onChange={setAddress}
@@ -215,6 +243,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
               }}
               placeholder="Enter your address"
             />
+            <p className="text-xs text-muted-foreground">
+              Your address will be used to filter matches within 30km of your location
+            </p>
           </div>
 
           <div className="space-y-2">

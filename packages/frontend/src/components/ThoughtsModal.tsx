@@ -7,6 +7,7 @@ import { Edit3, Trash2, Reply, X } from "lucide-react";
 import { createThought, createEventThought, createHealerProfileThought, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createThoughtAddedNotifications } from "@/lib/notifications";
 
 interface Thought {
   id: string;
@@ -244,8 +245,24 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
       } else {
         result = await createThought(postId, newThought, replyingToThought?.id);
       }
-      
+
       if (result.success) {
+        // Create notifications for match thoughts (only for top-level thoughts, not replies)
+        if (isMatch && !replyingToThought && currentUserId) {
+          // Get current user's profile to get their name
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("id", currentUserId)
+            .single();
+
+          const authorName = profile
+            ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Someone"
+            : "Someone";
+
+          await createThoughtAddedNotifications(postId, authorName, currentUserId, newThought);
+        }
+
         toast.success(replyingToThought ? "Reply added successfully!" : "Thought shared successfully!");
         setNewThought("");
         setReplyingToThought(null); // Clear reply state

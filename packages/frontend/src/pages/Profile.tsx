@@ -14,7 +14,7 @@ import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { getCurrentProfile, updateProfile, uploadAvatar, deleteAvatar } from "@/lib/profiles";
 import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
-const Settings = () => {
+const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -272,7 +272,7 @@ const Settings = () => {
                   <span>Back to Community</span>
                 </Button>
               </div>
-              <h1 className="text-xl font-bold text-foreground font-comfortaa">Settings</h1>
+              <h1 className="text-xl font-bold text-foreground font-comfortaa">Profile</h1>
               <div className="w-32"></div> {/* Spacer for centering */}
             </div>
           </div>
@@ -463,4 +463,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Profile;

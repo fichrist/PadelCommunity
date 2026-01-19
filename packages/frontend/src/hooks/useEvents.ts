@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllEvents } from '@/lib/events';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -78,6 +78,9 @@ export const useEvents = (): UseEventsReturn => {
   const [allIntentions, setAllIntentions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Track recently deleted matches to avoid unnecessary refetches from CASCADE DELETE events
+  const deletedMatchesRef = useRef<Set<string>>(new Set());
 
   const fetchEvents = useCallback(async () => {
     console.log('useEvents: Starting fetchEvents...');
@@ -312,7 +315,14 @@ export const useEvents = (): UseEventsReturn => {
 
           if (payload.eventType === 'DELETE' && matchId) {
             console.log(`🗑️ Match ${matchId} deleted, removing from state`);
+            // Track this deleted match to avoid refetching it when CASCADE DELETE triggers participant events
+            deletedMatchesRef.current.add(matchId);
             setMatches(prevMatches => prevMatches.filter(m => m.id !== matchId));
+
+            // Clean up the deleted match from ref after a short delay
+            setTimeout(() => {
+              deletedMatchesRef.current.delete(matchId);
+            }, 2000);
             return;
           }
 
@@ -341,39 +351,44 @@ export const useEvents = (): UseEventsReturn => {
             console.log('👥 DELETE event, searching for match in current state...');
             const participantId = payload.old.id;
 
-            // Get current matches from state and find which one has this participant
-            setMatches(prevMatches => {
-              const matchWithParticipant = prevMatches.find(m =>
-                m.match_participants?.some((p: any) => p.id === participantId)
-              );
+            // Find the match without triggering a state update
+            const currentMatches = matches;
+            const matchWithParticipant = currentMatches.find(m =>
+              m.match_participants?.some((p: any) => p.id === participantId)
+            );
 
-              if (matchWithParticipant) {
-                console.log(`👥 Found match ${matchWithParticipant.id} for deleted participant`);
-                // Refetch this specific match only if it still exists
-                refetchSingleMatch(matchWithParticipant.id);
-              } else {
-                console.log('👥 Match not found in state (may have been deleted), skipping refetch');
+            if (matchWithParticipant) {
+              // Check if this match was recently deleted
+              if (deletedMatchesRef.current.has(matchWithParticipant.id)) {
+                console.log(`👥 Match ${matchWithParticipant.id} was recently deleted, skipping refetch`);
+                return;
               }
 
-              // Return prevMatches unchanged - refetchSingleMatch will update it
-              return prevMatches;
-            });
+              console.log(`👥 Found match ${matchWithParticipant.id} for deleted participant`);
+              refetchSingleMatch(matchWithParticipant.id);
+            } else {
+              console.log('👥 Match not found in state (may have been deleted), skipping refetch');
+            }
             return;
           }
 
           if (matchId) {
             console.log(`👥 Refetching match ${matchId} due to participant change (${payload.eventType})`);
-            // For DELETE events, check if match still exists before refetching
+            // For DELETE events, check if match was recently deleted or still exists
             if (payload.eventType === 'DELETE') {
-              setMatches(prevMatches => {
-                const matchExists = prevMatches.some(m => m.id === matchId);
-                if (matchExists) {
-                  refetchSingleMatch(matchId);
-                } else {
-                  console.log(`👥 Match ${matchId} no longer exists, skipping refetch`);
-                }
-                return prevMatches;
-              });
+              // Check if this match was recently deleted
+              if (deletedMatchesRef.current.has(matchId)) {
+                console.log(`👥 Match ${matchId} was recently deleted, skipping refetch`);
+                return;
+              }
+
+              // Check if match still exists in state
+              const matchExists = matches.some(m => m.id === matchId);
+              if (matchExists) {
+                refetchSingleMatch(matchId);
+              } else {
+                console.log(`👥 Match ${matchId} no longer exists in state, skipping refetch`);
+              }
             } else {
               refetchSingleMatch(matchId);
             }

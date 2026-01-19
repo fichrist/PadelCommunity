@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Shield } from "lucide-react";
+import { User, LogOut, Shield, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,11 +130,18 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-md border border-border">
         <DropdownMenuItem
-          onClick={() => navigate('/settings')}
+          onClick={() => navigate('/profile')}
           className="cursor-pointer flex items-center space-x-2 py-3"
         >
-          <Settings className="h-4 w-4 text-primary" />
-          <span>Settings</span>
+          <User className="h-4 w-4 text-primary" />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate('/notification-settings')}
+          className="cursor-pointer flex items-center space-x-2 py-3"
+        >
+          <Bell className="h-4 w-4 text-primary" />
+          <span>Notification Settings</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate('/admin')}

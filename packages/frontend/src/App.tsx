@@ -15,7 +15,8 @@ import EditableEventDetails from "./pages/EditableEventDetails";
 import CreateEvent from "./pages/CreateEvent";
 import CreatePost from "./pages/CreatePost";
 import CreateMatch from "./pages/CreateMatch";
-import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import NotificationSettings from "./pages/NotificationSettings";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -60,7 +61,9 @@ const App = () => {
             <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
             <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />
             <Route path="/create-match" element={<AppLayout><CreateMatch /></AppLayout>} />
-            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+            <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+            <Route path="/notification-settings" element={<AppLayout><NotificationSettings /></AppLayout>} />
+            <Route path="/settings" element={<Navigate to="/profile" replace />} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,8 @@ interface Notification {
   title: string;
   message: string;
   data: any;
+  link?: string;
+  match_id?: string;
   read: boolean;
   created_at: string;
 }
@@ -32,8 +34,26 @@ const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Fetch notifications on mount
   useEffect(() => {
@@ -132,8 +152,13 @@ const NotificationDropdown = () => {
       );
     }
 
-    // Navigate based on notification type
-    if (notification.type === 'new_match' && notification.data?.match_id) {
+    // Navigate based on notification link or type
+    if (notification.link) {
+      // Use the link field if available (new notifications)
+      navigate(notification.link);
+      setIsOpen(false);
+    } else if (notification.type === 'new_match' && notification.data?.match_id) {
+      // Fallback for old notifications using data field
       navigate('/events');
       setIsOpen(false);
     }
@@ -156,11 +181,29 @@ const NotificationDropdown = () => {
     toast.success('Notification deleted');
   };
 
+  const handleDeleteAllNotifications = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast.error('Failed to delete notifications');
+      return;
+    }
+
+    setNotifications([]);
+    toast.success('All notifications cleared');
+  };
+
   const unreadNotificationCount = notifications.filter(n => !n.read).length;
   const unreadCount = followers.filter(f => !f.isFollowing && !f.isBlocked).length + unreadNotificationCount;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <Button
         variant="ghost"
         size="lg"
@@ -183,9 +226,21 @@ const NotificationDropdown = () => {
           />
           <Card className="absolute right-0 top-full mt-2 w-96 z-50 bg-card border shadow-lg">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center space-x-2">
-                <Bell className="h-4 w-4 text-primary" />
-                <span>Notifications</span>
+              <CardTitle className="text-base font-semibold flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  <span>Notifications</span>
+                </div>
+                {notifications.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteAllNotifications}
+                    className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Clear All
+                  </Button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 max-h-96 overflow-y-auto">
