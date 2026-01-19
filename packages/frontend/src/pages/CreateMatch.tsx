@@ -219,7 +219,8 @@ const CreateMatch = () => {
                 price: p.price,
                 payment_status: p.payment_status,
                 registration_date: p.registration_date,
-                added_by_profile_id: user.id
+                added_by_profile_id: user.id,
+                scraped_from_playtomic: true
               }));
 
               const { data: insertedParticipants, error: participantsError } = await supabase

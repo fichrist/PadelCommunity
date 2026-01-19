@@ -50,6 +50,7 @@ import {
   MessageCircle,
   Share2
 } from "lucide-react";
+import { formatParticipantName } from "@/lib/matchParticipants";
 
 const Events = () => {
   const navigate = useNavigate();
@@ -254,9 +255,18 @@ const Events = () => {
         }
       }
 
+      // Hide fully booked matches
+      if (hideFullyBooked) {
+        const currentParticipants = match.match_participants?.length || 0;
+        const totalSpots = match.total_spots || 4;
+        if (currentParticipants >= totalSpots) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [dbMatches, geolocation, dateFilter, levelSelection]);
+  }, [dbMatches, geolocation, dateFilter, levelSelection, hideFullyBooked]);
 
   // ========================================
   // EVENT HANDLERS
@@ -349,7 +359,12 @@ const Events = () => {
         ...p,
         avatar_url: p.player_profile?.avatar_url || null,
         profile_ranking: p.player_profile?.ranking || null,
-      })) || []
+      })).sort((a: any, b: any) => {
+        // Sort participants by created_at timestamp
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
+        return timeA - timeB;
+      }) || []
     };
   };
 
@@ -376,6 +391,7 @@ const Events = () => {
       playtomic_user_id: profile?.playtomic_user_id || null,
       player_profile_id: currentUserId,
       added_by_profile_id: currentUserId,
+      scraped_from_playtomic: false,
     });
 
     if (error) {
@@ -404,6 +420,8 @@ const Events = () => {
           price,
           payment_status,
           registration_date,
+          scraped_from_playtomic,
+          created_at,
           player_profile:player_profile_id (
             avatar_url,
             ranking
@@ -467,6 +485,8 @@ const Events = () => {
           price,
           payment_status,
           registration_date,
+          scraped_from_playtomic,
+          created_at,
           player_profile:player_profile_id (
             avatar_url,
             ranking
@@ -753,7 +773,7 @@ const Events = () => {
                                         .toUpperCase() || "?"}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span>{participant.name}</span>
+                                  <span>{formatParticipantName(participant.name, participant.scraped_from_playtomic)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {/* Show profile ranking if available */}

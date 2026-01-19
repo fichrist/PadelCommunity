@@ -14,6 +14,20 @@ interface Participant {
 }
 
 /**
+ * Formats participant name with "Reserved by " prefix if they were manually added (not scraped)
+ *
+ * @param name - The participant's name
+ * @param scrapedFromPlaytomic - Whether the participant was scraped from Playtomic
+ * @returns Formatted name with optional "Reserved by " prefix
+ */
+export function formatParticipantName(name: string, scrapedFromPlaytomic: boolean): string {
+  if (!scrapedFromPlaytomic) {
+    return `Reserved by ${name}`;
+  }
+  return name;
+}
+
+/**
  * Normalizes a string for comparison (lowercase, trim, single spaces)
  */
 const normalizeString = (str: string): string => {

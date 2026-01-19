@@ -128,6 +128,8 @@ export const useEvents = (): UseEventsReturn => {
             price,
             payment_status,
             registration_date,
+            scraped_from_playtomic,
+            created_at,
             player_profile:player_profile_id (
               avatar_url,
               ranking
@@ -183,6 +185,11 @@ export const useEvents = (): UseEventsReturn => {
               avatar_url: p.player_profile?.avatar_url || null,
               profile_ranking: p.player_profile?.ranking || null,
             };
+          }).sort((a: any, b: any) => {
+            // Sort participants by created_at timestamp
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeA - timeB;
           }) || []
         }));
 
@@ -203,7 +210,7 @@ export const useEvents = (): UseEventsReturn => {
   }, []);
 
   // Helper function to refetch a single match without flickering
-  const refetchSingleMatch = useCallback(async (matchId: string) => {
+  const refetchSingleMatch = useCallback(async (matchId: string, isNewMatch = false) => {
     try {
       const { data: matchData } = await supabase
         .from('matches')
@@ -222,6 +229,8 @@ export const useEvents = (): UseEventsReturn => {
             price,
             payment_status,
             registration_date,
+            scraped_from_playtomic,
+            created_at,
             player_profile:player_profile_id (
               avatar_url,
               ranking
@@ -250,15 +259,39 @@ export const useEvents = (): UseEventsReturn => {
               avatar_url: p.player_profile?.avatar_url || null,
               profile_ranking: p.player_profile?.ranking || null,
             };
+          }).sort((a: any, b: any) => {
+            // Sort participants by created_at timestamp
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeA - timeB;
           }) || []
         };
 
-        // Update only this match in state
-        setMatches(prevMatches =>
-          prevMatches.map(match =>
-            match.id === matchId ? enrichedMatch as any : match
-          )
-        );
+        // Update or add match to state
+        setMatches(prevMatches => {
+          if (isNewMatch) {
+            // Check if match already exists to avoid duplicates
+            const exists = prevMatches.some(m => m.id === matchId);
+            if (exists) {
+              // Already exists, just update it
+              return prevMatches.map(match =>
+                match.id === matchId ? enrichedMatch as any : match
+              );
+            }
+            // Add new match to the list, sorted by match_date
+            const newMatches = [...prevMatches, enrichedMatch as any];
+            return newMatches.sort((a, b) => {
+              const dateA = new Date(a.match_date).getTime();
+              const dateB = new Date(b.match_date).getTime();
+              return dateA - dateB;
+            });
+          } else {
+            // Update existing match
+            return prevMatches.map(match =>
+              match.id === matchId ? enrichedMatch as any : match
+            );
+          }
+        });
       }
     } catch (error) {
       console.error('Error refetching single match:', error);
@@ -274,37 +307,102 @@ export const useEvents = (): UseEventsReturn => {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
         (payload) => {
-          console.log('Match changed:', payload);
+          console.log('🔄 Match changed:', payload.eventType, payload);
           const matchId = (payload.new as any)?.id || (payload.old as any)?.id;
+
+          if (payload.eventType === 'DELETE' && matchId) {
+            console.log(`🗑️ Match ${matchId} deleted, removing from state`);
+            setMatches(prevMatches => prevMatches.filter(m => m.id !== matchId));
+            return;
+          }
+
+          if (payload.eventType === 'INSERT' && matchId) {
+            console.log(`➕ New match ${matchId} created, adding to state`);
+            refetchSingleMatch(matchId, true);
+            return;
+          }
+
           if (matchId) {
+            console.log(`🔄 Refetching match ${matchId} due to match change (${payload.eventType})`);
             refetchSingleMatch(matchId);
           }
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'match_participants' },
-        (payload) => {
-          console.log('Match participant changed:', payload);
-          const matchId = (payload.new as any)?.match_id || (payload.old as any)?.match_id;
+        async (payload) => {
+          console.log('👥 Match participant changed:', payload.eventType, payload);
+
+          let matchId = (payload.new as any)?.match_id || (payload.old as any)?.match_id;
+
+          // For DELETE events, payload.old might only contain the participant ID
+          // Try to find which match this participant belonged to from current state
+          if (!matchId && payload.eventType === 'DELETE' && payload.old?.id) {
+            console.log('👥 DELETE event, searching for match in current state...');
+            const participantId = payload.old.id;
+
+            // Get current matches from state and find which one has this participant
+            setMatches(prevMatches => {
+              const matchWithParticipant = prevMatches.find(m =>
+                m.match_participants?.some((p: any) => p.id === participantId)
+              );
+
+              if (matchWithParticipant) {
+                console.log(`👥 Found match ${matchWithParticipant.id} for deleted participant`);
+                // Refetch this specific match only if it still exists
+                refetchSingleMatch(matchWithParticipant.id);
+              } else {
+                console.log('👥 Match not found in state (may have been deleted), skipping refetch');
+              }
+
+              // Return prevMatches unchanged - refetchSingleMatch will update it
+              return prevMatches;
+            });
+            return;
+          }
+
           if (matchId) {
-            refetchSingleMatch(matchId);
+            console.log(`👥 Refetching match ${matchId} due to participant change (${payload.eventType})`);
+            // For DELETE events, check if match still exists before refetching
+            if (payload.eventType === 'DELETE') {
+              setMatches(prevMatches => {
+                const matchExists = prevMatches.some(m => m.id === matchId);
+                if (matchExists) {
+                  refetchSingleMatch(matchId);
+                } else {
+                  console.log(`👥 Match ${matchId} no longer exists, skipping refetch`);
+                }
+                return prevMatches;
+              });
+            } else {
+              refetchSingleMatch(matchId);
+            }
           }
         }
       )
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'thoughts' },
         (payload) => {
-          console.log('Thought added:', payload);
+          console.log('💭 Thought added:', payload);
           const matchId = (payload.new as any)?.match_id;
           if (matchId) {
             refetchSingleMatch(matchId);
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('❌ Realtime subscription error:', err);
+        }
+        console.log('📡 Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to match changes');
+        }
+      });
 
     // Cleanup subscription on unmount
     return () => {
+      console.log('🔌 Cleaning up realtime subscriptions');
       supabase.removeChannel(matchesChannel);
     };
   }, [fetchEvents, refetchSingleMatch]);
