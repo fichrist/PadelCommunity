@@ -153,7 +153,7 @@ const NotificationSettings = () => {
       if (error) throw error;
 
       toast.success("Notification settings saved!");
-      navigate('/events');
+      navigate('/');
     } catch (error: any) {
       console.error("Error saving notification filters:", error);
       toast.error(error.message || "Failed to save settings");
@@ -172,7 +172,7 @@ const NotificationSettings = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/events')}
+                onClick={() => navigate('/')}
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -275,7 +275,7 @@ const NotificationSettings = () => {
           <div className="flex justify-end space-x-3">
             <Button
               variant="outline"
-              onClick={() => navigate('/events')}
+              onClick={() => navigate('/')}
             >
               Cancel
             </Button>

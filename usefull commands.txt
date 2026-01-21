@@ -5,15 +5,18 @@ func azure functionapp publish PadelCommunity
 
 deploy database scripts
 change password in supabase/.env
-set SUPABASE_DB_PASSWORD= IRQK9iKcScvi44en -- dev
+set SUPABASE_DB_PASSWORD= ENQWwjpCnBhquhcm -- dev
 set SUPABASE_DB_PASSWORD= fRxBLWcZHFVKm8Vu -- prd
 change .env files to prd file in frontend
 ask claude to run migration to supabase
+problemen door oa
+Great! The connection worked with aws-1-eu-west-1 instead of aws-0-eu-west-1!
 
 
 run front end locally
 cd C:\PadelCommunity\packages\frontend
 npm run dev
+somns gaat die automatisch naar poort 8083 als hij herstart
 
 run azure-functions locally?
 
@@ -25,3 +28,8 @@ ik denk dat het volgende ook niet nodig is
 !! supabase base passwoord in the .env  UHNdr43z@Vs#Rzn   en Sofie_1998 in PRD
 
 
+
+Exit code 1
+Connecting to remote database...
+failed to parse rows: ERROR: prepared statement "lrupsc_1_0" already exists (SQLSTATE 42P05)
+Try rerunning the command with --debug to t

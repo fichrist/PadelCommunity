@@ -900,62 +900,30 @@ const Events = () => {
                           </div>
                         </div>
 
-                        {/* Match Levels Badges */}
+                        {/* Match Group Rankings Badges */}
                         <div className="space-y-2">
                           <span className="text-sm font-medium">Rankings:</span>
 
-                          {match.match_levels && match.match_levels.length > 0 && (
-                            <div className="flex flex-wrap gap-1 items-center justify-between">
-                              <div className="flex flex-wrap gap-1 items-center">
-                                {[...match.match_levels]
-                                  .sort((a: string, b: string) => {
-                                    const getFirstNum = (level: string) => {
-                                      const match = level.match(/\d+/);
-                                      return match ? parseInt(match[0]) : 0;
-                                    };
-                                    return getFirstNum(a) - getFirstNum(b);
-                                  })
-                                  .map((level: string) => (
-                                    <Badge
-                                      key={level}
-                                      variant="secondary"
-                                      className="capitalize text-xs flex items-center gap-1"
-                                    >
-                                      {level}
-                                      {currentUserId === match.created_by &&
-                                        match.match_levels.length > 1 && (
-                                          <X
-                                            className="h-3 w-3 cursor-pointer hover:text-destructive ml-1"
-                                            onClick={() =>
-                                              handleRemoveLevelFromMatch(match.id, level)
-                                            }
-                                          />
-                                        )}
-                                    </Badge>
-                                  ))}
-
-                                {/* Add Level Button */}
-                                {currentUserId === match.created_by &&
-                                  (() => {
-                                    const availableLevels = getAvailableRankingLevels(
-                                      userRanking
-                                    ).filter(
-                                      (level) => !match.match_levels?.includes(level)
-                                    );
-                                    return (
-                                      availableLevels.length > 0 && (
-                                        <Button
-                                          variant="outline"
-                                          size="icon"
-                                          className="h-6 w-6 border-dashed"
-                                          onClick={() => handleAddLevelToMatch(match.id, availableLevels[0])}
-                                        >
-                                          <Plus className="h-3 w-3" />
-                                        </Button>
-                                      )
-                                    );
-                                  })()}
-                              </div>
+                          {(match as any).groups && (match as any).groups.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {(match as any).groups
+                                .filter((group: any) => group.group_type === 'Ranked')
+                                .sort((a: any, b: any) => {
+                                  const getFirstNum = (level: string) => {
+                                    const match = level.match(/\d+/);
+                                    return match ? parseInt(match[0]) : 0;
+                                  };
+                                  return getFirstNum(a.ranking_level || '') - getFirstNum(b.ranking_level || '');
+                                })
+                                .map((group: any) => (
+                                  <Badge
+                                    key={group.id}
+                                    variant="secondary"
+                                    className="capitalize text-xs"
+                                  >
+                                    {group.ranking_level}
+                                  </Badge>
+                                ))}
                             </div>
                           )}
                         </div>

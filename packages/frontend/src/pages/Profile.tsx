@@ -238,8 +238,8 @@ const Profile = () => {
       // Refresh the profile data to show updated values
       await fetchUserData();
 
-      // Navigate to events page
-      navigate('/events');
+      // Navigate to index page
+      navigate('/');
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");

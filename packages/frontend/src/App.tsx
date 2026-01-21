@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
+import Community from "./pages/Community";
 import Events from "./pages/Events";
 import People from "./pages/People";
 import Chat from "./pages/Chat";
@@ -49,14 +50,15 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/community" element={<AppLayout><Community /></AppLayout>} />
             <Route path="/login" element={<Login />} />
             <Route path="/events" element={<AppLayout><Events /></AppLayout>} />
             <Route path="/people" element={<AppLayout><People /></AppLayout>} />
             <Route path="/event/:eventId" element={<AppLayout><EventDetails /></AppLayout>} />
             <Route path="/createevent" element={<AppLayout><CreateEvent /></AppLayout>} />
             <Route path="/editevent/:eventId" element={<AppLayout><EditEvent /></AppLayout>} />
-            <Route path="/home" element={<AppLayout><Index /></AppLayout>} />
+            <Route path="/home" element={<Navigate to="/community" replace />} />
             <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
             <Route path="/create-event" element={<AppLayout><CreateEvent /></AppLayout>} />
             <Route path="/create-post" element={<AppLayout><CreatePost /></AppLayout>} />

@@ -9,6 +9,7 @@ import padelBackground from "@/assets/padel-background.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import SignupCard from "@/components/SignupCard";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AppLayoutProps {
@@ -16,6 +17,7 @@ interface AppLayoutProps {
   showCreateDropdown?: boolean;
   showNotifications?: boolean;
   showProfileDropdown?: boolean;
+  showNavBar?: boolean;
   onCreateShare?: () => void;
 }
 
@@ -24,23 +26,69 @@ const AppLayout = ({
   showCreateDropdown = true,
   showNotifications = true,
   showProfileDropdown = true,
+  showNavBar = true,
   onCreateShare
 }: AppLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [signInDialogOpen, setSignInDialogOpen] = useState(false);
+  const [hasTpUserId, setHasTpUserId] = useState<boolean>(false);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-      setAuthLoading(false);
-    };
-    checkAuth();
+      console.log('🔍 AppLayout: Starting auth check...');
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        console.log('🔍 AppLayout: Got user:', user ? 'logged in' : 'not logged in', error);
+        setIsLoggedIn(!!user);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        // Check if user has tp_user_id in their profile
+        if (user) {
+          console.log('🔍 AppLayout: Fetching profile for user:', user.id);
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('tp_user_id')
+            .eq('id', user.id)
+            .single();
+
+          console.log('🔍 AppLayout: Profile data:', profile, 'Error:', profileError);
+          setHasTpUserId(!!profile?.tp_user_id);
+        }
+
+        setAuthLoading(false);
+        console.log('✅ AppLayout: Auth check complete');
+      } catch (error) {
+        console.error('❌ AppLayout: Auth check failed:', error);
+        setAuthLoading(false);
+      }
+    };
+
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('⚠️ AppLayout: Auth check timeout, forcing completion');
+      setAuthLoading(false);
+    }, 3000);
+
+    checkAuth().finally(() => clearTimeout(timeout));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setIsLoggedIn(!!session?.user);
+
+      // Check tp_user_id when auth state changes
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('tp_user_id')
+          .eq('id', session.user.id)
+          .single();
+
+        setHasTpUserId(!!profile?.tp_user_id);
+      } else {
+        setHasTpUserId(false);
+      }
+
       setAuthLoading(false);
     });
 
@@ -69,13 +117,14 @@ const AppLayout = ({
       {/* Background Overlay */}
       <div className="min-h-screen pt-0">
         {/* Top Navigation Bar */}
-        <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+        {showNavBar && (
+          <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               {/* Left: Logo + App Name */}
               <div
                 className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => navigate('/events')}
+                onClick={() => navigate('/')}
               >
                 <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
                   <Trophy className="h-6 w-6 text-primary-foreground" />
@@ -128,21 +177,35 @@ const AppLayout = ({
                 )}
               </div>
 
-              {/* Right: Create Button + Profile */}
+              {/* Right: Create Button / Complete Registration + Profile */}
               <div className="flex items-center space-x-3">
-                {isLoggedIn && (showCreateDropdown ? (
-                  <CreateDropdown onCreateShare={onCreateShare || (() => {})} />
-                ) : (
-                  <Button size="sm" className="rounded-full h-10 w-10 p-0">
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                ))}
+                {isLoggedIn && (
+                  hasTpUserId ? (
+                    showCreateDropdown ? (
+                      <CreateDropdown onCreateShare={onCreateShare || (() => {})} />
+                    ) : (
+                      <Button size="sm" className="rounded-full h-10 w-10 p-0">
+                        <Plus className="h-5 w-5" />
+                      </Button>
+                    )
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/profile')}
+                      className="flex items-center space-x-2"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Complete Registration</span>
+                    </Button>
+                  )
+                )}
                 {showNotifications && isLoggedIn && <NotificationDropdown />}
                 {isLoggedIn === false ? (
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => navigate('/login')}
+                    onClick={() => setSignInDialogOpen(true)}
                     className="flex items-center space-x-2"
                   >
                     <LogIn className="h-4 w-4" />
@@ -159,11 +222,15 @@ const AppLayout = ({
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Page Content */}
         {children}
       </div>
+
+      {/* Sign In Dialog */}
+      <SignupCard open={signInDialogOpen} onOpenChange={setSignInDialogOpen} />
     </div>
   );
 };

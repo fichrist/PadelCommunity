@@ -1,170 +1,70 @@
-import HeroSection from "@/components/HeroSection";
-import EventCard from "@/components/EventCard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Heart, MessageCircle, ArrowRight, Sparkles, User, Plus, Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Import centralized events data
-import { getFeaturedEvents, formatEventForList } from "@/data/events";
+import { Button } from "@/components/ui/button";
+import { LogIn, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import SignupCard from "@/components/SignupCard";
 
 const Index = () => {
   const navigate = useNavigate();
-  
-  // Get featured events from centralized data
-  const featuredEvents = getFeaturedEvents(3).map(formatEventForList);
+  const [signInDialogOpen, setSignInDialogOpen] = useState(false);
 
-  const features = [
-    {
-      icon: Calendar,
-      title: "Discover Events",
-      description: "Find spiritual gatherings, workshops, and ceremonies in your area"
-    },
-    {
-      icon: Users,
-      title: "Connect with Souls",
-      description: "Build meaningful relationships with like-minded spiritual seekers"
-    },
-    {
-      icon: MessageCircle,
-      title: "Sacred Conversations",
-      description: "Engage in deep, meaningful discussions about your spiritual journey"
-    },
-    {
-      icon: Heart,
-      title: "Share Wisdom",
-      description: "Contribute your insights and learn from others' experiences"
-    }
-  ];
+  useEffect(() => {
+    // Check if user is already logged in, redirect to community
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        navigate('/community');
+      }
+    };
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        navigate('/community');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <>
-        <HeroSection />
-      
-      {/* Features Section */}
-      <section className="py-20 bg-gradient-to-b from-background to-sage/5">
-        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Nurture Your Spiritual Journey
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to connect, learn, and grow in your spiritual practice
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="text-center group hover:shadow-lg transition-all duration-300 border-border/50">
-                <CardHeader>
-                  <div className="mx-auto p-3 bg-primary/10 rounded-full w-fit group-hover:scale-110 transition-transform">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Events */}
-      <section className="py-20">
-        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Featured Events
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Upcoming spiritual gatherings you won't want to miss
-              </p>
-            </div>
-            <Button variant="outline" className="hidden sm:flex">
-              View All Events
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {featuredEvents.map((event, index) => (
-              <EventCard key={index} {...event} />
-            ))}
-          </div>
-          
-          <div className="text-center sm:hidden">
-            <Button variant="outline">
-              View All Events
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Community Stats */}
-      <section className="py-20 bg-gradient-to-r from-sage/10 via-celestial/10 to-lotus/10">
-        <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-6">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Growing Spiritual Community
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of souls on their journey of awakening and transformation
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">2,847</div>
-              <div className="text-muted-foreground">Active Members</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">156</div>
-              <div className="text-muted-foreground">Weekly Events</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">1,234</div>
-              <div className="text-muted-foreground">Conversations</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">89</div>
-              <div className="text-muted-foreground">Cities Connected</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Ready to Begin Your Journey?
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect with your spiritual community today and discover events, wisdom, and connections that will transform your life.
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
+        <div className="text-center max-w-md px-6">
+          <h1 className="text-5xl font-bold mb-4 font-comfortaa bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Padel Community
+          </h1>
+          <p className="text-lg text-muted-foreground mb-8">
+            Join the community to discover matches, connect with players, and organize games
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="group">
-              Join SpiritualHub Today
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+
+          <div className="space-y-4">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => setSignInDialogOpen(true)}
+              className="w-full flex items-center justify-center space-x-2"
+            >
+              <LogIn className="h-5 w-5" />
+              <span>Sign In</span>
             </Button>
-            <Button variant="outline" size="lg">
-              Explore as Guest
+
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('/community')}
+              className="w-full flex items-center justify-center space-x-2"
+            >
+              <span>Continue without signing in</span>
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
-      </section>
+      </div>
+
+      <SignupCard open={signInDialogOpen} onOpenChange={setSignInDialogOpen} />
     </>
   );
 };

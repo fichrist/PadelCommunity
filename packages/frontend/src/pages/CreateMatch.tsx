@@ -165,6 +165,56 @@ const CreateMatch = () => {
         return;
       }
 
+      // Determine group_ids based on user ranking
+      const groupIds: string[] = [];
+
+      // Always add the General group
+      const { data: generalGroup } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('group_type', 'General')
+        .single();
+
+      if (generalGroup) {
+        groupIds.push(generalGroup.id);
+      }
+
+      // Add ranked groups based on match_levels
+      if (userRanking) {
+        const rankingMatch = userRanking.match(/P?(\d+)/i);
+        if (rankingMatch) {
+          const rankingValue = parseInt(rankingMatch[1]);
+
+          const allLevels = [
+            { value: 'p50-p100', min: 50, max: 100 },
+            { value: 'p100-p200', min: 100, max: 200 },
+            { value: 'p200-p300', min: 200, max: 300 },
+            { value: 'p300-p400', min: 300, max: 400 },
+            { value: 'p400-p500', min: 400, max: 500 },
+            { value: 'p500-p700', min: 500, max: 700 },
+            { value: 'p700-p1000', min: 700, max: 1000 },
+            { value: 'p1000+', min: 1000, max: Infinity }
+          ];
+
+          // Get all ranking levels that match the user's ranking
+          const matchingLevels = allLevels
+            .filter(level => rankingValue >= level.min && rankingValue <= level.max)
+            .map(level => level.value);
+
+          // Fetch all groups that match these ranking levels
+          if (matchingLevels.length > 0) {
+            const { data: rankedGroups } = await supabase
+              .from('groups')
+              .select('id')
+              .in('ranking_level', matchingLevels);
+
+            if (rankedGroups && rankedGroups.length > 0) {
+              rankedGroups.forEach(group => groupIds.push(group.id));
+            }
+          }
+        }
+      }
+
       // Check if a match with this URL already exists
       const { data: existingMatches, error: checkError } = await supabase
         .from('matches')
@@ -220,6 +270,7 @@ const CreateMatch = () => {
         .insert({
           url: url.trim(),
           match_levels: matchLevels,
+          group_ids: groupIds,
           created_by: user.id,
           status: 'confirmed',
           restricted_users: restrictedUsers,

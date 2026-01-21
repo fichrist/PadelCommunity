@@ -116,7 +116,7 @@ export const useEvents = (): UseEventsReturn => {
       const { data: { user } } = await supabase.auth.getUser();
       const currentUserId = user?.id;
 
-      // Fetch matches with participants (join with profiles via player_profile_id)
+      // Fetch matches with participants and groups
       console.log('useEvents: Fetching matches...');
       let matchesQuery = supabase
         .from('matches')
@@ -194,31 +194,59 @@ export const useEvents = (): UseEventsReturn => {
           });
         }
 
-        console.log('useEvents: Enriching matches with profile data...');
-        // Flatten profile data into participant objects and add thoughts count
-        const enrichedMatches = filteredMatches.map(match => ({
-          ...match,
-          thoughts_count: thoughtsCounts.get(match.id) || 0,
-          match_participants: match.match_participants?.map((p: any) => {
-            console.log('useEvents: Enriching participant:', {
-              name: p.name,
-              player_profile_id: p.player_profile_id,
-              has_player_profile: !!p.player_profile,
-              profile_ranking: p.player_profile?.ranking,
-              profile_avatar: p.player_profile?.avatar_url
-            });
-            return {
-              ...p,
-              avatar_url: p.player_profile?.avatar_url || null,
-              profile_ranking: p.player_profile?.ranking || null,
-            };
-          }).sort((a: any, b: any) => {
-            // Sort participants by created_at timestamp
-            const timeA = new Date(a.created_at).getTime();
-            const timeB = new Date(b.created_at).getTime();
-            return timeA - timeB;
-          }) || []
-        }));
+        console.log('useEvents: Fetching groups data...');
+        // Fetch all unique group IDs from filtered matches
+        const allGroupIds = new Set<string>();
+        filteredMatches.forEach((match: any) => {
+          if (match.group_ids && Array.isArray(match.group_ids)) {
+            match.group_ids.forEach((id: string) => allGroupIds.add(id));
+          }
+        });
+
+        let groupsMap = new Map<string, any>();
+        if (allGroupIds.size > 0) {
+          // Cast to any to bypass TypeScript error for groups table
+          const { data: groupsData } = await (supabase as any)
+            .from('groups')
+            .select('*')
+            .in('id', Array.from(allGroupIds));
+
+          console.log('useEvents: Groups fetched:', groupsData?.length);
+
+          groupsData?.forEach((group: any) => {
+            groupsMap.set(group.id, group);
+          });
+        }
+
+        console.log('useEvents: Enriching matches with profile data and groups...');
+        // Flatten profile data into participant objects, add thoughts count, and add groups
+        const enrichedMatches = filteredMatches.map(match => {
+          const matchGroupIds = (match as any).group_ids || [];
+          return {
+            ...match,
+            thoughts_count: thoughtsCounts.get(match.id) || 0,
+            groups: matchGroupIds.map((groupId: string) => groupsMap.get(groupId)).filter(Boolean),
+            match_participants: match.match_participants?.map((p: any) => {
+              console.log('useEvents: Enriching participant:', {
+                name: p.name,
+                player_profile_id: p.player_profile_id,
+                has_player_profile: !!p.player_profile,
+                profile_ranking: p.player_profile?.ranking,
+                profile_avatar: p.player_profile?.avatar_url
+              });
+              return {
+                ...p,
+                avatar_url: p.player_profile?.avatar_url || null,
+                profile_ranking: p.player_profile?.ranking || null,
+              };
+            }).sort((a: any, b: any) => {
+              // Sort participants by created_at timestamp
+              const timeA = new Date(a.created_at).getTime();
+              const timeB = new Date(b.created_at).getTime();
+              return timeA - timeB;
+            }) || []
+          };
+        });
 
         console.log('useEvents: Setting enriched matches:', enrichedMatches.length);
         setMatches(enrichedMatches as any);
