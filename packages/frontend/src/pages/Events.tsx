@@ -17,6 +17,7 @@ import ThoughtsModal from "@/components/ThoughtsModal";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 import { EventFilters } from "@/components/EventFilters";
+import { ManageRestrictedUsersDialog } from "@/components/ManageRestrictedUsersDialog";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +49,8 @@ import {
   Plus,
   X,
   MessageCircle,
-  Share2
+  Share2,
+  Lock
 } from "lucide-react";
 import { formatParticipantName } from "@/lib/matchParticipants";
 import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
@@ -98,6 +100,11 @@ const Events = () => {
     imageUrl: string | null;
     name: string;
   }>({ open: false, imageUrl: null, name: "" });
+  const [restrictedUsersDialog, setRestrictedUsersDialog] = useState<{
+    open: boolean;
+    matchId: string | null;
+    restrictedUsers: string[] | null;
+  }>({ open: false, matchId: null, restrictedUsers: null });
 
   // Thoughts for events
   const eventThoughts = useThoughts("event", selectedEvent?.eventId || null);
@@ -719,21 +726,45 @@ const Events = () => {
 
                         {/* Date and Venue */}
                         <div className="space-y-1 relative">
-                          {/* Delete button - aligned with date */}
+                          {/* Organizer actions - aligned with date */}
                           {currentUserId === match.created_by && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteMatch(match.id);
-                              }}
-                              className="absolute top-0 right-0 h-8 w-8 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="absolute top-0 right-0 flex gap-1">
+                              {/* Manage visibility button */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setRestrictedUsersDialog({
+                                    open: true,
+                                    matchId: match.id,
+                                    restrictedUsers: match.restricted_users || null,
+                                  });
+                                }}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                title={match.restricted_users && match.restricted_users.length > 0
+                                  ? "Match is restricted - click to manage"
+                                  : "Match is public - click to restrict"}
+                              >
+                                <Lock className={`h-4 w-4 ${match.restricted_users && match.restricted_users.length > 0 ? 'text-yellow-500' : ''}`} />
+                              </Button>
+                              {/* Delete button */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteMatch(match.id);
+                                }}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                           {match.match_date && (
                             <h3 className="font-semibold text-lg flex items-center">
@@ -1001,6 +1032,18 @@ const Events = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Restricted Users Dialog */}
+      {restrictedUsersDialog.matchId && currentUserId && (
+        <ManageRestrictedUsersDialog
+          open={restrictedUsersDialog.open}
+          onOpenChange={(open) => setRestrictedUsersDialog({ ...restrictedUsersDialog, open })}
+          matchId={restrictedUsersDialog.matchId}
+          currentRestrictedUsers={restrictedUsersDialog.restrictedUsers}
+          organizerId={currentUserId}
+          onUpdate={refetch}
+        />
+      )}
     </>
   );
 };

@@ -3,9 +3,25 @@ az login
 cd packages/azure-functions
 func azure functionapp publish PadelCommunity
 
+deploy database scripts
+change password in supabase/.env
+set SUPABASE_DB_PASSWORD= IRQK9iKcScvi44en -- dev
+set SUPABASE_DB_PASSWORD= fRxBLWcZHFVKm8Vu -- prd
+change .env files to prd file in frontend
+ask claude to run migration to supabase
+
 
 run front end locally
 cd C:\PadelCommunity\packages\frontend
 npm run dev
 
-run azure-functions locally
+run azure-functions locally?
+
+
+
+om naar PRD te gaan 
+env files aanpassen is niet nodig. die gaan niet mee
+ik denk dat het volgende ook niet nodig is
+!! supabase base passwoord in the .env  UHNdr43z@Vs#Rzn   en Sofie_1998 in PRD
+
+

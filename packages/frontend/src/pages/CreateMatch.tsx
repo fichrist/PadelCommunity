@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,30 +71,61 @@ const fetchPlaytomicMatchDetails = async (url: string) => {
   }
 };
 
+interface FavoriteUser {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  club_name: string | null;
+}
+
 const CreateMatch = () => {
   const navigate = useNavigate();
   const [url, setUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRanking, setUserRanking] = useState<string | null>(null);
+  const [publishToFavoritesOnly, setPublishToFavoritesOnly] = useState(false);
+  const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUser[]>([]);
+  const [selectedFavorites, setSelectedFavorites] = useState<string[]>([]);
 
-  // Fetch user's ranking on mount
+  // Fetch user's ranking and favorites on mount
   useEffect(() => {
-    const fetchUserRanking = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Fetch ranking
         const { data: profile } = await supabase
           .from('profiles')
-          .select('ranking')
+          .select('ranking, favorite_users')
           .eq('id', user.id)
           .single();
 
         if (profile?.ranking) {
           setUserRanking(profile.ranking);
         }
+
+        // Fetch favorite users details
+        if (profile?.favorite_users && profile.favorite_users.length > 0) {
+          const { data: favorites } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, display_name, avatar_url, club_name')
+            .in('id', profile.favorite_users);
+
+          if (favorites) {
+            const formattedFavorites = favorites.map(fav => ({
+              id: fav.id,
+              name: fav.display_name || `${fav.first_name || ''} ${fav.last_name || ''}`.trim() || 'User',
+              avatar_url: fav.avatar_url,
+              club_name: fav.club_name
+            }));
+            setFavoriteUsers(formattedFavorites);
+            // Initially select all favorites
+            setSelectedFavorites(formattedFavorites.map(f => f.id));
+          }
+        }
       }
     };
 
-    fetchUserRanking();
+    fetchUserData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,6 +138,11 @@ const CreateMatch = () => {
 
     if (!userRanking) {
       toast.error("Unable to determine your ranking. Please update your profile.");
+      return;
+    }
+
+    if (publishToFavoritesOnly && selectedFavorites.length === 0) {
+      toast.error("Please select at least one favorite to publish to");
       return;
     }
 
@@ -143,148 +182,123 @@ const CreateMatch = () => {
         return;
       }
 
+      // Fetch match details from Playtomic FIRST before creating the match
+      toast.info("Fetching match details from Playtomic...");
+      const details = await fetchPlaytomicMatchDetails(url.trim());
+
+      // Validate that we got valid match data
+      if (!details || !details.success || !details.data) {
+        toast.error("Failed to fetch match details from Playtomic. Please check the URL and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const matchDetails = details.data;
+
+      // Validate essential fields
+      if (!matchDetails.venue_name || !matchDetails.match_date) {
+        toast.error("Could not extract essential match information from Playtomic. The URL may be invalid or the match may not be accessible.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('Fetched match details:', matchDetails);
+
       // Get match levels based on user's ranking
       const matchLevels = getAvailableRankingLevels(userRanking) as Array<"beginner" | "intermediate" | "advanced" | "professional" | "p50-p100" | "p100-p200" | "p200-p300" | "p300-p400" | "p400-p500" | "p500-p700" | "p700-p1000" | "p1000+">;
 
-      // Create the match first
+      // Prepare restricted_users array if publish to favorites only
+      let restrictedUsers: string[] | null = null;
+      if (publishToFavoritesOnly && selectedFavorites.length > 0) {
+        // Include selected favorites and the organizer
+        restrictedUsers = [...selectedFavorites, user.id];
+      }
+
+      // Now create the match with all the scraped data
       const { data: matchData, error: insertError } = await supabase
         .from('matches')
         .insert({
           url: url.trim(),
           match_levels: matchLevels,
           created_by: user.id,
-          status: 'pending'
+          status: 'confirmed',
+          restricted_users: restrictedUsers,
+          // Include scraped data directly
+          match_date: matchDetails.match_date,
+          match_time: matchDetails.match_time,
+          venue_name: matchDetails.venue_name,
+          location: matchDetails.location,
+          city: matchDetails.city,
+          latitude: matchDetails.latitude,
+          longitude: matchDetails.longitude,
+          duration: matchDetails.duration,
+          court_number: matchDetails.court_number,
+          price_per_person: matchDetails.price_per_person,
+          total_price: matchDetails.total_price,
+          match_type: matchDetails.match_type,
+          surface_type: matchDetails.surface_type,
+          players_registered: matchDetails.players_registered,
+          total_spots: matchDetails.total_spots,
+          organizer_name: matchDetails.organizer_name,
         })
         .select()
         .single();
 
       if (insertError) throw insertError;
 
-      toast.success("Match created! Fetching details...");
+      toast.success("Match created successfully!");
 
-      // Fetch match details and wait for completion before navigating
-      if (matchData) {
-        try {
-          const details = await fetchPlaytomicMatchDetails(url.trim());
+      // Create notifications for users based on their filters
+      await createMatchNotifications(
+        {
+          id: matchData.id,
+          venue_name: matchDetails.venue_name,
+          match_date: matchDetails.match_date,
+          latitude: matchDetails.latitude,
+          longitude: matchDetails.longitude,
+          match_levels: matchLevels,
+          restricted_users: restrictedUsers,
+        },
+        user.id
+      );
 
-          if (details && details.data) {
-            const matchDetails = details.data;
+      // Insert participants if available
+      if (matchDetails.participants && matchDetails.participants.length > 0) {
+        const participantsToInsert = matchDetails.participants.map((p: any) => ({
+          match_id: matchData.id,
+          playtomic_user_id: p.playtomic_user_id,
+          name: p.name,
+          team_id: p.team_id,
+          gender: p.gender,
+          level_value: p.level_value,
+          level_confidence: p.level_confidence,
+          price: p.price,
+          payment_status: p.payment_status,
+          registration_date: p.registration_date,
+          added_by_profile_id: user.id,
+          scraped_from_playtomic: true
+        }));
 
-            console.log('Fetched match details:', matchDetails);
+        const { data: insertedParticipants, error: participantsError } = await supabase
+          .from('match_participants')
+          .insert(participantsToInsert)
+          .select();
 
-            // Update the match with fetched details
-            const { error: updateError } = await supabase
-              .from('matches')
-              .update({
-                match_date: matchDetails.match_date,
-                match_time: matchDetails.match_time,
-                venue_name: matchDetails.venue_name,
-                location: matchDetails.location,
-                city: matchDetails.city,
-                latitude: matchDetails.latitude,
-                longitude: matchDetails.longitude,
-                duration: matchDetails.duration,
-                court_number: matchDetails.court_number,
-                price_per_person: matchDetails.price_per_person,
-                total_price: matchDetails.total_price,
-                match_type: matchDetails.match_type,
-                surface_type: matchDetails.surface_type,
-                players_registered: matchDetails.players_registered,
-                total_spots: matchDetails.total_spots,
-                organizer_name: matchDetails.organizer_name,
-                status: 'confirmed'
-              })
-              .eq('id', matchData.id);
+        if (participantsError) {
+          console.error('Error inserting participants:', participantsError);
+        } else {
+          console.log(`${matchDetails.participants.length} participants inserted successfully`);
 
-            if (updateError) {
-              console.error('Error updating match:', updateError);
-              // Even if match update fails, still try to update status
-              await supabase
-                .from('matches')
-                .update({ status: 'confirmed' })
-                .eq('id', matchData.id);
-            } else {
-              console.log('Match details updated successfully');
-            }
-
-            // Create notifications for all users (except creator) based on their filters
-            await createMatchNotifications(
-              {
-                id: matchData.id,
-                venue_name: matchDetails.venue_name,
-                match_date: matchDetails.match_date,
-                latitude: matchDetails.latitude,
-                longitude: matchDetails.longitude,
-                match_levels: matchLevels,
-              },
-              user.id
-            );
-
-            // Insert participants if available
-            if (matchDetails.participants && matchDetails.participants.length > 0) {
-              const participantsToInsert = matchDetails.participants.map((p: any) => ({
-                match_id: matchData.id,
-                playtomic_user_id: p.playtomic_user_id,
-                name: p.name,
-                team_id: p.team_id,
-                gender: p.gender,
-                level_value: p.level_value,
-                level_confidence: p.level_confidence,
-                price: p.price,
-                payment_status: p.payment_status,
-                registration_date: p.registration_date,
-                added_by_profile_id: user.id,
-                scraped_from_playtomic: true
-              }));
-
-              const { data: insertedParticipants, error: participantsError } = await supabase
-                .from('match_participants')
-                .insert(participantsToInsert)
-                .select();
-
-              if (participantsError) {
-                console.error('Error inserting participants:', participantsError);
-              } else {
-                console.log(`${matchDetails.participants.length} participants inserted successfully`);
-
-                // Process participants: set playtomic_user_id on profiles and link to participants
-                if (insertedParticipants && insertedParticipants.length > 0) {
-                  await processMatchParticipants(insertedParticipants, user.id);
-                }
-
-                toast.success(`Match details and ${matchDetails.participants.length} participants saved!`);
-              }
-            } else {
-              toast.success("Match details updated successfully!");
-            }
-          } else {
-            console.log('No match details returned from scraper, updating status anyway');
-            // If scraper didn't return details, still update status to confirmed
-            await supabase
-              .from('matches')
-              .update({ status: 'confirmed' })
-              .eq('id', matchData.id);
-
-            // Create notifications even if scraper didn't return details
-            await createMatchNotifications(
-              {
-                id: matchData.id,
-                match_levels: matchLevels,
-              },
-              user.id
-            );
+          // Process participants: set playtomic_user_id on profiles and link to participants
+          if (insertedParticipants && insertedParticipants.length > 0) {
+            await processMatchParticipants(insertedParticipants, user.id);
           }
-        } catch (err) {
-          console.error('Error updating match details:', err);
-          // Even if there's an error, update status to confirmed so the loading indicator disappears
-          await supabase
-            .from('matches')
-            .update({ status: 'confirmed' })
-            .eq('id', matchData.id);
+
+          toast.success(`Match created with ${matchDetails.participants.length} participants!`);
         }
       }
 
-      // Navigate to events page and trigger a refetch (now happens AFTER match is fully updated)
+      // Navigate to events page and trigger a refetch
       navigate('/events', { state: { refetchData: true } });
     } catch (error: any) {
       console.error('Error creating match:', error);
@@ -332,6 +346,69 @@ const CreateMatch = () => {
                   Enter the Playtomic match URL. Details and match rankings will be set automatically based on your profile.
                 </p>
               </div>
+
+              {/* Publish to Favorites Only */}
+              {favoriteUsers.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="favorites-toggle">Publish to favorites only</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Only selected favorites will be able to see this match
+                      </p>
+                    </div>
+                    <Switch
+                      id="favorites-toggle"
+                      checked={publishToFavoritesOnly}
+                      onCheckedChange={setPublishToFavoritesOnly}
+                    />
+                  </div>
+
+                  {/* Favorites Selection List */}
+                  {publishToFavoritesOnly && (
+                    <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+                      <Label className="text-sm font-medium">Select favorites who can see this match:</Label>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {favoriteUsers.map((favorite) => (
+                          <div key={favorite.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50">
+                            <Checkbox
+                              id={`favorite-${favorite.id}`}
+                              checked={selectedFavorites.includes(favorite.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedFavorites([...selectedFavorites, favorite.id]);
+                                } else {
+                                  setSelectedFavorites(selectedFavorites.filter(id => id !== favorite.id));
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`favorite-${favorite.id}`}
+                              className="flex items-center space-x-3 flex-1 cursor-pointer"
+                            >
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={favorite.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs bg-primary/10">
+                                  {favorite.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{favorite.name}</p>
+                                {favorite.club_name && (
+                                  <p className="text-xs text-muted-foreground truncate">{favorite.club_name}</p>
+                                )}
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedFavorites.length === 0 && (
+                        <p className="text-sm text-destructive">Please select at least one favorite</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="flex gap-3 pt-4">

@@ -53,7 +53,7 @@ async function searchPlayers(firstName: string, lastName: string): Promise<Playe
 
     // Extract club name from the first span after the icon (tevl-icon-padel or tevl-icon-tennis)
     // Format: <span>Meadow Club Kontich | </span>
-    const clubMatch = cardContext.match(/<i class="tevl-icon-(?:padel|tennis)"><\/i>\s*<span>([^|<]+)/);
+    const clubMatch = cardContext.match(/<i class="tevl-icon-padel"><\/i>\s*<span>([^|<]+)/);
     const club = clubMatch ? clubMatch[1].trim() : null;
 
     // Extract P ranking (e.g., P100, P200, P500) - look for it in a <b> tag

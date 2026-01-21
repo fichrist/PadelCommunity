@@ -4,7 +4,9 @@
   "description": "Azure Functions for PadelCommunity",
   "main": "dist/src/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-files && npm run install-deps",
+    "copy-files": "node -e \"require('fs').copyFileSync('package.deploy.json', 'dist/package.json')\" && node -e \"require('fs').copyFileSync('host.json', 'dist/host.json')\"",
+    "install-deps": "cd dist && npm install --omit=dev",
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",

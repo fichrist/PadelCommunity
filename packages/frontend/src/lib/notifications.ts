@@ -22,6 +22,7 @@ interface Match {
   latitude?: number | null;
   longitude?: number | null;
   match_levels?: string[];
+  restricted_users?: string[] | null;
 }
 
 /**
@@ -134,26 +135,57 @@ export async function createMatchNotifications(
       latitude: match.latitude,
       longitude: match.longitude,
       match_levels: match.match_levels,
+      restricted_users: match.restricted_users,
     });
 
-    // Get all user profiles except the creator
-    // We use profiles table instead of auth.users to avoid needing admin access
-    const { data: allProfiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id")
-      .neq("id", creatorId);
+    // Get eligible user profiles
+    let eligibleProfiles;
 
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      return;
+    if (match.restricted_users && match.restricted_users.length > 0) {
+      // Match is restricted - only notify users in restricted_users list (excluding creator)
+      console.log(`Match is restricted to ${match.restricted_users.length} users`);
+      const restrictedUsersExcludingCreator = match.restricted_users.filter(
+        userId => userId !== creatorId
+      );
+
+      if (restrictedUsersExcludingCreator.length === 0) {
+        console.log("No users to notify (only creator in restricted list)");
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id")
+        .in("id", restrictedUsersExcludingCreator);
+
+      if (profilesError) {
+        console.error("Error fetching restricted profiles:", profilesError);
+        return;
+      }
+
+      eligibleProfiles = profiles;
+    } else {
+      // Match is public - notify all users except creator
+      console.log("Match is public, fetching all users except creator");
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id")
+        .neq("id", creatorId);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        return;
+      }
+
+      eligibleProfiles = profiles;
     }
 
-    if (!allProfiles || allProfiles.length === 0) {
+    if (!eligibleProfiles || eligibleProfiles.length === 0) {
       console.log("No eligible users found");
       return;
     }
 
-    console.log(`Found ${allProfiles.length} eligible users for notifications`);
+    console.log(`Found ${eligibleProfiles.length} eligible users for notifications`);
 
     // Get all notification filters
     const { data: filters } = await supabase
@@ -170,7 +202,7 @@ export async function createMatchNotifications(
     // Prepare notifications array
     const notifications = [];
 
-    for (const profile of allProfiles) {
+    for (const profile of eligibleProfiles) {
       const filter = filtersByUserId.get(profile.id);
 
       if (!filter) {

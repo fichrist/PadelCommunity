@@ -112,9 +112,13 @@ export const useEvents = (): UseEventsReturn => {
       });
       setAllIntentions(Array.from(intentionsSet));
 
+      // Get current user ID for filtering restricted matches
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+
       // Fetch matches with participants (join with profiles via player_profile_id)
       console.log('useEvents: Fetching matches...');
-      const { data: matchesData, error: matchesError } = await supabase
+      let matchesQuery = supabase
         .from('matches')
         .select(`
           *,
@@ -141,6 +145,8 @@ export const useEvents = (): UseEventsReturn => {
         `)
         .order('match_date', { ascending: true });
 
+      const { data: matchesData, error: matchesError } = await matchesQuery;
+
       console.log('useEvents: Matches fetched:', matchesData?.length, 'Error:', matchesError);
 
       if (matchesError) {
@@ -150,9 +156,27 @@ export const useEvents = (): UseEventsReturn => {
       } else if (matchesData) {
         console.log('useEvents: Processing matches data...');
 
+        // Filter matches based on restricted_users
+        // Only show matches where:
+        // 1. restricted_users is null or empty (public matches), OR
+        // 2. restricted_users contains the current user's ID
+        const filteredMatches = matchesData.filter((match: any) => {
+          // If no restricted_users or empty array, match is public
+          if (!match.restricted_users || match.restricted_users.length === 0) {
+            return true;
+          }
+          // If restricted_users is set, only show if current user is in the list
+          if (currentUserId && match.restricted_users.includes(currentUserId)) {
+            return true;
+          }
+          return false;
+        });
+
+        console.log('useEvents: Filtered matches:', filteredMatches.length, 'of', matchesData.length);
+
         console.log('useEvents: Fetching thoughts counts...');
-        // Fetch thoughts counts for all matches
-        const matchIds = matchesData.map(m => m.id);
+        // Fetch thoughts counts for all filtered matches
+        const matchIds = filteredMatches.map(m => m.id);
         let thoughtsCounts = new Map<string, number>();
 
         if (matchIds.length > 0) {
@@ -172,7 +196,7 @@ export const useEvents = (): UseEventsReturn => {
 
         console.log('useEvents: Enriching matches with profile data...');
         // Flatten profile data into participant objects and add thoughts count
-        const enrichedMatches = matchesData.map(match => ({
+        const enrichedMatches = filteredMatches.map(match => ({
           ...match,
           thoughts_count: thoughtsCounts.get(match.id) || 0,
           match_participants: match.match_participants?.map((p: any) => {

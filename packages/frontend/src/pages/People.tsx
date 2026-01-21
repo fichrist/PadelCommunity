@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban } from "lucide-react";
+import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -28,23 +30,16 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 };
 
 const People = () => {
-  const [filter, setFilter] = useState("all");
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedRadius, setSelectedRadius] = useState("");
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedClub, setSelectedClub] = useState("");
   const [favoriteUsers, setFavoriteUsers] = useState<string[]>([]); // Store user IDs
   const [removeFavoriteDialogOpen, setRemoveFavoriteDialogOpen] = useState(false);
   const [userToRemoveFavorite, setUserToRemoveFavorite] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [sortBy, setSortBy] = useState("alphabetical");
-  const [sortOrder, setSortOrder] = useState("asc");
-  const [selectedIcons, setSelectedIcons] = useState<Record<string, { calendar: boolean; info: boolean; block: boolean; notification: boolean }>>({});
   const [people, setPeople] = useState<any[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
-  const [selectedLocationCoords, setSelectedLocationCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [allClubs, setAllClubs] = useState<string[]>([]);
+  const [clubSearchOpen, setClubSearchOpen] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const navigate = useNavigate();
 
   // Fetch current user and their favorites
@@ -88,6 +83,7 @@ const People = () => {
       const formattedPeople = profiles.map((profile: any) => {
         const name = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
         const clubName = profile.club_name || 'No club';
+        const ranking = profile.ranking || null;
         // Location shows only city and country
         const location = [profile.city, profile.country].filter(Boolean).join(', ') || 'Location not set';
 
@@ -95,6 +91,7 @@ const People = () => {
           id: profile.id,
           name,
           role: clubName,
+          ranking,
           bio: profile.bio || '',
           avatar: profile.avatar_url || '/placeholder-avatar.png',
           location,
@@ -106,95 +103,38 @@ const People = () => {
       });
 
       setPeople(formattedPeople);
+
+      // Extract unique club names for the filter dropdown
+      const clubs = Array.from(new Set(formattedPeople.map(p => p.role).filter(club => club && club !== 'No club')));
+      setAllClubs(clubs.sort());
     };
 
     fetchPeople();
   }, []);
 
-  // Geocode location when it changes (using Nominatim - free API)
-  useEffect(() => {
-    const geocodeLocation = async () => {
-      if (!selectedLocation) {
-        setSelectedLocationCoords(null);
-        return;
-      }
+  // Apply all filters
+  let filteredPeople = people;
 
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(selectedLocation)}&format=json&limit=1`
-        );
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-          setSelectedLocationCoords({
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
-          });
-        }
-      } catch (error) {
-        console.error('Geocoding error:', error);
-      }
-    };
+  // Filter by favorites only
+  if (showFavoritesOnly) {
+    filteredPeople = filteredPeople.filter(person => favoriteUsers.includes(person.id));
+  }
 
-    geocodeLocation();
-  }, [selectedLocation]);
+  // Filter by club
+  if (selectedClub) {
+    filteredPeople = filteredPeople.filter(person => person.role === selectedClub);
+  }
 
-  // Mock contact list - users in your contact list (you can enhance this later)
-  const contactUserIds: string[] = [];
+  // Filter by name search
+  if (searchQuery.trim() !== "") {
+    filteredPeople = filteredPeople.filter(person =>
+      person.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
-  // Filter people
-  const filteredPeople = people.filter(person => {
-    if (filter === "all") return true; // Show all people
-    if (filter === "following") return favoriteUsers.includes(person.id);
-    if (filter === "followers") return false; // Could be enhanced
-    if (filter === "contacts") return contactUserIds.includes(person.id);
-    return true;
-  });
-
-  // Apply tag filtering
-  const tagFilteredPeople = selectedTags.length > 0
-    ? filteredPeople.filter(person => 
-        selectedTags.some(tag => person.tags.includes(tag))
-      )
-    : filteredPeople;
-
-  // Apply name search filtering
-  const nameFilteredPeople = searchQuery.trim() !== ""
-    ? tagFilteredPeople.filter(person =>
-        person.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : tagFilteredPeople;
-
-  // Apply distance/radius filtering
-  const distanceFilteredPeople = (selectedRadius && selectedLocationCoords)
-    ? nameFilteredPeople.filter(person => {
-        // If person has no coordinates, hide them when radius is selected
-        if (!person.latitude || !person.longitude) {
-          return false;
-        }
-        
-        // Calculate distance between selected location and person's location
-        const distance = calculateDistance(
-          selectedLocationCoords.lat,
-          selectedLocationCoords.lng,
-          person.latitude,
-          person.longitude
-        );
-        
-        const radiusKm = parseFloat(selectedRadius);
-        return distance <= radiusKm;
-      })
-    : nameFilteredPeople;
-
-  // Sort users based on selected sort option
-  const sortedUsers = [...distanceFilteredPeople].sort((a, b) => {
-    let comparison = 0;
-    if (sortBy === "alphabetical") {
-      comparison = a.name.localeCompare(b.name);
-    } else if (sortBy === "followers") {
-      comparison = 0; // No followers anymore
-    }
-    return sortOrder === "asc" ? comparison : -comparison;
+  // Sort users alphabetically by name (ascending)
+  const sortedUsers = [...filteredPeople].sort((a, b) => {
+    return a.name.localeCompare(b.name);
   });
 
   // Save favorites to database
@@ -231,69 +171,7 @@ const People = () => {
         {/* People Filters - Sticky */}
         <div className="bg-transparent sticky top-[57px] z-40">
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-foreground font-comfortaa">Players</h1>
-              
-              {/* Sort Options - Completely Right Aligned */}
-              <div className="ml-auto flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">Sort by:</span>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-36 h-9">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="alphabetical">Name</SelectItem>
-                      <SelectItem value="followers">Followers</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">Order:</span>
-                  <Select value={sortOrder} onValueChange={setSortOrder}>
-                    <SelectTrigger className="w-32 h-9">
-                      <SelectValue placeholder="Order" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">Ascending</SelectItem>
-                      <SelectItem value="desc">Descending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              {/* Centered Filters */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-                <Button
-                  variant={filter === "all" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("all")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={filter === "following" ? "default" : "ghost"}
-                  size="sm"  
-                  onClick={() => setFilter("following")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Following
-                </Button>
-                <Button
-                  variant={filter === "followers" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFilter("followers")}
-                  className="px-3 py-1 rounded-full h-7 text-xs"
-                >
-                  Followers
-                </Button>
-              </div>
-              
-              {/* Empty div for balance */}
-              <div></div>
-            </div>
+            <h1 className="text-2xl font-bold text-foreground font-comfortaa">Players</h1>
           </div>
         </div>
 
@@ -311,17 +189,14 @@ const People = () => {
                         <Filter className="h-4 w-4 text-primary" />
                         <span>Filters</span>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-6 px-2 text-xs"
                         onClick={() => {
-                          setSelectedLocation("");
-                          setSelectedRadius("");
-                          setSelectedSpecialty("");
-                          setSelectedTags([]);
+                          setSelectedClub("");
                           setSearchQuery("");
-                          setOnlyShowHealers(false);
+                          setShowFavoritesOnly(false);
                         }}
                       >
                         Clear
@@ -347,59 +222,69 @@ const People = () => {
                       </div>
                     </div>
 
-                    {/* Where Section */}
+                    {/* Club Section */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Where</span>
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Club</span>
                       </div>
-                      <LocationAutocomplete
-                        value={selectedLocation}
-                        onChange={setSelectedLocation}
-                        placeholder="Enter a city..."
-                        className="text-sm"
-                      />
-                      <Select value={selectedRadius} onValueChange={setSelectedRadius}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Radius" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">5 km</SelectItem>
-                          <SelectItem value="10">10 km</SelectItem>
-                          <SelectItem value="25">25 km</SelectItem>
-                          <SelectItem value="50">50 km</SelectItem>
-                          <SelectItem value="100">100 km</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Popover open={clubSearchOpen} onOpenChange={setClubSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={clubSearchOpen}
+                            className="w-full justify-between text-sm"
+                          >
+                            {selectedClub || "Select club..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <Command>
+                            <CommandInput placeholder="Search club..." />
+                            <CommandList>
+                              <CommandEmpty>No club found.</CommandEmpty>
+                              <CommandGroup>
+                                {allClubs.map((club) => (
+                                  <CommandItem
+                                    key={club}
+                                    value={club}
+                                    onSelect={(currentValue) => {
+                                      setSelectedClub(currentValue === selectedClub ? "" : currentValue);
+                                      setClubSearchOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedClub === club ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {club}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
-                    {/* What Section - Tags */}
+                    {/* Favorites Only Toggle */}
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Tag className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">What</span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {allTags.map((tag) => (
-                          <Badge 
-                            key={tag}
-                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                            className="text-xs cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => {
-                              setSelectedTags(prev => {
-                                const newTags = prev.includes(tag) 
-                                  ? prev.filter(t => t !== tag)
-                                  : [...prev, tag];
-                                
-                                
-                                return newTags;
-                              });
-                            }}
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <Label htmlFor="favorites-toggle" className="text-sm font-medium cursor-pointer">
+                            Favorites only
+                          </Label>
+                        </div>
+                        <Switch
+                          id="favorites-toggle"
+                          checked={showFavoritesOnly}
+                          onCheckedChange={setShowFavoritesOnly}
+                        />
                       </div>
                     </div>
 
@@ -433,12 +318,11 @@ const People = () => {
                             {person.name}
                           </h3>
                           <p className="text-sm text-muted-foreground truncate">{person.role}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground truncate">{person.location}</span>
-                            </div>
-                          </div>
+                          {person.ranking && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              {person.ranking}
+                            </Badge>
+                          )}
                         </div>
                         <div className="relative flex items-center space-x-2">
                            {favoriteUsers.includes(person.id) ? (
@@ -516,39 +400,6 @@ const People = () => {
                       {person.bio && (
                         <p className="text-sm text-muted-foreground line-clamp-2">{person.bio}</p>
                       )}
-
-                      {/* Bottom section - Block icon only */}
-                      <div className="mt-auto flex justify-end">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-auto hover:bg-muted/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedIcons(prev => ({
-                                  ...prev,
-                                  [person.id]: {
-                                    ...prev[person.id],
-                                    block: !prev[person.id]?.block
-                                  }
-                                }));
-                              }}
-                            >
-                              <Ban className={`h-4 w-4 transition-colors ${
-                                selectedIcons[person.id]?.block
-                                  ? 'text-red-500 fill-red-500'
-                                  : 'text-muted-foreground hover:text-primary'
-                              }`} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{selectedIcons[person.id]?.block ? 'Unblock' : 'Block'}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-
                     </CardContent>
                   </Card>
                 ))}
