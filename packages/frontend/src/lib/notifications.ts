@@ -11,8 +11,7 @@ interface NotificationFilter {
   location_latitude: number | null;
   location_longitude: number | null;
   location_radius_km: number;
-  ranking_enabled: boolean;
-  ranking_levels: string[];
+  group_ids: string[];
 }
 
 interface Match {
@@ -21,7 +20,7 @@ interface Match {
   match_date?: string;
   latitude?: number | null;
   longitude?: number | null;
-  match_levels?: string[];
+  group_ids?: string[];
   restricted_users?: string[] | null;
 }
 
@@ -89,25 +88,24 @@ function matchMeetsFilterCriteria(
     }
   }
 
-  // Check ranking filter
-  console.log("Checking ranking filter:", {
-    ranking_enabled: filter.ranking_enabled,
-    ranking_levels: filter.ranking_levels,
-    match_levels: match.match_levels,
+  // Check group filter (primary filter)
+  console.log("Checking group filter:", {
+    group_ids: filter.group_ids,
+    match_group_ids: match.group_ids,
   });
 
-  if (filter.ranking_enabled && filter.ranking_levels && filter.ranking_levels.length > 0) {
-    console.log("Ranking filter is ENABLED with levels:", filter.ranking_levels);
-    if (match.match_levels && match.match_levels.length > 0) {
-      const hasMatchingLevel = match.match_levels.some((level) =>
-        filter.ranking_levels.includes(level)
+  if (filter.group_ids && filter.group_ids.length > 0) {
+    console.log("Group filter is ENABLED with groups:", filter.group_ids);
+    if (match.group_ids && match.group_ids.length > 0) {
+      const hasMatchingGroup = match.group_ids.some((groupId) =>
+        filter.group_ids.includes(groupId)
       );
-      if (!hasMatchingLevel) {
-        console.log(`Match ${match.id} excluded: ranking levels don't match`);
+      if (!hasMatchingGroup) {
+        console.log(`Match ${match.id} excluded: group IDs don't match`);
         return false;
       }
     } else {
-      console.log(`Match ${match.id} excluded: match has no ranking levels`);
+      console.log(`Match ${match.id} excluded: match has no group IDs`);
       return false;
     }
   }
@@ -134,7 +132,7 @@ export async function createMatchNotifications(
       match_date: match.match_date,
       latitude: match.latitude,
       longitude: match.longitude,
-      match_levels: match.match_levels,
+      group_ids: match.group_ids,
       restricted_users: match.restricted_users,
     });
 
@@ -211,12 +209,11 @@ export async function createMatchNotifications(
         console.log(`User ${profile.id}: Checking filter...`, {
           location_enabled: filter.location_enabled,
           location_radius_km: filter.location_radius_km,
-          ranking_enabled: filter.ranking_enabled,
-          ranking_levels: filter.ranking_levels,
+          group_ids: filter.group_ids,
         });
       }
 
-      // If user has no filter, or if match meets filter criteria, create notification
+      // Create notification if user has no filter OR match meets the filter criteria
       if (!filter || matchMeetsFilterCriteria(match, filter)) {
         console.log(`User ${profile.id}: Creating notification`);
 
@@ -235,7 +232,7 @@ export async function createMatchNotifications(
           type: "new_match",
           title: "New Match Available",
           message,
-          link: `/events?match=${match.id}`,
+          link: `/community?match=${match.id}`,
           match_id: match.id,
           read: false,
           created_at: new Date().toISOString(),
@@ -337,7 +334,7 @@ export async function createParticipantJoinedNotifications(
         type: "participant_joined",
         title: "Player Joined Match",
         message,
-        link: `/events?match=${matchId}`,
+        link: `/community?match=${matchId}`,
         match_id: matchId,
         read: false,
         created_at: new Date().toISOString(),
@@ -436,7 +433,7 @@ export async function createParticipantLeftNotifications(
         type: "participant_left",
         title: "Player Left Match",
         message,
-        link: `/events?match=${matchId}`,
+        link: `/community?match=${matchId}`,
         match_id: matchId,
         read: false,
         created_at: new Date().toISOString(),
@@ -458,6 +455,90 @@ export async function createParticipantLeftNotifications(
     }
   } catch (error) {
     console.error("Error in createParticipantLeftNotifications:", error);
+  }
+}
+
+/**
+ * Create notifications for the thought author when someone reacts to their thought
+ *
+ * @param thoughtId - The ID of the thought that received a reaction
+ * @param matchId - The ID of the match (for navigation)
+ * @param reactorName - The name of the person who reacted
+ * @param reactorId - The user ID of the person who reacted (won't receive notification)
+ * @param emoji - The emoji reaction
+ */
+export async function createThoughtReactionNotifications(
+  thoughtId: string,
+  matchId: string,
+  reactorName: string,
+  reactorId: string,
+  emoji: string
+): Promise<void> {
+  try {
+    console.log(`Creating reaction notification for thought ${thoughtId}`);
+
+    // Get the thought to find the author
+    const { data: thought, error: thoughtError } = await supabase
+      .from("thoughts")
+      .select("user_id, content")
+      .eq("id", thoughtId)
+      .single();
+
+    if (thoughtError || !thought) {
+      console.error("Error fetching thought:", thoughtError);
+      return;
+    }
+
+    // Don't notify if the reactor is the author
+    if (thought.user_id === reactorId) {
+      console.log("Reactor is the author, not creating notification");
+      return;
+    }
+
+    // Get match details for the notification message
+    const { data: match } = await supabase
+      .from("matches")
+      .select("venue_name, match_date")
+      .eq("id", matchId)
+      .single();
+
+    // Truncate thought content if too long (max 50 characters)
+    const truncatedThought = thought.content.length > 50
+      ? thought.content.substring(0, 50) + "..."
+      : thought.content;
+
+    const matchInfo = match?.venue_name && match?.match_date
+      ? `${match.venue_name} on ${format(new Date(match.match_date), "EEEE, MMMM d")}`
+      : match?.match_date
+      ? `on ${format(new Date(match.match_date), "EEEE, MMMM d")}`
+      : "the match";
+
+    const message = `${reactorName} reacted ${emoji} to: "${truncatedThought}" (${matchInfo})`;
+
+    const notification = {
+      user_id: thought.user_id,
+      type: "thought_reaction",
+      title: "New Reaction on Thought",
+      message,
+      link: `/community?match=${matchId}`,
+      match_id: matchId,
+      read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    console.log("Creating reaction notification:", notification);
+
+    const { error: insertError } = await supabase
+      .from("notifications")
+      .insert(notification);
+
+    if (insertError) {
+      console.error("Error inserting reaction notification:", insertError);
+    } else {
+      console.log("Successfully created reaction notification");
+    }
+  } catch (error) {
+    console.error("Error in createThoughtReactionNotifications:", error);
   }
 }
 
@@ -538,7 +619,7 @@ export async function createThoughtAddedNotifications(
         type: "thought_added",
         title: "New Thought Added",
         message,
-        link: `/events?match=${matchId}`,
+        link: `/community?match=${matchId}`,
         match_id: matchId,
         read: false,
         created_at: new Date().toISOString(),

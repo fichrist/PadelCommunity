@@ -1,21 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bell, MapPin, Trophy, X } from "lucide-react";
+import { ArrowLeft, Bell, MapPin, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
-import { getAvailableRankingLevels } from "@/hooks";
 import { Input } from "@/components/ui/input";
+
+interface Group {
+  id: string;
+  name: string;
+  group_type: 'General' | 'Ranked';
+  ranking_level: string | null;
+}
 
 const NotificationSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [userRanking, setUserRanking] = useState<string | null>(null);
 
   // Location filters (always enabled)
   const [locationAddress, setLocationAddress] = useState("");
@@ -24,14 +28,51 @@ const NotificationSettings = () => {
   const [locationRadiusKm, setLocationRadiusKm] = useState(50);
   const [selectedPlaceData, setSelectedPlaceData] = useState<any>(null);
 
-  // Ranking filters (always enabled)
-  const [rankingLevels, setRankingLevels] = useState<string[]>([]);
-  const [availableLevels, setAvailableLevels] = useState<string[]>([]);
+  // Groups
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   useEffect(() => {
+    fetchGroups();
     fetchUserData();
     fetchNotificationFilters();
   }, []);
+
+  const fetchGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .select('*')
+        .order('group_type', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      // Sort ranked groups by numeric value
+      const sortedGroups = (data || []).sort((a, b) => {
+        // General groups come first
+        if (a.group_type === 'General' && b.group_type !== 'General') return -1;
+        if (a.group_type !== 'General' && b.group_type === 'General') return 1;
+
+        // For ranked groups, sort by the first number in the ranking level
+        if (a.group_type === 'Ranked' && b.group_type === 'Ranked') {
+          const getFirstNum = (level: string | null) => {
+            if (!level) return 0;
+            const match = level.match(/\d+/);
+            return match ? parseInt(match[0]) : 0;
+          };
+          return getFirstNum(a.ranking_level) - getFirstNum(b.ranking_level);
+        }
+
+        return 0;
+      });
+
+      setAllGroups(sortedGroups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      toast.error("Failed to load groups");
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -45,10 +86,6 @@ const NotificationSettings = () => {
           .single();
 
         if (profile) {
-          setUserRanking(profile.ranking);
-          const levels = getAvailableRankingLevels(profile.ranking);
-          setAvailableLevels(levels);
-
           // Set default location from profile if not already set
           if (!locationAddress && profile.formatted_address) {
             setLocationAddress(profile.formatted_address);
@@ -81,11 +118,10 @@ const NotificationSettings = () => {
         setLocationLongitude(filters.location_longitude);
         setLocationRadiusKm(filters.location_radius_km || 50);
 
-        setRankingLevels(filters.ranking_levels || []);
-      } else {
-        // Set defaults based on user profile
-        const levels = getAvailableRankingLevels(userRanking);
-        setRankingLevels(levels);
+        // Use group_ids if available
+        if (filters.group_ids && filters.group_ids.length > 0) {
+          setSelectedGroupIds(filters.group_ids);
+        }
       }
     } catch (error) {
       console.error("Error fetching notification filters:", error);
@@ -110,12 +146,12 @@ const NotificationSettings = () => {
     }
   };
 
-  const handleToggleRankingLevel = (level: string) => {
-    setRankingLevels(prev => {
-      if (prev.includes(level)) {
-        return prev.filter(l => l !== level);
+  const handleToggleGroup = (groupId: string) => {
+    setSelectedGroupIds(prev => {
+      if (prev.includes(groupId)) {
+        return prev.filter(id => id !== groupId);
       } else {
-        return [...prev, level];
+        return [...prev, groupId];
       }
     });
   };
@@ -138,8 +174,7 @@ const NotificationSettings = () => {
         location_latitude: locationLatitude,
         location_longitude: locationLongitude,
         location_radius_km: locationRadiusKm,
-        ranking_enabled: true,
-        ranking_levels: rankingLevels,
+        group_ids: selectedGroupIds,
         updated_at: new Date().toISOString(),
       };
 
@@ -153,7 +188,9 @@ const NotificationSettings = () => {
       if (error) throw error;
 
       toast.success("Notification settings saved!");
-      navigate('/');
+      // Navigate to community page with first group selected
+      const firstGroupId = allGroups.length > 0 ? allGroups[0].id : null;
+      navigate('/community', { state: { selectGroupId: firstGroupId } });
     } catch (error: any) {
       console.error("Error saving notification filters:", error);
       toast.error(error.message || "Failed to save settings");
@@ -161,6 +198,9 @@ const NotificationSettings = () => {
       setLoading(false);
     }
   };
+
+  const generalGroups = allGroups.filter(g => g.group_type === 'General');
+  const rankedGroups = allGroups.filter(g => g.group_type === 'Ranked');
 
   return (
     <>
@@ -172,11 +212,14 @@ const NotificationSettings = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  const firstGroupId = allGroups.length > 0 ? allGroups[0].id : null;
+                  navigate('/community', { state: { selectGroupId: firstGroupId } });
+                }}
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back to Events</span>
+                <span>Back to Community</span>
               </Button>
             </div>
             <h1 className="text-xl font-bold text-foreground font-comfortaa">Notification Settings</h1>
@@ -196,7 +239,7 @@ const NotificationSettings = () => {
                 <span>Match Notifications</span>
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-2">
-                Configure your preferences for match notifications. You'll only receive notifications for matches that meet both location and ranking criteria.
+                Configure your preferences for match notifications. You'll only receive notifications for matches that meet both location and group criteria.
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -236,34 +279,64 @@ const NotificationSettings = () => {
               {/* Divider */}
               <div className="border-t border-border" />
 
-              {/* Ranking Section */}
+              {/* Groups Section */}
               <div className="space-y-4">
                 <div className="flex items-center space-x-2 mb-3">
-                  <Trophy className="h-4 w-4 text-primary" />
-                  <Label className="text-base font-semibold">Ranking Levels</Label>
+                  <Users className="h-4 w-4 text-primary" />
+                  <Label className="text-base font-semibold">Groups</Label>
                 </div>
-                <div className="pl-6">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Select the ranking levels you want to receive notifications for
+                <div className="pl-6 space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Select the groups you want to receive notifications for
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableLevels.map(level => (
-                      <Badge
-                        key={level}
-                        variant={rankingLevels.includes(level) ? "default" : "outline"}
-                        className="capitalize cursor-pointer text-sm px-3 py-1.5"
-                        onClick={() => handleToggleRankingLevel(level)}
-                      >
-                        {level}
-                        {rankingLevels.includes(level) && (
-                          <X className="h-3 w-3 ml-1" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                  {rankingLevels.length === 0 && (
+
+                  {/* General Groups */}
+                  {generalGroups.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">General</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {generalGroups.map(group => (
+                          <Badge
+                            key={group.id}
+                            variant={selectedGroupIds.includes(group.id) ? "default" : "outline"}
+                            className="cursor-pointer text-sm px-3 py-1.5"
+                            onClick={() => handleToggleGroup(group.id)}
+                          >
+                            {group.name}
+                            {selectedGroupIds.includes(group.id) && (
+                              <X className="h-3 w-3 ml-1" />
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ranked Groups */}
+                  {rankedGroups.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Ranked</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {rankedGroups.map(group => (
+                          <Badge
+                            key={group.id}
+                            variant={selectedGroupIds.includes(group.id) ? "default" : "outline"}
+                            className="cursor-pointer text-sm px-3 py-1.5"
+                            onClick={() => handleToggleGroup(group.id)}
+                          >
+                            {group.name}
+                            {selectedGroupIds.includes(group.id) && (
+                              <X className="h-3 w-3 ml-1" />
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedGroupIds.length === 0 && (
                     <p className="text-xs text-destructive mt-2">
-                      Please select at least one ranking level
+                      Please select at least one group
                     </p>
                   )}
                 </div>
@@ -275,14 +348,17 @@ const NotificationSettings = () => {
           <div className="flex justify-end space-x-3">
             <Button
               variant="outline"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                const firstGroupId = allGroups.length > 0 ? allGroups[0].id : null;
+                navigate('/community', { state: { selectGroupId: firstGroupId } });
+              }}
             >
               Cancel
             </Button>
             <Button
               className="min-w-32"
               onClick={handleSave}
-              disabled={loading || rankingLevels.length === 0}
+              disabled={loading || selectedGroupIds.length === 0}
             >
               {loading ? "Saving..." : "Save Settings"}
             </Button>

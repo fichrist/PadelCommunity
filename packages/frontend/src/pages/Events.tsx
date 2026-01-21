@@ -18,6 +18,7 @@ import CommunityEventCard from "@/components/CommunityEventCard";
 import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 import { EventFilters } from "@/components/EventFilters";
 import { ManageRestrictedUsersDialog } from "@/components/ManageRestrictedUsersDialog";
+import EditMatchDialog from "@/components/EditMatchDialog";
 import {
   Dialog,
   DialogContent,
@@ -28,12 +29,10 @@ import {
   useAuth,
   useGeolocation,
   useDateFiltering,
-  useArraySelection,
   useEvents,
   useEventEnrollment,
   useMatchManagement,
   useThoughts,
-  getAvailableRankingLevels,
   calculateDistance,
 } from "@/hooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +49,8 @@ import {
   X,
   MessageCircle,
   Share2,
-  Lock
+  Lock,
+  Edit3
 } from "lucide-react";
 import { formatParticipantName } from "@/lib/matchParticipants";
 import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
@@ -71,9 +71,6 @@ const Events = () => {
 
   // Date filtering
   const dateFilter = useDateFiltering("");
-
-  // Match level selection
-  const levelSelection = useArraySelection<string>([]);
 
   // Events data
   const { events: dbEvents, matches: dbMatches, isLoading: eventsLoading, refetch, updateMatch } = useEvents();
@@ -105,6 +102,10 @@ const Events = () => {
     matchId: string | null;
     restrictedUsers: string[] | null;
   }>({ open: false, matchId: null, restrictedUsers: null });
+  const [editMatchDialog, setEditMatchDialog] = useState<{
+    open: boolean;
+    match: any | null;
+  }>({ open: false, match: null });
 
   // Thoughts for events
   const eventThoughts = useThoughts("event", selectedEvent?.eventId || null);
@@ -128,10 +129,6 @@ const Events = () => {
 
       // Set user ranking
       setUserRanking(currentUser.ranking);
-
-      // Set default match levels
-      const availableLevels = getAvailableRankingLevels(currentUser.ranking);
-      levelSelection.set(availableLevels);
 
       // Set default location from profile
       if (currentUser.formatted_address) {
@@ -159,30 +156,64 @@ const Events = () => {
     }
   }, [location.state, refetch, navigate, location.pathname]);
 
-  // Handle match query parameter from notifications
+  // Handle match query parameter from notifications - redirect to Community page
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const matchId = searchParams.get('match');
 
-    if (matchId && dbMatches) {
-      // Find the match in the loaded data
-      const match = dbMatches.find((m: any) => m.id === matchId);
-      if (match) {
-        // Open the thoughts modal for this match
-        setSelectedMatchForThoughts(match);
-        setMatchThoughtsModalOpen(true);
-
-        // Force refresh thoughts when opening from notification
-        // Use setTimeout to ensure the state update has completed
-        setTimeout(() => {
-          matchThoughts.fetchThoughts();
-        }, 0);
-
-        // Clear the query parameter
-        navigate(location.pathname, { replace: true });
-      }
+    if (matchId) {
+      // Redirect to Community page with the match selected
+      navigate('/community', { state: { selectMatchId: matchId }, replace: true });
     }
-  }, [location.search, dbMatches, navigate, location.pathname, matchThoughts]);
+  }, [location.search, navigate]);
+
+  // Real-time subscriptions for matches and participants
+  useEffect(() => {
+    console.log('[Events] Setting up real-time subscriptions...');
+
+    // Subscribe to matches table changes
+    const matchesSubscription = supabase
+      .channel('matches-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches'
+        },
+        (payload) => {
+          console.log('[Events] Matches change detected:', payload);
+          // Refetch all data when a match changes
+          refetch();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to match_participants table changes
+    const participantsSubscription = supabase
+      .channel('participants-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'match_participants'
+        },
+        (payload) => {
+          console.log('[Events] Match participants change detected:', payload);
+          // Refetch all data when participants change
+          refetch();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      console.log('[Events] Cleaning up real-time subscriptions...');
+      supabase.removeChannel(matchesSubscription);
+      supabase.removeChannel(participantsSubscription);
+    };
+  }, [refetch]);
 
   // ========================================
   // DATA TRANSFORMATION
@@ -278,16 +309,6 @@ const Events = () => {
         return false;
       }
 
-      // Level filtering - check if any of the match's levels are in the selected levels
-      if (levelSelection.count > 0 && match.match_levels) {
-        const hasMatchingLevel = match.match_levels.some((level: string) =>
-          levelSelection.isSelected(level)
-        );
-        if (!hasMatchingLevel) {
-          return false;
-        }
-      }
-
       // Hide fully booked matches
       if (hideFullyBooked) {
         const currentParticipants = match.match_participants?.length || 0;
@@ -299,7 +320,7 @@ const Events = () => {
 
       return true;
     });
-  }, [dbMatches, geolocation, dateFilter, levelSelection, hideFullyBooked]);
+  }, [dbMatches, geolocation, dateFilter, hideFullyBooked]);
 
   // ========================================
   // EVENT HANDLERS
@@ -557,74 +578,6 @@ const Events = () => {
     }
   };
 
-  const handleRemoveLevelFromMatch = async (
-    matchId: string,
-    levelToRemove: string
-  ) => {
-    const match = dbMatches?.find((m) => m.id === matchId);
-    if (!match) return;
-
-    const updatedLevels = (match.match_levels || []).filter(
-      (level: string) => level !== levelToRemove
-    );
-
-    if (updatedLevels.length === 0) {
-      toast.error("Match must have at least one level");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("matches")
-      .update({ match_levels: updatedLevels })
-      .eq("id", matchId);
-
-    if (error) {
-      console.error("Error updating match levels:", error);
-      toast.error("Failed to remove level");
-      return;
-    }
-
-    toast.success("Level removed successfully");
-
-    // Update only this match in local state without refetching everything
-    const updatedMatch = {
-      ...match,
-      match_levels: updatedLevels
-    };
-    updateMatch(matchId, updatedMatch as any);
-  };
-
-  const handleAddLevelToMatch = async (
-    matchId: string,
-    levelToAdd: string
-  ) => {
-    const match = dbMatches?.find((m) => m.id === matchId);
-    if (!match) return;
-
-    const currentLevels = match.match_levels || [];
-    const updatedLevels = [...currentLevels, levelToAdd];
-
-    const { error } = await supabase
-      .from("matches")
-      .update({ match_levels: updatedLevels })
-      .eq("id", matchId);
-
-    if (error) {
-      console.error("Error updating match levels:", error);
-      toast.error("Failed to add ranking");
-      return;
-    }
-
-    toast.success("Ranking added!");
-
-    // Update only this match in local state without refetching everything
-    const updatedMatch = {
-      ...match,
-      match_levels: updatedLevels
-    };
-    updateMatch(matchId, updatedMatch as any);
-  };
-
   // ========================================
   // LOADING STATE
   // ========================================
@@ -679,11 +632,8 @@ const Events = () => {
             <EventFilters
               geolocation={geolocation}
               dateFilter={dateFilter}
-              levelSelection={levelSelection}
               hideFullyBooked={hideFullyBooked}
               setHideFullyBooked={setHideFullyBooked}
-              userRanking={userRanking}
-              currentUserId={currentUserId}
               onPlaceSelected={handlePlaceSelected}
             />
           </div>
@@ -729,6 +679,24 @@ const Events = () => {
                           {/* Organizer actions - aligned with date */}
                           {currentUserId === match.created_by && (
                             <div className="absolute top-0 right-0 flex gap-1">
+                              {/* Edit button */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setEditMatchDialog({
+                                    open: true,
+                                    match: match,
+                                  });
+                                }}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                title="Edit match"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
                               {/* Manage visibility button */}
                               <Button
                                 type="button"
@@ -1009,6 +977,16 @@ const Events = () => {
           matchId={restrictedUsersDialog.matchId}
           currentRestrictedUsers={restrictedUsersDialog.restrictedUsers}
           organizerId={currentUserId}
+          onUpdate={refetch}
+        />
+      )}
+
+      {/* Edit Match Dialog */}
+      {editMatchDialog.match && (
+        <EditMatchDialog
+          open={editMatchDialog.open}
+          onOpenChange={(open) => setEditMatchDialog({ ...editMatchDialog, open })}
+          match={editMatchDialog.match}
           onUpdate={refetch}
         />
       )}

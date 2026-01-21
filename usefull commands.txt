@@ -11,12 +11,20 @@ change .env files to prd file in frontend
 ask claude to run migration to supabase
 problemen door oa
 Great! The connection worked with aws-1-eu-west-1 instead of aws-0-eu-west-1!
+dev
+npx supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:ENQWwjpCnBhquhcm@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
 
+prd 
+npx supabase db push --db-url "postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+
+prd
 
 run front end locally
 cd C:\PadelCommunity\packages\frontend
 npm run dev
-somns gaat die automatisch naar poort 8083 als hij herstart
+somns gaat die automatisch naar poort 8083 als hij herstart 
+   free up port 8083
+   free up port 8082
 
 run azure-functions locally?
 

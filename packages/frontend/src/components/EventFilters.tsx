@@ -4,12 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import CustomDateRangePicker from "@/components/CustomDateRangePicker";
-import { Filter, MapPin, Clock, Trophy } from "lucide-react";
+import { Filter, MapPin, Clock } from "lucide-react";
 import {
   UseGeolocationReturn,
   UseDateFilteringReturn,
-  UseArraySelectionReturn,
-  getAvailableRankingLevels,
 } from "@/hooks";
 
 /**
@@ -22,30 +20,21 @@ import {
 interface EventFiltersProps {
   geolocation: UseGeolocationReturn;
   dateFilter: UseDateFilteringReturn;
-  levelSelection: UseArraySelectionReturn<string>;
   hideFullyBooked: boolean;
   setHideFullyBooked: (value: boolean) => void;
-  userRanking: string | null;
-  currentUserId: string | null;
   onPlaceSelected: (place: any) => void;
 }
 
 export const EventFilters = ({
   geolocation,
   dateFilter,
-  levelSelection,
   hideFullyBooked,
   setHideFullyBooked,
-  userRanking,
-  currentUserId,
   onPlaceSelected,
 }: EventFiltersProps) => {
-  const availableLevels = getAvailableRankingLevels(userRanking);
-
   const handleClearFilters = () => {
     geolocation.resetLocation();
     dateFilter.resetDateFilter();
-    levelSelection.set(availableLevels);
     setHideFullyBooked(false);
   };
 
@@ -156,42 +145,6 @@ export const EventFilters = ({
                   {dateFilter.customDateTo.toLocaleDateString()}
                 </div>
               )}
-          </div>
-        </div>
-
-        {/* Match Level Section */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              Ranking {currentUserId && "*"}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {availableLevels.map((level) => (
-              <div key={level} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`level-${level}`}
-                  checked={levelSelection.isSelected(level)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      levelSelection.add(level);
-                    } else {
-                      // Prevent unchecking if it's the last one
-                      if (levelSelection.count > 1) {
-                        levelSelection.remove(level);
-                      }
-                    }
-                  }}
-                />
-                <label
-                  htmlFor={`level-${level}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  {level.replace("p", "P").replace("-", " - ").toUpperCase()}
-                </label>
-              </div>
-            ))}
           </div>
         </div>
 

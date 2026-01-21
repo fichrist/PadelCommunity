@@ -27,6 +27,13 @@ export interface Profile {
   playtomic_user_id: string | null;
   bio: string | null;
   intentions: string[] | null;
+  group_ids: string[] | null;
+  allowed_groups: string[] | null;
+  filtered_groups: string[] | null;
+  filtered_address: string | null;
+  filtered_latitude: number | null;
+  filtered_longitude: number | null;
+  filtered_radius_km: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -107,6 +114,69 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
     }
 
     console.log('[updateProfile] User ID:', user.id);
+
+    // If ranking is being updated, automatically update allowed_groups
+    if (updates.ranking) {
+      console.log('[updateProfile] Ranking update detected, updating allowed_groups...');
+
+      // Fetch all ranked groups
+      const { data: rankedGroups, error: groupsError } = await supabase
+        .from('groups')
+        .select('id, ranking_level')
+        .eq('group_type', 'Ranked');
+
+      if (groupsError) {
+        console.error('[updateProfile] Error fetching ranked groups:', groupsError);
+      } else if (rankedGroups) {
+        // Parse user's ranking to get numeric value (e.g., "P300" -> 300)
+        const userRankingMatch = updates.ranking.match(/(\d+)/);
+        const userRankingValue = userRankingMatch ? parseInt(userRankingMatch[0]) : null;
+
+        console.log('[updateProfile] User ranking value:', userRankingValue);
+
+        // Find groups where the user's ranking falls within the group's range
+        const matchingGroupIds = rankedGroups
+          .filter(group => {
+            if (!group.ranking_level || !userRankingValue) return false;
+
+            // Extract min and max from ranking_level (e.g., "P200-P300" -> [200, 300])
+            const rangeMatch = group.ranking_level.match(/(\d+)-.*?(\d+)/);
+            if (!rangeMatch) return false;
+
+            const minRank = parseInt(rangeMatch[1]);
+            const maxRank = parseInt(rangeMatch[2]);
+
+            // Check if user's ranking falls within this range (inclusive)
+            const isInRange = userRankingValue >= minRank && userRankingValue <= maxRank;
+
+            console.log(`[updateProfile] Group ${group.id} (${group.ranking_level}): ${minRank}-${maxRank}, user: ${userRankingValue}, in range: ${isInRange}`);
+
+            return isInRange;
+          })
+          .map(group => group.id);
+
+        console.log('[updateProfile] Matching group IDs for ranking:', matchingGroupIds);
+
+        // Get current profile to preserve existing General groups
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('group_ids')
+          .eq('id', user.id)
+          .single();
+
+        // Preserve General groups (those not in ranked groups list)
+        const rankedGroupIds = rankedGroups.map(g => g.id);
+        const currentGeneralGroups = (currentProfile?.group_ids || []).filter(
+          (groupId: string) => !rankedGroupIds.includes(groupId)
+        );
+
+        // Combine General groups with new matching ranked groups
+        const newAllowedGroups = [...currentGeneralGroups, ...matchingGroupIds];
+
+        console.log('[updateProfile] Setting allowed_groups to:', newAllowedGroups);
+        updates.allowed_groups = newAllowedGroups as any;
+      }
+    }
 
     console.log('[updateProfile] About to update database...');
 

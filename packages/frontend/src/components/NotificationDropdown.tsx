@@ -154,12 +154,21 @@ const NotificationDropdown = () => {
 
     // Navigate based on notification link or type
     if (notification.link) {
-      // Use the link field if available (new notifications)
-      navigate(notification.link);
+      // Parse the link to extract match ID if it's a community match link
+      const urlObj = new URL(notification.link, window.location.origin);
+      const matchId = urlObj.searchParams.get('match');
+
+      if (urlObj.pathname === '/community' && matchId) {
+        // Navigate to Community page with the match selected
+        navigate('/community', { state: { selectMatchId: matchId } });
+      } else {
+        // Use the link as-is for other notifications
+        navigate(notification.link);
+      }
       setIsOpen(false);
     } else if (notification.type === 'new_match' && notification.data?.match_id) {
       // Fallback for old notifications using data field
-      navigate('/events');
+      navigate('/community', { state: { selectMatchId: notification.data.match_id } });
       setIsOpen(false);
     }
   };

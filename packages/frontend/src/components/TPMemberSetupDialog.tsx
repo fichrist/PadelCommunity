@@ -15,6 +15,7 @@ import { Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { updateProfile } from "@/lib/profiles";
 
 interface TPMemberSetupDialogProps {
   open: boolean;
@@ -112,12 +113,6 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
     setSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error("You must be logged in");
-      }
-
       const updates: any = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -134,16 +129,49 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         updates.phone_number = phoneNumber.trim();
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      const success = await updateProfile(updates);
 
-      if (error) throw error;
+      if (!success) {
+        throw new Error("Failed to update profile");
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
+      // Fetch all groups
+      const { data: allGroups, error: groupsError } = await supabase
+        .from('groups')
+        .select('id, name, group_type, ranking_level');
+
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
+      }
 
       // Get applicable ranking levels based on user's ranking
       const { getAvailableRankingLevels: getRankingLevels } = await import('@/hooks');
       const rankingLevels = getRankingLevels(selectedPlayerData.ranking);
+
+      // Build list of group IDs to include in notifications:
+      // 1. All General groups
+      // 2. Ranked groups that match the user's applicable ranking levels
+      const groupIds: string[] = [];
+
+      if (allGroups) {
+        for (const group of allGroups) {
+          if (group.group_type === 'General') {
+            // Include all general groups
+            groupIds.push(group.id);
+          } else if (group.group_type === 'Ranked' && group.ranking_level) {
+            // Include ranked groups that match user's applicable levels
+            if (rankingLevels.includes(group.ranking_level)) {
+              groupIds.push(group.id);
+            }
+          }
+        }
+      }
 
       // Create or update notification match filter with address and 30km radius
       const { error: filterError } = await (supabase as any)
@@ -155,8 +183,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
           location_latitude: addressCoords.lat,
           location_longitude: addressCoords.lng,
           location_radius_km: 30,
-          ranking_enabled: true,
-          ranking_levels: rankingLevels,
+          group_ids: groupIds,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,33 +13,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { processMatchParticipants } from "@/lib/matchParticipants";
 import { createMatchNotifications } from "@/lib/notifications";
-
-// Helper function to get available ranking levels based on user's ranking
-const getAvailableRankingLevels = (userRanking: string | null): string[] => {
-  if (!userRanking) return [];
-
-  // Extract numeric value from ranking (e.g., "P450" -> 450)
-  const rankingMatch = userRanking.match(/P?(\d+)/i);
-  if (!rankingMatch) return [];
-
-  const rankingValue = parseInt(rankingMatch[1]);
-
-  const allLevels = [
-    { value: 'p50-p100', min: 50, max: 100 },
-    { value: 'p100-p200', min: 100, max: 200 },
-    { value: 'p200-p300', min: 200, max: 300 },
-    { value: 'p300-p400', min: 300, max: 400 },
-    { value: 'p400-p500', min: 400, max: 500 },
-    { value: 'p500-p700', min: 500, max: 700 },
-    { value: 'p700-p1000', min: 700, max: 1000 },
-    { value: 'p1000+', min: 1000, max: Infinity }
-  ];
-
-  // Filter levels that include the user's ranking
-  return allLevels
-    .filter(level => rankingValue >= level.min && rankingValue <= level.max)
-    .map(level => level.value);
-};
 
 // Function to fetch match details from Playtomic URL
 const fetchPlaytomicMatchDetails = async (url: string) => {
@@ -86,6 +60,7 @@ const CreateMatch = () => {
   const [publishToFavoritesOnly, setPublishToFavoritesOnly] = useState(false);
   const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUser[]>([]);
   const [selectedFavorites, setSelectedFavorites] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
 
   // Fetch user's ranking and favorites on mount
   useEffect(() => {
@@ -167,19 +142,9 @@ const CreateMatch = () => {
 
       // Determine group_ids based on user ranking
       const groupIds: string[] = [];
+      let hasRankedGroups = false;
 
-      // Always add the General group
-      const { data: generalGroup } = await supabase
-        .from('groups')
-        .select('id')
-        .eq('group_type', 'General')
-        .single();
-
-      if (generalGroup) {
-        groupIds.push(generalGroup.id);
-      }
-
-      // Add ranked groups based on match_levels
+      // Add ranked groups based on user's ranking
       if (userRanking) {
         const rankingMatch = userRanking.match(/P?(\d+)/i);
         if (rankingMatch) {
@@ -210,8 +175,23 @@ const CreateMatch = () => {
 
             if (rankedGroups && rankedGroups.length > 0) {
               rankedGroups.forEach(group => groupIds.push(group.id));
+              hasRankedGroups = true;
             }
           }
+        }
+      }
+
+      // Only add to General group if there are NO ranked groups
+      // (General group is for matches without ranking levels)
+      if (!hasRankedGroups) {
+        const { data: generalGroup } = await supabase
+          .from('groups')
+          .select('id')
+          .eq('group_type', 'General')
+          .single();
+
+        if (generalGroup) {
+          groupIds.push(generalGroup.id);
         }
       }
 
@@ -254,9 +234,6 @@ const CreateMatch = () => {
 
       console.log('Fetched match details:', matchDetails);
 
-      // Get match levels based on user's ranking
-      const matchLevels = getAvailableRankingLevels(userRanking) as Array<"beginner" | "intermediate" | "advanced" | "professional" | "p50-p100" | "p100-p200" | "p200-p300" | "p300-p400" | "p400-p500" | "p500-p700" | "p700-p1000" | "p1000+">;
-
       // Prepare restricted_users array if publish to favorites only
       let restrictedUsers: string[] | null = null;
       if (publishToFavoritesOnly && selectedFavorites.length > 0) {
@@ -269,11 +246,11 @@ const CreateMatch = () => {
         .from('matches')
         .insert({
           url: url.trim(),
-          match_levels: matchLevels,
           group_ids: groupIds,
           created_by: user.id,
           status: 'confirmed',
           restricted_users: restrictedUsers,
+          message: message.trim() || null,
           // Include scraped data directly
           match_date: matchDetails.match_date,
           match_time: matchDetails.match_time,
@@ -307,7 +284,7 @@ const CreateMatch = () => {
           match_date: matchDetails.match_date,
           latitude: matchDetails.latitude,
           longitude: matchDetails.longitude,
-          match_levels: matchLevels,
+          group_ids: groupIds,
           restricted_users: restrictedUsers,
         },
         user.id
@@ -349,8 +326,13 @@ const CreateMatch = () => {
         }
       }
 
-      // Navigate to events page and trigger a refetch
-      navigate('/events', { state: { refetchData: true } });
+      // Navigate to community page and trigger a refetch, with the first group ID to auto-select
+      navigate('/community', {
+        state: {
+          refetchData: true,
+          selectGroupId: groupIds.length > 0 ? groupIds[0] : null
+        }
+      });
     } catch (error: any) {
       console.error('Error creating match:', error);
       toast.error(error.message || "Failed to create match");
@@ -395,6 +377,22 @@ const CreateMatch = () => {
                 />
                 <p className="text-sm text-muted-foreground">
                   Enter the Playtomic match URL. Details and match rankings will be set automatically based on your profile.
+                </p>
+              </div>
+
+              {/* Match Message */}
+              <div className="space-y-2">
+                <Label htmlFor="message">Message (optional)</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Add a message or description for this match..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+                <p className="text-sm text-muted-foreground">
+                  This message will be shown on the match card.
                 </p>
               </div>
 
@@ -466,7 +464,7 @@ const CreateMatch = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate('/community')}
                   className="flex-1"
                 >
                   Cancel
