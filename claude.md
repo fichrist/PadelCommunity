@@ -66,24 +66,30 @@ const handleSubmit = async () => {
 
 Voor migraties altijd de `--db-url` flag gebruiken, NIET linken.
 
+## Credentials
+
+Database URLs staan in het `.env` bestand in de root (gitignored):
+- `DATABASE_URL_LOCAL` → lokale Supabase
+- `DATABASE_URL_PROD` → productie Supabase
+
+**NOOIT credentials in dit bestand of andere tracked files zetten!**
+
 ### Lokale database
+Lees de waarde van `DATABASE_URL_LOCAL` uit `.env` en gebruik die:
 ```bash
-supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:ENQWwjpCnBhquhcm@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+supabase db push --db-url "<waarde van DATABASE_URL_LOCAL uit .env>"
 ```
 
 ### Productie database
+Lees de waarde van `DATABASE_URL_PROD` uit `.env` en gebruik die:
 ```bash
-supabase db push --db-url "$postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-north-1.pooler.supabase.com:6543/postgres"
+supabase db push --db-url "<waarde van DATABASE_URL_PROD uit .env>"
 ```
-
-## Environment variabelen
-
-- `DATABASE_URL_LOCAL` → lokale Supabase
-- `DATABASE_URL_PROD` → productie Supabase
 
 ## Regels
 
 1. Vraag ALTIJD welke omgeving (local/prod) voordat je migraties uitvoert
-2. Gebruik NOOIT `supabase link` 
-3. Gebruik ALTIJD `--db-url` met de juiste environment variabele
+2. Gebruik NOOIT `supabase link`
+3. Gebruik ALTIJD `--db-url` met de juiste URL uit het `.env` bestand
 4. Vraag bevestiging voordat je naar productie migreert
+5. Zet NOOIT database credentials in tracked files (claude.md, code, etc.)

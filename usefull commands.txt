@@ -12,11 +12,11 @@ ask claude to run migration to supabase
 problemen door oa
 Great! The connection worked with aws-1-eu-west-1 instead of aws-0-eu-west-1!
 dev
-npx supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:ENQWwjpCnBhquhcm@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+npx supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:u4QzjDHiKfuQqDHX@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
 
 region kan je vinden in project overview
 prd 
-npx supabase db push --db-url "postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-north-1.pooler.supabase.com:6543/postgres"
+npx supabase db push --db-url "postgresql://postgres.avwrplietxyrdqevpayb:TV4P1mTOAnXYd0Ll@aws-1-eu-north-1.pooler.supabase.com:6543/postgres"
 
 prd
 
@@ -28,7 +28,7 @@ somns gaat die automatisch naar poort 8083 als hij herstart
    free up port 8082
 
 run azure-functions locally?
-
+cd c:\PadelCommunity\packages\azure-functions && func start
 
 
 om naar PRD te gaan 
