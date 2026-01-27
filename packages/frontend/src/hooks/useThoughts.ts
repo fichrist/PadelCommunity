@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   getThoughtsByEventId,
   getThoughtsByMatchId,
@@ -218,6 +219,34 @@ export const useThoughts = (
   useEffect(() => {
     fetchThoughts();
   }, [fetchThoughts]);
+
+  // Real-time subscription for thoughts changes
+  useEffect(() => {
+    if (!entityId) return;
+
+    const channel = supabase
+      .channel(`thoughts-${entityType}-${entityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'thoughts',
+        },
+        (payload: any) => {
+          // Only refetch if the change is for our entity
+          const changedId = payload.new?.[`${entityType}_id`] || payload.old?.[`${entityType}_id`];
+          if (changedId === entityId) {
+            fetchThoughts();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [entityType, entityId, fetchThoughts]);
 
   // Organize thoughts into tree structure
   const thoughtTree = organizeThoughtsIntoTree(thoughts);

@@ -122,11 +122,6 @@ const Events = () => {
     const initializeUser = async () => {
       if (!currentUser) return;
 
-      // Check if tp_user_id is set
-      if (!currentUser.tp_user_id) {
-        setShowSetupDialog(true);
-      }
-
       // Set user ranking
       setUserRanking(currentUser.ranking);
 

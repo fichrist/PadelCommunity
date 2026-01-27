@@ -115,6 +115,31 @@ function matchMeetsFilterCriteria(
 }
 
 /**
+ * Fetch the blocked_users array from a user's profile.
+ * Returns an empty array if the profile doesn't exist, has no blocked users,
+ * or if the query fails for any reason.
+ */
+async function getBlockedUsersForUser(userId: string): Promise<string[]> {
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("blocked_users")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching blocked users for user:", userId, error);
+      return [];
+    }
+
+    return Array.isArray(profile?.blocked_users) ? profile.blocked_users : [];
+  } catch (error) {
+    console.error("Unexpected error in getBlockedUsersForUser:", error);
+    return [];
+  }
+}
+
+/**
  * Create notifications for all eligible users when a new match is created
  *
  * @param match - The match object
@@ -180,6 +205,20 @@ export async function createMatchNotifications(
 
     if (!eligibleProfiles || eligibleProfiles.length === 0) {
       console.log("No eligible users found");
+      return;
+    }
+
+    // Filter out users blocked by the organizer
+    const blockedUsers = await getBlockedUsersForUser(creatorId);
+    if (blockedUsers.length > 0) {
+      eligibleProfiles = eligibleProfiles.filter(
+        (p) => !blockedUsers.includes(p.id)
+      );
+      console.log(`After blocked user filter: ${eligibleProfiles.length} eligible users`);
+    }
+
+    if (eligibleProfiles.length === 0) {
+      console.log("No eligible users after blocked user filter");
       return;
     }
 
@@ -278,7 +317,7 @@ export async function createParticipantJoinedNotifications(
     // Get match details for the notification message
     const { data: match } = await supabase
       .from("matches")
-      .select("venue_name, match_date")
+      .select("venue_name, match_date, created_by")
       .eq("id", matchId)
       .single();
 
@@ -300,13 +339,21 @@ export async function createParticipantJoinedNotifications(
     }
 
     // Filter out the participant who just joined and get unique user IDs
-    const uniqueUserIds = [
+    let uniqueUserIds = [
       ...new Set(
         participants
           .map((p) => p.player_profile_id)
           .filter((id) => id && id !== newParticipantId)
       ),
     ];
+
+    // Filter out users blocked by the organizer
+    if (match?.created_by) {
+      const blockedUsers = await getBlockedUsersForUser(match.created_by);
+      if (blockedUsers.length > 0) {
+        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
+      }
+    }
 
     console.log(`Found ${uniqueUserIds.length} participants to notify`);
 
@@ -377,7 +424,7 @@ export async function createParticipantLeftNotifications(
     // Get match details for the notification message
     const { data: match } = await supabase
       .from("matches")
-      .select("venue_name, match_date")
+      .select("venue_name, match_date, created_by")
       .eq("id", matchId)
       .single();
 
@@ -399,13 +446,21 @@ export async function createParticipantLeftNotifications(
     }
 
     // Filter out the participant who just left and get unique user IDs
-    const uniqueUserIds = [
+    let uniqueUserIds = [
       ...new Set(
         participants
           .map((p) => p.player_profile_id)
           .filter((id) => id && id !== removedParticipantId)
       ),
     ];
+
+    // Filter out users blocked by the organizer
+    if (match?.created_by) {
+      const blockedUsers = await getBlockedUsersForUser(match.created_by);
+      if (blockedUsers.length > 0) {
+        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
+      }
+    }
 
     console.log(`Found ${uniqueUserIds.length} participants to notify`);
 
@@ -498,9 +553,18 @@ export async function createThoughtReactionNotifications(
     // Get match details for the notification message
     const { data: match } = await supabase
       .from("matches")
-      .select("venue_name, match_date")
+      .select("venue_name, match_date, created_by")
       .eq("id", matchId)
       .single();
+
+    // Don't notify if the thought author is blocked by the organizer
+    if (match?.created_by) {
+      const blockedUsers = await getBlockedUsersForUser(match.created_by);
+      if (blockedUsers.includes(thought.user_id)) {
+        console.log("Thought author is blocked by organizer, not creating notification");
+        return;
+      }
+    }
 
     // Truncate thought content if too long (max 50 characters)
     const truncatedThought = thought.content.length > 50
@@ -562,7 +626,7 @@ export async function createThoughtAddedNotifications(
     // Get match details for the notification message
     const { data: match } = await supabase
       .from("matches")
-      .select("venue_name, match_date")
+      .select("venue_name, match_date, created_by")
       .eq("id", matchId)
       .single();
 
@@ -584,13 +648,21 @@ export async function createThoughtAddedNotifications(
     }
 
     // Filter out the author and get unique user IDs
-    const uniqueUserIds = [
+    let uniqueUserIds = [
       ...new Set(
         participants
           .map((p) => p.player_profile_id)
           .filter((id) => id && id !== authorId)
       ),
     ];
+
+    // Filter out users blocked by the organizer
+    if (match?.created_by) {
+      const blockedUsers = await getBlockedUsersForUser(match.created_by);
+      if (blockedUsers.length > 0) {
+        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
+      }
+    }
 
     console.log(`Found ${uniqueUserIds.length} participants to notify`);
 

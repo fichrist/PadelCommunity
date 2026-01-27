@@ -28,20 +28,32 @@ import CookieConsent from "./components/CookieConsent";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Set up auth state change listener to handle session refresh
+  // Set up auth state change listener and visibility-based token refresh.
+  // Browsers throttle timers on inactive tabs, so autoRefreshToken may miss
+  // the refresh window. Re-starting auto-refresh when the tab becomes visible
+  // forces an immediate token check and refresh if needed.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔐 Auth state changed:', event);
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
       if (event === 'TOKEN_REFRESHED') {
-        console.log('✅ Token refreshed successfully');
+        console.log('Auth: token refreshed');
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
+        console.log('Auth: signed out');
       }
     });
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

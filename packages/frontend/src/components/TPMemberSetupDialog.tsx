@@ -69,6 +69,17 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
       if (data.data.players && data.data.players.length > 0) {
         setTpPlayers(data.data.players);
         toast.success(`Found ${data.data.players.length} player(s)`);
+
+        // Auto-select if only one player found
+        if (data.data.players.length === 1) {
+          const player = data.data.players[0];
+          setSelectedTPPlayer(player.userId);
+          setSelectedPlayerData({
+            ranking: player.ranking,
+            userId: player.userId,
+            club: player.club
+          });
+        }
       } else {
         toast.info('No players found with that name');
       }
@@ -113,6 +124,21 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
     setSaving(true);
 
     try {
+      // Check if this TP user ID is already linked to another profile
+      const tpUserId = parseInt(selectedPlayerData.userId);
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('tp_user_id', tpUserId)
+        .single();
+
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (existingProfile && existingProfile.id !== currentUser?.id) {
+        toast.error("This Tennis & Padel Vlaanderen account is already linked to another profile.");
+        setSaving(false);
+        return;
+      }
+
       const updates: any = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -123,6 +149,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         formatted_address: address.trim(),
         latitude: addressCoords.lat,
         longitude: addressCoords.lng,
+        filtered_address: address.trim(),
+        filtered_latitude: addressCoords.lat,
+        filtered_longitude: addressCoords.lng,
       };
 
       if (phoneNumber.trim()) {
@@ -172,6 +201,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
           }
         }
       }
+
+      // Save filtered_groups on the profile to match allowed groups
+      await updateProfile({ filtered_groups: groupIds });
 
       // Create or update notification match filter with address and 30km radius
       const { error: filterError } = await (supabase as any)
@@ -271,7 +303,7 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
               placeholder="Enter your address"
             />
             <p className="text-xs text-muted-foreground">
-              Your address will be used to filter matches within 30km of your location
+              Your address will be used to filter matches within 30km of your location. You can adapt the filter afterwards.
             </p>
           </div>
 
@@ -321,9 +353,6 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
                   })}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Selecting a profile will link your account
-              </p>
             </div>
           )}
         </div>

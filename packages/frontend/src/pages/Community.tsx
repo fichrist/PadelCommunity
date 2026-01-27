@@ -19,6 +19,7 @@ import { createParticipantJoinedNotifications, createParticipantLeftNotification
 import { getThoughtsByMatchId, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { createThoughtAddedNotifications } from "@/lib/notifications";
 import { fetchMatchesForGroup, fetchMatchById } from "@/lib/matches";
+import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 const Community = () => {
   const location = useLocation();
@@ -38,8 +39,29 @@ const Community = () => {
     matchId: string | null;
     restrictedUsers: string[] | null;
   }>({ open: false, matchId: null, restrictedUsers: null });
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   const { currentUserId } = useAuth();
+
+  // Show registration dialog when navigating from index page with incomplete profile
+  useEffect(() => {
+    const state = location.state as { fromIndex?: boolean } | null;
+    if (!state?.fromIndex || !currentUserId) return;
+
+    const checkProfile = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('tp_user_id')
+        .eq('id', currentUserId)
+        .single();
+
+      if (!profile?.tp_user_id) {
+        setShowSetupDialog(true);
+      }
+    };
+
+    checkProfile();
+  }, [currentUserId, location.state]);
 
   // Handle navigation state to auto-select a group or match
   useEffect(() => {
@@ -158,11 +180,35 @@ const Community = () => {
       )
       .subscribe();
 
+    // Subscribe to thoughts table changes
+    const thoughtsSubscription = supabase
+      .channel('community-thoughts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'thoughts'
+        },
+        (payload: any) => {
+          console.log('[Community] Thoughts change detected:', payload);
+          const matchId = payload.new?.match_id || payload.old?.match_id;
+          if (matchId) {
+            // Refetch thoughts for the affected match
+            getThoughtsByMatchId(matchId).then((thoughts) => {
+              setMatchThoughts(prev => ({ ...prev, [matchId]: thoughts }));
+            });
+          }
+        }
+      )
+      .subscribe();
+
     // Cleanup subscriptions on unmount or when selectedGroupId changes
     return () => {
       console.log('[Community] Cleaning up real-time subscriptions...');
       supabase.removeChannel(matchesSubscription);
       supabase.removeChannel(participantsSubscription);
+      supabase.removeChannel(thoughtsSubscription);
     };
   }, [selectedGroupId, selectedMatchId]);
 
@@ -474,6 +520,18 @@ const Community = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <TPMemberSetupDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        onSaveComplete={() => {
+          setShowSetupDialog(false);
+          // Clear the fromIndex state so it doesn't re-trigger
+          navigate(location.pathname, { replace: true, state: {} });
+          // Notify AppLayout to refresh the nav bar (Complete Registration -> Create button)
+          window.dispatchEvent(new Event('profile-updated'));
+        }}
+      />
 
       {restrictedUsersDialog.matchId && currentUserId && (
         <ManageRestrictedUsersDialog

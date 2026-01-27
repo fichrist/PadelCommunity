@@ -24,23 +24,42 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
   const [displayName, setDisplayName] = useState<string>(userName || "My Page");
   const [userEmail, setUserEmail] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [initials, setInitials] = useState<string>("ME");
+
+  const getInitials = (firstName?: string | null, lastName?: string | null, fallbackName?: string): string => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    if (firstName) {
+      return firstName.substring(0, 2).toUpperCase();
+    }
+    if (fallbackName) {
+      const parts = fallbackName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return fallbackName.substring(0, 2).toUpperCase();
+    }
+    return "ME";
+  };
 
   useEffect(() => {
     // Fetch the current user's information
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
         // Fetch profile from profiles table
         const profile = await getCurrentProfile();
-        
+
         // Get display name from profile or fallback to email
-        const name = profile?.display_name || 
+        const name = profile?.display_name ||
                      profile?.first_name ||
-                     user.email?.split('@')[0] || 
+                     user.email?.split('@')[0] ||
                      "My Page";
         setDisplayName(name);
         setUserEmail(user.email || "");
+        setInitials(getInitials(profile?.first_name, profile?.last_name, name));
 
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
@@ -60,13 +79,14 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
       if (session?.user) {
         // Fetch profile from profiles table
         const profile = await getCurrentProfile();
-        
-        const name = profile?.display_name || 
+
+        const name = profile?.display_name ||
                      profile?.first_name ||
-                     session.user.email?.split('@')[0] || 
+                     session.user.email?.split('@')[0] ||
                      "My Page";
         setDisplayName(name);
         setUserEmail(session.user.email || "");
+        setInitials(getInitials(profile?.first_name, profile?.last_name, name));
 
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
@@ -74,6 +94,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
         setDisplayName("My Page");
         setUserEmail("");
         setAvatarUrl(undefined);
+        setInitials("ME");
       }
     });
 
@@ -85,38 +106,16 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
 
   const handleLogout = async () => {
     try {
-      // Show loading toast
-      toast({
-        title: "Logging out...",
-        description: "Please wait.",
-      });
-
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to log out. Please try again.",
-          variant: "destructive",
-        });
-        console.error("Logout error:", error);
-        return;
-      }
-
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      
-      // Navigate to landing page using React Router
-      navigate('/', { replace: true });
+      // Race signOut against a timeout so we always navigate away,
+      // even if the network call hangs (e.g. expired token).
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
     } catch (error) {
-      console.error("Unexpected logout error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      console.error("Logout error:", error);
+    } finally {
+      navigate('/', { replace: true });
     }
   };
 
@@ -125,7 +124,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
       <DropdownMenuTrigger asChild>
         <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
           <AvatarImage src={avatarUrl} referrerPolicy="no-referrer" />
-          <AvatarFallback className="text-sm">ME</AvatarFallback>
+          <AvatarFallback className="text-sm">{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-md border border-border">

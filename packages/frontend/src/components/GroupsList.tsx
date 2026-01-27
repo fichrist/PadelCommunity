@@ -169,6 +169,15 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
     };
 
     fetchGroups();
+
+    const handleProfileUpdate = () => {
+      fetchGroups();
+    };
+    window.addEventListener('profile-updated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
   }, []);
 
   // Helper function to calculate distance between two coordinates (Haversine formula)

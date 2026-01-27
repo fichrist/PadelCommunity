@@ -116,8 +116,8 @@ const People = () => {
     fetchPeople();
   }, []);
 
-  // Apply all filters
-  let filteredPeople = people;
+  // Apply all filters - exclude the logged-in user
+  let filteredPeople = people.filter(person => person.id !== currentUserId);
 
   // Filter by favorites only
   if (showFavoritesOnly) {

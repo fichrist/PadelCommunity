@@ -151,22 +151,23 @@ export const MatchCard = ({
       const hasReacted = emojiReactions.includes(currentUserId);
 
       if (hasReacted) {
-        // Remove reaction
+        // Remove this specific emoji reaction
         const { error } = await supabase
           .from('thought_reactions')
           .delete()
           .eq('thought_id', thoughtId)
-          .eq('user_id', currentUserId);
+          .eq('user_id', currentUserId)
+          .eq('emoji', emoji);
 
         if (error) {
           console.error('Error removing reaction:', error);
           toast.error('Failed to remove reaction');
         }
       } else {
-        // Add reaction - use upsert to handle the UNIQUE constraint
+        // Add reaction - insert new emoji (multiple different emojis per user allowed)
         const { error } = await supabase
           .from('thought_reactions')
-          .upsert({
+          .insert({
             thought_id: thoughtId,
             user_id: currentUserId,
             emoji: emoji
@@ -342,8 +343,8 @@ export const MatchCard = ({
               {match.venue_name || "Padel Match"}
             </div>
 
-            {/* Location */}
-            {(match.city || match.location) && (
+            {/* Location - only show when match has a URL */}
+            {match.url && (match.city || match.location) && (
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-1" />
                 {match.location || match.city}
@@ -358,7 +359,7 @@ export const MatchCard = ({
             )}
 
             {/* Go to Playtomic Button */}
-            {(currentUserId === match.created_by ||
+            {match.url && (currentUserId === match.created_by ||
               match.match_participants?.some(
                 (p: any) => p.added_by_profile_id === currentUserId
               )) && (
@@ -412,6 +413,9 @@ export const MatchCard = ({
                       </AvatarFallback>
                     </Avatar>
                     <span>{formatParticipantName(participant.name, participant.scraped_from_playtomic)}</span>
+                    {participant.profile_ranking && (
+                      <span className="text-xs text-muted-foreground">({participant.profile_ranking})</span>
+                    )}
                   </div>
                   {/* Delete button */}
                   {participant.added_by_profile_id === currentUserId && onDeleteParticipant && (
@@ -637,6 +641,14 @@ const ThoughtItem = ({
                     <Button
                       variant="secondary"
                       size="sm"
+                      onClick={() => setShowEmojiPicker(showEmojiPicker === thought.id ? null : thought.id)}
+                      className="h-6 w-6 p-0 rounded-full shadow-md"
+                    >
+                      <Smile className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => onEdit(thought)}
                       className="h-6 w-6 p-0 rounded-full shadow-md"
                     >
@@ -665,8 +677,8 @@ const ThoughtItem = ({
                 )}
               </div>
 
-              {/* Emoji picker for other users' messages */}
-              {!isOwnMessage && showEmojiPicker === thought.id && (
+              {/* Emoji picker */}
+              {showEmojiPicker === thought.id && (
                 <div className="flex gap-1 mt-1 p-2 bg-background border border-border rounded-lg shadow-lg">
                   {availableEmojis.map((emoji) => (
                     <button

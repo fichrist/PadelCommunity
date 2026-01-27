@@ -9,8 +9,8 @@ import padelBackground from "@/assets/padel-background.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
-import SignupCard from "@/components/SignupCard";
 import { supabase } from "@/integrations/supabase/client";
+import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -33,8 +33,8 @@ const AppLayout = ({
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [signInDialogOpen, setSignInDialogOpen] = useState(false);
   const [hasTpUserId, setHasTpUserId] = useState<boolean>(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -69,13 +69,17 @@ const AppLayout = ({
       setIsLoggedIn(!!session?.user);
 
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('tp_user_id')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('tp_user_id')
+            .eq('id', session.user.id)
+            .single();
 
-        setHasTpUserId(!!profile?.tp_user_id);
+          setHasTpUserId(!!profile?.tp_user_id);
+        } catch (error) {
+          console.error('AppLayout: Profile fetch in auth change failed:', error);
+        }
       } else {
         setHasTpUserId(false);
       }
@@ -83,7 +87,25 @@ const AppLayout = ({
       setAuthLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    const handleProfileUpdate = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('tp_user_id')
+          .eq('id', session.user.id)
+          .single();
+
+        setHasTpUserId(!!profile?.tp_user_id);
+      }
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
   }, []);
 
   const isActive = (path: string) => {
@@ -196,7 +218,7 @@ const AppLayout = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/profile')}
+                      onClick={() => setShowSetupDialog(true)}
                       className="flex items-center space-x-2"
                     >
                       <User className="h-4 w-4" />
@@ -209,7 +231,7 @@ const AppLayout = ({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => setSignInDialogOpen(true)}
+                    onClick={() => navigate('/')}
                     className="flex items-center space-x-2"
                   >
                     <LogIn className="h-4 w-4" />
@@ -233,8 +255,15 @@ const AppLayout = ({
         {children}
       </div>
 
-      {/* Sign In Dialog */}
-      <SignupCard open={signInDialogOpen} onOpenChange={setSignInDialogOpen} />
+      <TPMemberSetupDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        onSaveComplete={() => {
+          setShowSetupDialog(false);
+          setHasTpUserId(true);
+          window.dispatchEvent(new Event('profile-updated'));
+        }}
+      />
     </div>
   );
 };

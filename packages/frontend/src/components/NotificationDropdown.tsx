@@ -140,17 +140,13 @@ const NotificationDropdown = () => {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read
-    if (!notification.read) {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notification.id);
+    // Delete the notification when clicked
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notification.id);
 
-      setNotifications(prev =>
-        prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-      );
-    }
+    setNotifications(prev => prev.filter(n => n.id !== notification.id));
 
     // Navigate based on notification link or type
     if (notification.link) {

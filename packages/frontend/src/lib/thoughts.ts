@@ -157,7 +157,7 @@ export async function getThoughtsByMatchId(matchId: string): Promise<any[]> {
       .from('thoughts')
       .select('id, content, created_at, user_id, parent_thought_id') as any)
       .eq('match_id', matchId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (thoughtsError) {
       console.error("Error fetching match thoughts:", thoughtsError);
