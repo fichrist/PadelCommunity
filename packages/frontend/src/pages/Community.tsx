@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks";
 import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
 import { getThoughtsByMatchId, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { createThoughtAddedNotifications } from "@/lib/notifications";
+import { fetchMatchesForGroup, fetchMatchById } from "@/lib/matches";
 
 const Community = () => {
   const location = useLocation();
@@ -71,62 +72,22 @@ const Community = () => {
     const fetchMatches = async () => {
       setIsLoading(true);
       try {
-        let query = supabase
-          .from('matches')
-          .select(`
-            *,
-            match_participants (
-              id,
-              playtomic_user_id,
-              added_by_profile_id,
-              player_profile_id,
-              name,
-              team_id,
-              gender,
-              level_value,
-              level_confidence,
-              price,
-              payment_status,
-              registration_date,
-              scraped_from_playtomic,
-              created_at,
-              player_profile:player_profile_id (
-                avatar_url,
-                ranking
-              )
-            )
-          `);
+        let enrichedMatches: any[] = [];
 
         // If a specific match is selected, fetch only that match
         if (selectedMatchId) {
-          query = query.eq('id', selectedMatchId);
+          const match = await fetchMatchById(selectedMatchId, currentUserId);
+          enrichedMatches = match ? [match] : [];
         }
         // Otherwise fetch all matches for the selected group
         else if (selectedGroupId) {
-          query = query.contains('group_ids', [selectedGroupId]);
+          enrichedMatches = await fetchMatchesForGroup(selectedGroupId, currentUserId);
         }
 
-        const { data, error } = await query.order('match_date', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching matches:', error);
-          toast.error('Failed to load matches');
-          return;
+        if (enrichedMatches.length === 0 && (selectedMatchId || selectedGroupId)) {
+          // Only show error if we expected matches but got none due to an error
+          // (empty groups should not show error)
         }
-
-        // Flatten profile data
-        const enrichedMatches = (data || []).map((match: any) => ({
-          ...match,
-          match_participants: match.match_participants?.map((p: any) => ({
-            ...p,
-            avatar_url: p.player_profile?.avatar_url || null,
-            profile_ranking: p.player_profile?.ranking || null,
-          })).sort((a: any, b: any) => {
-            const timeA = new Date(a.created_at).getTime();
-            const timeB = new Date(b.created_at).getTime();
-            return timeA - timeB;
-          }) || []
-        }));
 
         setMatches(enrichedMatches);
 
@@ -153,7 +114,7 @@ const Community = () => {
     };
 
     fetchMatches();
-  }, [selectedGroupId, selectedMatchId]);
+  }, [selectedGroupId, selectedMatchId, currentUserId]);
 
   // Real-time subscriptions for matches and participants
   useEffect(() => {
@@ -456,49 +417,13 @@ const Community = () => {
   };
 
   const refetchMatches = async () => {
-    if (!selectedGroupId) return;
+    if (!selectedGroupId && !selectedMatchId) return;
 
-    const { data, error } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        match_participants (
-          id,
-          playtomic_user_id,
-          added_by_profile_id,
-          player_profile_id,
-          name,
-          team_id,
-          gender,
-          level_value,
-          level_confidence,
-          price,
-          payment_status,
-          registration_date,
-          scraped_from_playtomic,
-          created_at,
-          player_profile:player_profile_id (
-            avatar_url,
-            ranking
-          )
-        )
-      `)
-      .contains('group_ids', [selectedGroupId])
-      .order('match_date', { ascending: true });
-
-    if (!error && data) {
-      const enrichedMatches = (data || []).map((match: any) => ({
-        ...match,
-        match_participants: match.match_participants?.map((p: any) => ({
-          ...p,
-          avatar_url: p.player_profile?.avatar_url || null,
-          profile_ranking: p.player_profile?.ranking || null,
-        })).sort((a: any, b: any) => {
-          const timeA = new Date(a.created_at).getTime();
-          const timeB = new Date(b.created_at).getTime();
-          return timeA - timeB;
-        }) || []
-      }));
+    if (selectedMatchId) {
+      const match = await fetchMatchById(selectedMatchId, currentUserId);
+      setMatches(match ? [match] : []);
+    } else if (selectedGroupId) {
+      const enrichedMatches = await fetchMatchesForGroup(selectedGroupId, currentUserId);
       setMatches(enrichedMatches);
     }
   };
@@ -602,63 +527,7 @@ const Community = () => {
                       defaultExpandThoughts={!!selectedMatchId}
                       onUpdateMatch={() => {
                         // Refetch matches when a match is updated
-                        const fetchMatches = async () => {
-                          setIsLoading(true);
-                          try {
-                            const { data, error } = await supabase
-                              .from('matches')
-                              .select(`
-                                *,
-                                match_participants (
-                                  id,
-                                  playtomic_user_id,
-                                  added_by_profile_id,
-                                  player_profile_id,
-                                  name,
-                                  team_id,
-                                  gender,
-                                  level_value,
-                                  level_confidence,
-                                  price,
-                                  payment_status,
-                                  registration_date,
-                                  scraped_from_playtomic,
-                                  created_at,
-                                  player_profile:player_profile_id (
-                                    avatar_url,
-                                    ranking
-                                  )
-                                )
-                              `)
-                              .contains('group_ids', [selectedGroupId])
-                              .order('match_date', { ascending: true });
-
-                            if (error) {
-                              console.error('Error fetching matches:', error);
-                              return;
-                            }
-
-                            const enrichedMatches = (data || []).map((match: any) => ({
-                              ...match,
-                              match_participants: match.match_participants?.map((p: any) => ({
-                                ...p,
-                                avatar_url: p.player_profile?.avatar_url || null,
-                                profile_ranking: p.player_profile?.ranking || null,
-                              })).sort((a: any, b: any) => {
-                                const timeA = new Date(a.created_at).getTime();
-                                const timeB = new Date(b.created_at).getTime();
-                                return timeA - timeB;
-                              }) || []
-                            }));
-
-                            setMatches(enrichedMatches);
-                          } catch (error) {
-                            console.error('Error fetching matches:', error);
-                          } finally {
-                            setIsLoading(false);
-                          }
-                        };
-                        fetchMatches();
+                        refetchMatches();
                       }}
                       thoughts={matchThoughts[match.id] || []}
                       onSubmitThought={handleSubmitThought}

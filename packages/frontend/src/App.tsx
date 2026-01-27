@@ -22,6 +22,8 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import EditEvent from "./pages/EditEvent";
+import Privacy from "./pages/Privacy";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -67,8 +69,10 @@ const App = () => {
             <Route path="/notification-settings" element={<AppLayout><NotificationSettings /></AppLayout>} />
             <Route path="/settings" element={<Navigate to="/profile" replace />} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

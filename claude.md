@@ -59,3 +59,31 @@ const handleSubmit = async () => {
   await processMatchParticipants(insertedParticipants, user.id)
 }
 ```
+
+# Database Migraties
+
+## BELANGRIJK: Gebruik NOOIT `supabase link`
+
+Voor migraties altijd de `--db-url` flag gebruiken, NIET linken.
+
+### Lokale database
+```bash
+supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:ENQWwjpCnBhquhcm@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+```
+
+### Productie database
+```bash
+supabase db push --db-url "$postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-north-1.pooler.supabase.com:6543/postgres"
+```
+
+## Environment variabelen
+
+- `DATABASE_URL_LOCAL` → lokale Supabase
+- `DATABASE_URL_PROD` → productie Supabase
+
+## Regels
+
+1. Vraag ALTIJD welke omgeving (local/prod) voordat je migraties uitvoert
+2. Gebruik NOOIT `supabase link` 
+3. Gebruik ALTIJD `--db-url` met de juiste environment variabele
+4. Vraag bevestiging voordat je naar productie migreert

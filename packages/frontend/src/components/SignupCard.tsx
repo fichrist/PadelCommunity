@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface SignupCardProps {
   open: boolean;
@@ -25,9 +26,17 @@ const SignupCard = ({ open, onOpenChange }: SignupCardProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate privacy consent for signup
+    if (!isLogin && !privacyConsent) {
+      toast.error("Je moet akkoord gaan met het privacybeleid om een account aan te maken.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -178,7 +187,31 @@ const SignupCard = ({ open, onOpenChange }: SignupCardProps) => {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            {!isLogin && (
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="privacy-consent"
+                  checked={privacyConsent}
+                  onCheckedChange={(checked) => setPrivacyConsent(checked === true)}
+                />
+                <label
+                  htmlFor="privacy-consent"
+                  className="text-sm text-muted-foreground leading-tight cursor-pointer"
+                >
+                  Ik ga akkoord met het{" "}
+                  <Link
+                    to="/privacy"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    privacybeleid
+                  </Link>{" "}
+                  en geef toestemming voor het verwerken van mijn gegevens.
+                </label>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loading || (!isLogin && !privacyConsent)}>
               {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>

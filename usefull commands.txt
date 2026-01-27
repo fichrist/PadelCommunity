@@ -14,8 +14,9 @@ Great! The connection worked with aws-1-eu-west-1 instead of aws-0-eu-west-1!
 dev
 npx supabase db push --db-url "postgresql://postgres.djnljqrarilsuodmetdl:ENQWwjpCnBhquhcm@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
 
+region kan je vinden in project overview
 prd 
-npx supabase db push --db-url "postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+npx supabase db push --db-url "postgresql://postgres.avwrplietxyrdqevpayb:fRxBLWcZHFVKm8Vu@aws-1-eu-north-1.pooler.supabase.com:6543/postgres"
 
 prd
 

@@ -12,8 +12,8 @@ const Index = () => {
   useEffect(() => {
     // Check if user is already logged in, redirect to community
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
         navigate('/community');
       }
     };

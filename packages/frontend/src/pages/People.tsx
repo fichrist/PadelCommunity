@@ -6,14 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 // Haversine formula to calculate distance between two lat/lng points in km
@@ -31,18 +30,18 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 
 const People = () => {
   const [selectedClub, setSelectedClub] = useState("");
-  const [favoriteUsers, setFavoriteUsers] = useState<string[]>([]); // Store user IDs
-  const [removeFavoriteDialogOpen, setRemoveFavoriteDialogOpen] = useState(false);
-  const [userToRemoveFavorite, setUserToRemoveFavorite] = useState<string | null>(null);
+  const [favoriteUsers, setFavoriteUsers] = useState<string[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [people, setPeople] = useState<any[]>([]);
   const [allClubs, setAllClubs] = useState<string[]>([]);
   const [clubSearchOpen, setClubSearchOpen] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [showBlockedOnly, setShowBlockedOnly] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch current user and their favorites
+  // Fetch current user and their favorites/blocked users
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -52,12 +51,17 @@ const People = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('favorite_users')
+        .select('favorite_users, blocked_users')
         .eq('id', user.id)
         .single();
 
-      if (profile && profile.favorite_users) {
-        setFavoriteUsers(profile.favorite_users);
+      if (profile) {
+        if (profile.favorite_users) {
+          setFavoriteUsers(profile.favorite_users);
+        }
+        if (profile.blocked_users) {
+          setBlockedUsers(profile.blocked_users);
+        }
       }
     };
 
@@ -120,6 +124,11 @@ const People = () => {
     filteredPeople = filteredPeople.filter(person => favoriteUsers.includes(person.id));
   }
 
+  // Filter by blocked only
+  if (showBlockedOnly) {
+    filteredPeople = filteredPeople.filter(person => blockedUsers.includes(person.id));
+  }
+
   // Filter by club
   if (selectedClub) {
     filteredPeople = filteredPeople.filter(person => person.role === selectedClub);
@@ -165,6 +174,34 @@ const People = () => {
     await saveFavoritesToDB(newFavorites);
   };
 
+  // Save blocked users to database
+  const saveBlockedToDB = async (newBlocked: string[]) => {
+    if (!currentUserId) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ blocked_users: newBlocked })
+      .eq('id', currentUserId);
+
+    if (error) {
+      console.error('Error saving blocked users:', error);
+    }
+  };
+
+  // Block user
+  const blockUser = async (userId: string) => {
+    const newBlocked = [...blockedUsers, userId];
+    setBlockedUsers(newBlocked);
+    await saveBlockedToDB(newBlocked);
+  };
+
+  // Unblock user
+  const unblockUser = async (userId: string) => {
+    const newBlocked = blockedUsers.filter(id => id !== userId);
+    setBlockedUsers(newBlocked);
+    await saveBlockedToDB(newBlocked);
+  };
+
   return (
     <TooltipProvider>
     <>
@@ -197,6 +234,7 @@ const People = () => {
                           setSelectedClub("");
                           setSearchQuery("");
                           setShowFavoritesOnly(false);
+                          setShowBlockedOnly(false);
                         }}
                       >
                         Clear
@@ -283,7 +321,30 @@ const People = () => {
                         <Switch
                           id="favorites-toggle"
                           checked={showFavoritesOnly}
-                          onCheckedChange={setShowFavoritesOnly}
+                          onCheckedChange={(checked) => {
+                            setShowFavoritesOnly(checked);
+                            if (checked) setShowBlockedOnly(false);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Blocked Only Toggle */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Ban className="h-4 w-4 text-destructive" />
+                          <Label htmlFor="blocked-toggle" className="text-sm font-medium cursor-pointer">
+                            Blocked only
+                          </Label>
+                        </div>
+                        <Switch
+                          id="blocked-toggle"
+                          checked={showBlockedOnly}
+                          onCheckedChange={(checked) => {
+                            setShowBlockedOnly(checked);
+                            if (checked) setShowFavoritesOnly(false);
+                          }}
                         />
                       </div>
                     </div>
@@ -297,9 +358,7 @@ const People = () => {
             <div className="lg:col-span-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedUsers.map((person) => (
-                  <Card key={person.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden cursor-pointer flex flex-col h-full"
-                    onClick={() => navigate(`/profile/${person.id}`)}
-                  >
+                  <Card key={person.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden flex flex-col h-full">
                     <CardHeader className="pb-3">
                       <div className="flex items-start space-x-3">
                         <div className="relative">
@@ -324,74 +383,54 @@ const People = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="relative flex items-center space-x-2">
-                           {favoriteUsers.includes(person.id) ? (
-                             <AlertDialog open={removeFavoriteDialogOpen && userToRemoveFavorite === person.id} onOpenChange={setRemoveFavoriteDialogOpen}>
-                               <AlertDialogTrigger asChild>
-                                 <Tooltip>
-                                   <TooltipTrigger asChild>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       className="p-2 h-auto hover:bg-yellow-50"
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         setUserToRemoveFavorite(person.id);
-                                         setRemoveFavoriteDialogOpen(true);
-                                       }}
-                                     >
-                                       <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                     </Button>
-                                   </TooltipTrigger>
-                                   <TooltipContent>
-                                     <p>Remove from favorites</p>
-                                   </TooltipContent>
-                                 </Tooltip>
-                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove {person.name} from favorites?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove {person.name} from your favorites?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => {
-                                    setRemoveFavoriteDialogOpen(false);
-                                  }}>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                     onClick={() => {
-                                       removeFromFavorites(person.id);
-                                       setRemoveFavoriteDialogOpen(false);
-                                       setUserToRemoveFavorite(null);
-                                     }}
-                                    className="bg-yellow-500 hover:bg-yellow-600"
-                                  >
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                           ) : (
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   className="p-2 h-auto hover:bg-yellow-50"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     addToFavorites(person.id);
-                                   }}
-                                 >
-                                   <Star className="h-4 w-4 text-yellow-500" />
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Add to favorites</p>
-                               </TooltipContent>
-                             </Tooltip>
-                           )}
+                        <div className="relative flex items-center space-x-1">
+                          {/* Favorite Button */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 h-auto hover:bg-yellow-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (favoriteUsers.includes(person.id)) {
+                                    removeFromFavorites(person.id);
+                                  } else {
+                                    addToFavorites(person.id);
+                                  }
+                                }}
+                              >
+                                <Star className={`h-4 w-4 text-yellow-500 ${favoriteUsers.includes(person.id) ? 'fill-yellow-500' : ''}`} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{favoriteUsers.includes(person.id) ? 'Remove from favorites' : 'Add to favorites'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          {/* Block Button */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 h-auto hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (blockedUsers.includes(person.id)) {
+                                    unblockUser(person.id);
+                                  } else {
+                                    blockUser(person.id);
+                                  }
+                                }}
+                              >
+                                <Ban className={`h-4 w-4 ${blockedUsers.includes(person.id) ? 'text-destructive fill-destructive' : 'text-muted-foreground hover:text-destructive'}`} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{blockedUsers.includes(person.id) ? 'Unblock user' : 'Block user - they won\'t see your matches'}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     </CardHeader>

@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, User, Upload, X, Trophy } from "lucide-react";
+import { ArrowLeft, User, Upload, X, Trophy, Shield, Download, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +40,7 @@ const Profile = () => {
 
   // TP Member Setup Dialog
   const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -248,6 +251,92 @@ const Profile = () => {
     }
   };
 
+  const handleDownloadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Je moet ingelogd zijn om je gegevens te downloaden");
+        return;
+      }
+
+      // Fetch all user data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      const { data: enrollments } = await supabase
+        .from('event_enrollments')
+        .select('*')
+        .eq('user_id', user.id);
+
+      const { data: messages } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('sender_id', user.id);
+
+      const userData = {
+        exportDate: new Date().toISOString(),
+        account: {
+          email: user.email,
+          created_at: user.created_at,
+        },
+        profile: profile,
+        event_enrollments: enrollments,
+        messages_sent: messages,
+      };
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `padel-community-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Je gegevens zijn gedownload");
+    } catch (error) {
+      console.error("Error downloading data:", error);
+      toast.error("Kon gegevens niet downloaden");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Je moet ingelogd zijn om je account te verwijderen");
+        return;
+      }
+
+      // Delete profile (this should cascade to related data via database triggers/policies)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error("Error deleting profile:", profileError);
+      }
+
+      // Sign out and redirect
+      await supabase.auth.signOut();
+
+      toast.success("Je account is verwijderd. Je wordt uitgelogd.");
+      navigate('/');
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Kon account niet verwijderen. Neem contact met ons op.");
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   return (
     <>
         {/* TP Member Setup Dialog */}
@@ -449,14 +538,98 @@ const Profile = () => {
 
             {/* Save Button */}
             <div className="flex justify-end">
-              <Button 
-                className="min-w-32" 
+              <Button
+                className="min-w-32"
                 onClick={handleSave}
                 disabled={loading}
               >
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
+
+            {/* Privacy & Data Management */}
+            <Card className="bg-card/90 backdrop-blur-sm border border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <span>Privacy & Gegevensbeheer</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Onder de GDPR heb je het recht om je gegevens in te zien, te downloaden of te verwijderen.
+                  Lees ons{" "}
+                  <Link to="/privacy" className="text-primary hover:underline">
+                    privacybeleid
+                  </Link>{" "}
+                  voor meer informatie.
+                </p>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium">Download je gegevens</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Download al je persoonlijke gegevens in JSON-formaat
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadData}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-destructive">Account verwijderen</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Verwijder je account en al je gegevens permanent
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex items-center gap-2"
+                          disabled={deletingAccount}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {deletingAccount ? "Verwijderen..." : "Verwijderen"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Account verwijderen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Dit kan niet ongedaan worden gemaakt. Al je gegevens worden permanent verwijderd,
+                            inclusief je profiel, inschrijvingen en berichten.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteAccount}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Ja, verwijder mijn account
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
     </>

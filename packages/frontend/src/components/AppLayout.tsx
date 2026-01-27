@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, User, MessageCircle, Plus, Trophy, LogIn } from "lucide-react";
+import { Calendar, User, MessageCircle, Plus, Trophy, LogIn, Users } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
@@ -38,45 +38,36 @@ const AppLayout = ({
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔍 AppLayout: Starting auth check...');
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        console.log('🔍 AppLayout: Got user:', user ? 'logged in' : 'not logged in', error);
-        setIsLoggedIn(!!user);
+        // Use getSession() (localStorage read) instead of getUser() (network call).
+        // getUser() fails when the access token has expired, making the user appear
+        // logged out even though the refresh token is still valid.
+        // autoRefreshToken will refresh the token in the background and
+        // onAuthStateChange will update the state when ready.
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsLoggedIn(!!session?.user);
 
-        // Check if user has tp_user_id in their profile
-        if (user) {
-          console.log('🔍 AppLayout: Fetching profile for user:', user.id);
-          const { data: profile, error: profileError } = await supabase
+        if (session?.user) {
+          const { data: profile } = await supabase
             .from('profiles')
             .select('tp_user_id')
-            .eq('id', user.id)
+            .eq('id', session.user.id)
             .single();
 
-          console.log('🔍 AppLayout: Profile data:', profile, 'Error:', profileError);
           setHasTpUserId(!!profile?.tp_user_id);
         }
-
-        setAuthLoading(false);
-        console.log('✅ AppLayout: Auth check complete');
       } catch (error) {
-        console.error('❌ AppLayout: Auth check failed:', error);
+        console.error('AppLayout: Auth check failed:', error);
+      } finally {
         setAuthLoading(false);
       }
     };
 
-    // Set a timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('⚠️ AppLayout: Auth check timeout, forcing completion');
-      setAuthLoading(false);
-    }, 3000);
-
-    checkAuth().finally(() => clearTimeout(timeout));
+    checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setIsLoggedIn(!!session?.user);
 
-      // Check tp_user_id when auth state changes
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -124,7 +115,7 @@ const AppLayout = ({
               {/* Left: Logo + App Name */}
               <div
                 className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/community')}
               >
                 <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
                   <Trophy className="h-6 w-6 text-primary-foreground" />
@@ -134,6 +125,19 @@ const AppLayout = ({
               
               {/* Center: Navigation Icons */}
               <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
+                    onClick={() => navigate('/community')}
+                  >
+                    <Users className={`h-9 w-9 ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
+                    {isActive('/community') && (
+                      <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
+                    )}
+                  </Button>
+                </div>
                 <div className="relative">
                   <Button
                     variant="ghost"
