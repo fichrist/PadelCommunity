@@ -28,24 +28,25 @@ import CookieConsent from "./components/CookieConsent";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Set up auth state change listener and visibility-based token refresh.
-  // Browsers throttle timers on inactive tabs, so autoRefreshToken may miss
-  // the refresh window. Re-starting auto-refresh when the tab becomes visible
-  // forces an immediate token check and refresh if needed.
+  // Set up auth state change listener, visibility-based refresh, and
+  // periodic keepalive. The keepalive ensures the session stays valid
+  // even when the tab is visible but idle for a long time (25+ min).
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
       if (event === 'TOKEN_REFRESHED') {
         console.log('Auth: token refreshed');
+        // Notify pages so they can re-fetch data with the fresh token.
+        window.dispatchEvent(new Event('supabase-session-restored'));
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: signed out');
       }
     });
 
+    // When the tab becomes visible after being hidden, force an immediate
+    // refresh so the token is valid before any page fetches data.
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         supabase.auth.startAutoRefresh();
-        // Force an immediate session refresh so the token is valid
-        // before any page tries to fetch data after being inactive.
         const { error } = await supabase.auth.refreshSession();
         if (!error) {
           window.dispatchEvent(new Event('supabase-session-restored'));
@@ -55,10 +56,34 @@ const App = () => {
       }
     };
 
+    // Periodic keepalive: every 4 minutes, validate the session and
+    // refresh the token if it is within 5 minutes of expiry. This acts
+    // as a safety net when the tab stays visible but the built-in
+    // autoRefreshToken timer silently stalls.
+    const keepaliveInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const expiresAt = session.expires_at; // unix seconds
+        if (!expiresAt) return;
+
+        const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
+        if (secondsLeft < 300) {
+          console.log(`Auth keepalive: token expires in ${secondsLeft}s, refreshing`);
+          await supabase.auth.refreshSession();
+          // TOKEN_REFRESHED event will dispatch supabase-session-restored
+        }
+      } catch (err) {
+        console.warn('Auth keepalive: check failed', err);
+      }
+    }, 4 * 60 * 1000);
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       subscription.unsubscribe();
+      clearInterval(keepaliveInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);

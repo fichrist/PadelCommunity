@@ -121,6 +121,25 @@ const AppLayout = ({
     };
   }, []);
 
+  // AppLayout is reused across route changes (React reconciles same component
+  // type at same tree position). The initial auth check above only runs once.
+  // This effect re-validates the session on every navigation so that child
+  // pages always see up-to-date auth state, especially after long idle periods.
+  useEffect(() => {
+    // Skip during the initial auth check to avoid double-work.
+    if (authLoading) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const loggedIn = !!session?.user;
+      if (loggedIn !== isLoggedIn) {
+        console.log('AppLayout: Auth state changed on navigation', { loggedIn });
+        setIsLoggedIn(loggedIn);
+      }
+    }).catch((err) => {
+      console.warn('AppLayout: Navigation session check failed', err);
+    });
+  }, [location.pathname]);
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);

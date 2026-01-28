@@ -27,15 +27,45 @@ const fetchWithTimeout: typeof fetch = (input, init) => {
 // a previous context (e.g. before F5 refresh, after sleep) is never
 // released. Every Supabase query internally calls getSession() which
 // waits on this lock, so a stuck lock hangs ALL data fetching silently.
-// This custom lock implementation runs functions directly without
-// cross-tab coordination, which is safe for single-tab usage.
-const navigatorLockNoOp = async (
-  _name: string,
-  _acquireTimeout: number,
-  fn: () => Promise<any>
-) => {
-  return await fn();
-};
+//
+// This in-memory lock serializes operations with the same name within
+// the current tab, while avoiding the cross-tab navigator.locks that can
+// persist across page refreshes. It uses a timeout so that if a previous
+// operation gets permanently stuck, subsequent operations still proceed
+// (falling back to concurrent execution rather than deadlocking).
+const inMemoryLock = (() => {
+  const pending = new Map<string, Promise<void>>();
+
+  return async (
+    name: string,
+    acquireTimeout: number,
+    fn: () => Promise<any>
+  ): Promise<any> => {
+    // Wait for any pending operation, but never longer than the timeout.
+    const existing = pending.get(name);
+    if (existing) {
+      const timeoutMs = Math.max(acquireTimeout || 5000, 1000);
+      await Promise.race([
+        existing,
+        new Promise<void>(resolve => setTimeout(resolve, timeoutMs)),
+      ]).catch(() => {});
+    }
+
+    // Track our own operation so the next caller can wait for us.
+    let done!: () => void;
+    const ourLock = new Promise<void>(r => { done = r; });
+    pending.set(name, ourLock);
+
+    try {
+      return await fn();
+    } finally {
+      done();
+      if (pending.get(name) === ourLock) {
+        pending.delete(name);
+      }
+    }
+  };
+})();
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -46,8 +76,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',
-    lock: navigatorLockNoOp,
+    flowType: 'pkce',
+    lock: inMemoryLock,
   },
   global: {
     fetch: fetchWithTimeout,

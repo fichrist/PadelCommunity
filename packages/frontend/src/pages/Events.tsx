@@ -169,53 +169,10 @@ const Events = () => {
     }
   }, [location.search, navigate]);
 
-  // Real-time subscriptions for matches and participants
-  useEffect(() => {
-    console.log('[Events] Setting up real-time subscriptions...');
-
-    // Subscribe to matches table changes
-    const matchesSubscription = supabase
-      .channel('matches-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'matches'
-        },
-        (payload) => {
-          console.log('[Events] Matches change detected:', payload);
-          // Refetch all data when a match changes
-          refetch();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to match_participants table changes
-    const participantsSubscription = supabase
-      .channel('participants-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'match_participants'
-        },
-        (payload) => {
-          console.log('[Events] Match participants change detected:', payload);
-          // Refetch all data when participants change
-          refetch();
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscriptions on unmount
-    return () => {
-      console.log('[Events] Cleaning up real-time subscriptions...');
-      supabase.removeChannel(matchesSubscription);
-      supabase.removeChannel(participantsSubscription);
-    };
-  }, [refetch]);
+  // Real-time subscriptions are handled by the useEvents hook
+  // (matches, match_participants, and thoughts tables).
+  // Do NOT duplicate them here — duplicate channel names cause
+  // "mismatch between server and client bindings" errors on reconnect.
 
   // ========================================
   // DATA TRANSFORMATION
