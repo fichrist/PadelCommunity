@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, readSessionFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useSessionRefresh } from "@/hooks";
 
@@ -73,17 +73,60 @@ const People = () => {
   // Fetch people from database
   useEffect(() => {
     const fetchPeople = async () => {
+      console.log('People: Starting fetchPeople...');
+
+      // Diagnostic: Compare in-memory session with localStorage (with timeout)
+      const localStorageInfo = readSessionFromStorage();
+      console.log('[People] localStorage session:', localStorageInfo);
+
+      // getSession() with 3 second timeout - it can hang after token refresh
+      const getSessionWithTimeout = () => {
+        return Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout after 3s')), 3000))
+        ]);
+      };
+
+      try {
+        const result = await getSessionWithTimeout() as any;
+        const inMemorySession = result?.data?.session;
+        const inMemoryExpiresIn = inMemorySession?.expires_at
+          ? inMemorySession.expires_at - Math.floor(Date.now() / 1000)
+          : null;
+        console.log('[People] in-memory session:', {
+          expiresIn: inMemoryExpiresIn,
+          hasAccessToken: !!inMemorySession?.access_token,
+          userId: inMemorySession?.user?.id?.substring(0, 8) || null,
+        });
+        if (localStorageInfo && !inMemorySession) {
+          console.error('[People] MISMATCH: localStorage has session but getSession() returned NULL!');
+        }
+      } catch (diagErr: any) {
+        console.error('[People] getSession() FAILED/TIMED OUT:', diagErr?.message);
+        console.log('[People] Using fresh client to bypass stuck state...');
+      }
+
+      // Use fresh client if getSession timed out (indicates stuck state)
+      // The fresh client uses token directly from localStorage
+      const client = createFreshSupabaseClient();
+      console.log('[People] Using fresh Supabase client for data fetch');
+
       // Fetch all profiles
-      const { data: profiles, error } = await supabase
+      const { data: profiles, error } = await client
         .from('profiles')
         .select('*');
+
+      console.log('People: Profiles fetched:', profiles?.length, 'Error:', error);
 
       if (error) {
         console.error('Error fetching profiles:', error);
         return;
       }
 
-      if (!profiles) return;
+      if (!profiles) {
+        console.warn('People: Profiles is null/undefined');
+        return;
+      }
 
       // Filter out profiles with no name filled in
       const profilesWithName = profiles.filter((profile: any) => {

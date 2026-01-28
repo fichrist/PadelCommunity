@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, readSessionFromStorage } from "@/integrations/supabase/client";
 import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import Community from "./pages/Community";
@@ -32,11 +32,30 @@ const App = () => {
   // periodic keepalive. The keepalive ensures the session stays valid
   // even when the tab is visible but idle for a long time (25+ min).
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'TOKEN_REFRESHED') {
         console.log('Auth: token refreshed');
-        // Notify pages so they can re-fetch data with the fresh token.
-        window.dispatchEvent(new Event('supabase-session-restored'));
+
+        // Explicitly re-set the session to ensure internal state is consistent.
+        // This can help clear any stuck promises in the Supabase client.
+        if (session) {
+          try {
+            console.log('Auth: re-setting session to stabilize internal state...');
+            await supabase.auth.setSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            });
+            console.log('Auth: session re-set successfully');
+          } catch (err) {
+            console.warn('Auth: setSession failed, continuing anyway', err);
+          }
+        }
+
+        // Small delay then notify pages
+        setTimeout(() => {
+          console.log('Auth: dispatching session-restored event');
+          window.dispatchEvent(new Event('supabase-session-restored'));
+        }, 100);
       } else if (event === 'SIGNED_OUT') {
         console.log('Auth: signed out');
       }
@@ -56,28 +75,23 @@ const App = () => {
       }
     };
 
-    // Periodic keepalive: every 4 minutes, validate the session and
-    // refresh the token if it is within 5 minutes of expiry. This acts
-    // as a safety net when the tab stays visible but the built-in
-    // autoRefreshToken timer silently stalls.
-    const keepaliveInterval = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const expiresAt = session.expires_at; // unix seconds
-        if (!expiresAt) return;
-
-        const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
-        if (secondsLeft < 300) {
-          console.log(`Auth keepalive: token expires in ${secondsLeft}s, refreshing`);
-          await supabase.auth.refreshSession();
-          // TOKEN_REFRESHED event will dispatch supabase-session-restored
-        }
-      } catch (err) {
-        console.warn('Auth keepalive: check failed', err);
-      }
+    // Periodic keepalive: restart the built-in auto-refresh timer every
+    // 4 minutes. This is lightweight (no network call, no getSession)
+    // and acts as a safety net if the internal timer silently stalls.
+    const keepaliveInterval = setInterval(() => {
+      supabase.auth.startAutoRefresh();
     }, 4 * 60 * 1000);
+
+    // Diagnostic: log session state every 60s by reading directly from
+    // localStorage (bypasses ALL Supabase client code, locks, etc.).
+    const diagnosticInterval = setInterval(() => {
+      const info = readSessionFromStorage();
+      if (info) {
+        console.log(`[Session Diagnostic] expiresIn=${info.expiresIn}s, hasAccessToken=${info.hasAccessToken}, hasRefreshToken=${info.hasRefreshToken}, user=${info.userId}`);
+      } else {
+        console.log('[Session Diagnostic] No session in localStorage');
+      }
+    }, 60000);
 
     // Handle supabase-session-invalid: try to recover, redirect to login if unrecoverable.
     const handleSessionInvalid = async () => {
@@ -105,6 +119,7 @@ const App = () => {
     return () => {
       subscription.unsubscribe();
       clearInterval(keepaliveInterval);
+      clearInterval(diagnosticInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('supabase-session-invalid', handleSessionInvalid);
     };

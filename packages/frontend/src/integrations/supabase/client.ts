@@ -5,32 +5,82 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Wrap fetch with a 10-second timeout so Supabase requests (including
-// internal token refreshes) can never hang indefinitely. Without this,
-// an unreachable Supabase server (e.g. paused free-tier project, network
-// issue after sleep) causes getSession() to hang and the app to freeze.
-const fetchWithTimeout: typeof fetch = (input, init) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+// Simple in-memory lock to replace navigator.locks.
+// navigator.locks can hang after F5 refresh when a lock from a previous
+// page context is never released. This implementation is synchronous
+// within a single page context and won't deadlock across refreshes.
+const locks = new Map<string, Promise<any>>();
 
-  // If the caller already provided a signal, listen to it as well.
-  if (init?.signal) {
-    init.signal.addEventListener('abort', () => controller.abort());
-  }
-
-  return fetch(input, { ...init, signal: controller.signal })
-    .finally(() => clearTimeout(timeout));
-};
-
-// Bypass navigator.locks which can hang after F5 refresh when a lock from
-// a previous page context is never released. The 5-second auth timeout in
-// AppLayout handles the rare case where getSession() still stalls.
-const navigatorLockNoOp = async (
-  _name: string,
-  _acquireTimeout: number,
+const inMemoryLock = async (
+  name: string,
+  acquireTimeout: number,
   fn: () => Promise<any>
 ) => {
-  return await fn();
+  const startTime = Date.now();
+
+  // Wait for any existing lock with timeout
+  while (locks.has(name)) {
+    if (Date.now() - startTime > acquireTimeout) {
+      console.warn(`inMemoryLock: Timeout waiting for lock "${name}", proceeding anyway`);
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  // Create a promise for this lock
+  let resolveLock: () => void;
+  const lockPromise = new Promise<void>(resolve => {
+    resolveLock = resolve;
+  });
+  locks.set(name, lockPromise);
+
+  try {
+    return await fn();
+  } finally {
+    locks.delete(name);
+    resolveLock!();
+  }
+};
+
+/**
+ * Read access token directly from localStorage.
+ * This bypasses getSession() which can hang.
+ */
+const getAccessTokenFromStorage = (): string | null => {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return data.access_token || null;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Custom fetch that adds Authorization header from localStorage.
+ * This bypasses the potentially hanging getSession() call.
+ */
+const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const token = getAccessTokenFromStorage();
+
+  const headers = new Headers(init?.headers);
+
+  // Only add auth header if we have a token and one isn't already set
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return fetch(input, {
+    ...init,
+    headers,
+  });
 };
 
 // Import the supabase client like this:
@@ -43,22 +93,74 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    lock: navigatorLockNoOp,
+    lock: inMemoryLock,
   },
   global: {
-    fetch: fetchWithTimeout,
+    fetch: customFetch,
   },
 });
 
 /**
- * Validate the current session before making queries.
- * Supabase queries with an expired JWT don't return errors — RLS policies
- * silently filter all rows, returning empty arrays. This function detects
- * that situation and tries to refresh the token. If recovery fails it
- * dispatches 'supabase-session-invalid' so the app can redirect to login.
+ * Singleton data client for fetching data.
+ * Uses customFetch which reads token directly from localStorage,
+ * bypassing the potentially stuck main client's getSession().
  *
- * @returns true if the session is valid and queries can proceed.
+ * This client is used ONLY for data operations (from().select(), etc.)
+ * The main 'supabase' client handles auth operations (login, logout, etc.)
  */
+let _dataClient: ReturnType<typeof createClient<Database>> | null = null;
+
+export function getDataClient() {
+  if (!_dataClient) {
+    console.log('[DataClient] Creating singleton data client');
+    _dataClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,  // Don't persist - main client handles that
+        autoRefreshToken: false,  // Don't auto-refresh - main client handles that
+        storageKey: 'sb-data-client-dummy',  // Use different key to avoid conflicts
+      },
+      global: {
+        fetch: customFetch,  // Uses token from localStorage directly
+      },
+    });
+  }
+  return _dataClient;
+}
+
+// Keep the old function for backwards compatibility but use the singleton
+export function createFreshSupabaseClient() {
+  return getDataClient();
+}
+
+/**
+ * Diagnostic: reads the auth session directly from localStorage,
+ * completely bypassing the Supabase client, locks, and getSession().
+ * This tells us the raw truth about what's stored.
+ */
+export function readSessionFromStorage(): { expiresIn: number | null; hasAccessToken: boolean; hasRefreshToken: boolean; userId: string | null } | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        const expiresAt = data.expires_at || 0;
+        const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
+        return {
+          expiresIn: expiresAt ? secondsLeft : null,
+          hasAccessToken: !!data.access_token,
+          hasRefreshToken: !!data.refresh_token,
+          userId: data.user?.id?.substring(0, 8) || null,
+        };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function validateSession(): Promise<boolean> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -93,10 +195,6 @@ export async function validateSession(): Promise<boolean> {
   }
 }
 
-/**
- * Log the current auth state to the console for debugging.
- * Call from a button or useEffect to diagnose session issues.
- */
 export async function debugAuthState() {
   try {
     const { data: { session } } = await supabase.auth.getSession();

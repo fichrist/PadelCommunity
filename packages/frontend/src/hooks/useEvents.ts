@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllEvents } from '@/lib/events';
-import { supabase, validateSession } from '@/integrations/supabase/client';
+import { supabase, readSessionFromStorage, createFreshSupabaseClient } from '@/integrations/supabase/client';
 
 /**
  * Hook for fetching and managing events data
@@ -82,28 +81,74 @@ export const useEvents = (): UseEventsReturn => {
   // Track recently deleted matches to avoid unnecessary refetches from CASCADE DELETE events
   const deletedMatchesRef = useRef<Set<string>>(new Set());
 
+  // Track the current user ID via onAuthStateChange so we never need to call
+  // getSession() in the data-fetching path. getSession() can hang when it
+  // races with autoRefreshToken (both try to use the same refresh token).
+  const userIdRef = useRef<string | null>(null);
+
   const fetchEvents = useCallback(async () => {
     console.log('useEvents: Starting fetchEvents...');
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Validate session before fetching data. Without this, queries with
-      // an expired JWT succeed but RLS policies silently filter all rows,
-      // returning empty arrays with no error.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const isValid = await validateSession();
-        if (!isValid) {
-          console.warn('useEvents: Session invalid, skipping fetch');
-          setIsLoading(false);
-          return;
-        }
-      }
+    // Diagnostic: Compare in-memory session with localStorage (with timeout)
+    const localStorageInfo = readSessionFromStorage();
+    console.log('[Events] localStorage session:', localStorageInfo);
 
-      // Fetch events
+    // getSession() with 3 second timeout - it can hang after token refresh
+    const getSessionWithTimeout = () => {
+      return Promise.race([
+        supabase.auth.getSession(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout after 3s')), 3000))
+      ]);
+    };
+
+    try {
+      const result = await getSessionWithTimeout() as any;
+      const inMemorySession = result?.data?.session;
+      const inMemoryExpiresIn = inMemorySession?.expires_at
+        ? inMemorySession.expires_at - Math.floor(Date.now() / 1000)
+        : null;
+      console.log('[Events] in-memory session:', {
+        expiresIn: inMemoryExpiresIn,
+        hasAccessToken: !!inMemorySession?.access_token,
+        userId: inMemorySession?.user?.id?.substring(0, 8) || null,
+      });
+      if (localStorageInfo && !inMemorySession) {
+        console.error('[Events] MISMATCH: localStorage has session but getSession() returned NULL!');
+      }
+    } catch (diagErr: any) {
+      console.error('[Events] getSession() FAILED/TIMED OUT:', diagErr?.message);
+      console.log('[Events] Using fresh client to bypass stuck state...');
+    }
+
+    // Use fresh client to bypass potentially stuck main client
+    const client = createFreshSupabaseClient();
+    console.log('[Events] Using fresh Supabase client for data fetch');
+
+    try {
+      // Fetch events using fresh client
       console.log('useEvents: Fetching events...');
-      const eventsData = await getAllEvents();
+      const { data: eventsData, error: eventsError } = await client
+        .from('events')
+        .select(`
+          *,
+          profiles:organizer_id (
+            first_name,
+            last_name,
+            avatar_url
+          ),
+          enrollments (
+            id,
+            user_id,
+            is_anonymous
+          )
+        `)
+        .order('event_date', { ascending: true });
+
+      if (eventsError) {
+        console.error('Events error:', eventsError);
+      }
       console.log('useEvents: Events fetched:', eventsData?.length);
       setEvents(eventsData || []);
 
@@ -125,15 +170,15 @@ export const useEvents = (): UseEventsReturn => {
       });
       setAllIntentions(Array.from(intentionsSet));
 
-      // Get current user ID for filtering restricted matches.
-      // Use getSession() instead of getUser() because getUser() makes a
-      // network call that returns null without error when the token is
-      // expired, while getSession() reads from localStorage.
-      const currentUserId = session?.user?.id;
+      // Use the cached user ID from onAuthStateChange. We deliberately avoid
+      // calling getSession() here because it can hang when it races with the
+      // autoRefreshToken background refresh (both try to consume the same
+      // refresh token when navigatorLock is bypassed).
+      const currentUserId = userIdRef.current;
 
-      // Fetch matches with participants and groups
+      // Fetch matches with participants and groups using fresh client
       console.log('useEvents: Fetching matches...');
-      let matchesQuery = supabase
+      let matchesQuery = client
         .from('matches')
         .select(`
           *,
@@ -163,6 +208,17 @@ export const useEvents = (): UseEventsReturn => {
       const { data: matchesData, error: matchesError } = await matchesQuery;
 
       console.log('useEvents: Matches fetched:', matchesData?.length, 'Error:', matchesError);
+
+      // Log raw response details for debugging empty data issues
+      if (!matchesData || matchesData.length === 0) {
+        console.warn('[Matches Debug] Empty or null response:', {
+          dataIsNull: matchesData === null,
+          dataIsUndefined: matchesData === undefined,
+          dataIsArray: Array.isArray(matchesData),
+          dataLength: matchesData?.length,
+          error: matchesError,
+        });
+      }
 
       if (matchesError) {
         console.error('Matches error:', matchesError);
@@ -195,7 +251,7 @@ export const useEvents = (): UseEventsReturn => {
         let thoughtsCounts = new Map<string, number>();
 
         if (matchIds.length > 0) {
-          const { data: thoughtsData } = await supabase
+          const { data: thoughtsData } = await client
             .from('thoughts')
             .select('match_id')
             .in('match_id', matchIds);
@@ -221,7 +277,7 @@ export const useEvents = (): UseEventsReturn => {
         let groupsMap = new Map<string, any>();
         if (allGroupIds.size > 0) {
           // Cast to any to bypass TypeScript error for groups table
-          const { data: groupsData } = await (supabase as any)
+          const { data: groupsData } = await (client as any)
             .from('groups')
             .select('*')
             .in('id', Array.from(allGroupIds));
@@ -369,6 +425,25 @@ export const useEvents = (): UseEventsReturn => {
   }, []);
 
   useEffect(() => {
+    // Populate userIdRef from the current session without blocking.
+    // We read the session synchronously from localStorage via getSession(),
+    // but do NOT await it in the fetch path — only here at setup time.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      userIdRef.current = session?.user?.id ?? null;
+    });
+
+    // Keep userIdRef up-to-date when auth state changes (login, logout, token refresh).
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
+      userIdRef.current = session?.user?.id ?? null;
+    });
+
+    // Re-fetch data when the session is restored after a token refresh.
+    const handleSessionRestored = () => {
+      console.log('useEvents: Session restored, refetching data');
+      fetchEvents();
+    };
+    window.addEventListener('supabase-session-restored', handleSessionRestored);
+
     fetchEvents();
 
     // Set up realtime subscriptions for matches and participants
@@ -487,9 +562,11 @@ export const useEvents = (): UseEventsReturn => {
         }
       });
 
-    // Cleanup subscription on unmount
+    // Cleanup subscriptions on unmount
     return () => {
-      console.log('🔌 Cleaning up realtime subscriptions');
+      console.log('useEvents: Cleaning up subscriptions');
+      authSub.unsubscribe();
+      window.removeEventListener('supabase-session-restored', handleSessionRestored);
       supabase.removeChannel(matchesChannel);
     };
   }, [fetchEvents, refetchSingleMatch]);
