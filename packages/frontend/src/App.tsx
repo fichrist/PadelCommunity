@@ -79,12 +79,34 @@ const App = () => {
       }
     }, 4 * 60 * 1000);
 
+    // Handle supabase-session-invalid: try to recover, redirect to login if unrecoverable.
+    const handleSessionInvalid = async () => {
+      console.warn('App: Session invalid event received, attempting recovery...');
+      try {
+        const { data: { session }, error } = await supabase.auth.refreshSession();
+        if (error || !session) {
+          console.error('App: Session recovery failed, redirecting to login', error);
+          await supabase.auth.signOut();
+          window.location.href = '/';
+        } else {
+          console.log('App: Session recovered successfully');
+          window.dispatchEvent(new Event('supabase-session-restored'));
+        }
+      } catch (err) {
+        console.error('App: Session recovery threw, redirecting to login', err);
+        await supabase.auth.signOut().catch(() => {});
+        window.location.href = '/';
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('supabase-session-invalid', handleSessionInvalid);
 
     return () => {
       subscription.unsubscribe();
       clearInterval(keepaliveInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('supabase-session-invalid', handleSessionInvalid);
     };
   }, []);
 

@@ -22,50 +22,16 @@ const fetchWithTimeout: typeof fetch = (input, init) => {
     .finally(() => clearTimeout(timeout));
 };
 
-// Supabase v2 uses navigator.locks to coordinate auth sessions across
-// browser tabs. This can cause the entire app to freeze when a lock from
-// a previous context (e.g. before F5 refresh, after sleep) is never
-// released. Every Supabase query internally calls getSession() which
-// waits on this lock, so a stuck lock hangs ALL data fetching silently.
-//
-// This in-memory lock serializes operations with the same name within
-// the current tab, while avoiding the cross-tab navigator.locks that can
-// persist across page refreshes. It uses a timeout so that if a previous
-// operation gets permanently stuck, subsequent operations still proceed
-// (falling back to concurrent execution rather than deadlocking).
-const inMemoryLock = (() => {
-  const pending = new Map<string, Promise<void>>();
-
-  return async (
-    name: string,
-    acquireTimeout: number,
-    fn: () => Promise<any>
-  ): Promise<any> => {
-    // Wait for any pending operation, but never longer than the timeout.
-    const existing = pending.get(name);
-    if (existing) {
-      const timeoutMs = Math.max(acquireTimeout || 5000, 1000);
-      await Promise.race([
-        existing,
-        new Promise<void>(resolve => setTimeout(resolve, timeoutMs)),
-      ]).catch(() => {});
-    }
-
-    // Track our own operation so the next caller can wait for us.
-    let done!: () => void;
-    const ourLock = new Promise<void>(r => { done = r; });
-    pending.set(name, ourLock);
-
-    try {
-      return await fn();
-    } finally {
-      done();
-      if (pending.get(name) === ourLock) {
-        pending.delete(name);
-      }
-    }
-  };
-})();
+// Bypass navigator.locks which can hang after F5 refresh when a lock from
+// a previous page context is never released. The 5-second auth timeout in
+// AppLayout handles the rare case where getSession() still stalls.
+const navigatorLockNoOp = async (
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<any>
+) => {
+  return await fn();
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -77,9 +43,78 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    lock: inMemoryLock,
+    lock: navigatorLockNoOp,
   },
   global: {
     fetch: fetchWithTimeout,
   },
 });
+
+/**
+ * Validate the current session before making queries.
+ * Supabase queries with an expired JWT don't return errors — RLS policies
+ * silently filter all rows, returning empty arrays. This function detects
+ * that situation and tries to refresh the token. If recovery fails it
+ * dispatches 'supabase-session-invalid' so the app can redirect to login.
+ *
+ * @returns true if the session is valid and queries can proceed.
+ */
+export async function validateSession(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('validateSession: No session found');
+      window.dispatchEvent(new Event('supabase-session-invalid'));
+      return false;
+    }
+
+    const expiresAt = session.expires_at; // unix seconds
+    if (expiresAt) {
+      const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
+      console.log(`validateSession: Token expires in ${secondsLeft}s`);
+
+      if (secondsLeft < 30) {
+        console.log('validateSession: Token expired/expiring, refreshing...');
+        const { data: { session: refreshed }, error } = await supabase.auth.refreshSession();
+        if (error || !refreshed) {
+          console.error('validateSession: Refresh failed', error);
+          window.dispatchEvent(new Event('supabase-session-invalid'));
+          return false;
+        }
+        console.log('validateSession: Token refreshed successfully');
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.error('validateSession: Check failed', err);
+    window.dispatchEvent(new Event('supabase-session-invalid'));
+    return false;
+  }
+}
+
+/**
+ * Log the current auth state to the console for debugging.
+ * Call from a button or useEffect to diagnose session issues.
+ */
+export async function debugAuthState() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    console.group('Auth Debug State');
+    console.log('Session exists:', !!session);
+    if (session) {
+      const expiresAt = session.expires_at || 0;
+      const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
+      console.log('Token expires in:', secondsLeft, 'seconds');
+      console.log('Access token (first 20 chars):', session.access_token?.substring(0, 20));
+      console.log('Refresh token exists:', !!session.refresh_token);
+    }
+    console.log('User from getUser():', user?.id || 'null');
+    console.log('User email:', user?.email || 'null');
+    console.groupEnd();
+  } catch (err) {
+    console.error('debugAuthState: Failed', err);
+  }
+}

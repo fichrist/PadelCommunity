@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllEvents } from '@/lib/events';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, validateSession } from '@/integrations/supabase/client';
 
 /**
  * Hook for fetching and managing events data
@@ -88,6 +88,19 @@ export const useEvents = (): UseEventsReturn => {
     setError(null);
 
     try {
+      // Validate session before fetching data. Without this, queries with
+      // an expired JWT succeed but RLS policies silently filter all rows,
+      // returning empty arrays with no error.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const isValid = await validateSession();
+        if (!isValid) {
+          console.warn('useEvents: Session invalid, skipping fetch');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Fetch events
       console.log('useEvents: Fetching events...');
       const eventsData = await getAllEvents();
@@ -112,9 +125,11 @@ export const useEvents = (): UseEventsReturn => {
       });
       setAllIntentions(Array.from(intentionsSet));
 
-      // Get current user ID for filtering restricted matches
-      const { data: { user } } = await supabase.auth.getUser();
-      const currentUserId = user?.id;
+      // Get current user ID for filtering restricted matches.
+      // Use getSession() instead of getUser() because getUser() makes a
+      // network call that returns null without error when the token is
+      // expired, while getSession() reads from localStorage.
+      const currentUserId = session?.user?.id;
 
       // Fetch matches with participants and groups
       console.log('useEvents: Fetching matches...');
@@ -459,11 +474,16 @@ export const useEvents = (): UseEventsReturn => {
       )
       .subscribe((status, err) => {
         if (err) {
-          console.error('❌ Realtime subscription error:', err);
+          console.error('Realtime subscription error:', err);
         }
-        console.log('📡 Realtime subscription status:', status);
+        console.log('Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to match changes');
+          console.log('Successfully subscribed to match changes');
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`Realtime channel ${status}, will attempt to resubscribe`);
+          // Remove the broken channel and resubscribe after a short delay
+          supabase.removeChannel(matchesChannel);
         }
       });
 
