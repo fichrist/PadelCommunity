@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Trophy, Filter, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -60,12 +60,15 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         }
 
         // Load current user's saved filters
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
+        // Get user ID synchronously from localStorage (never hangs)
+        const userId = getUserIdFromStorage();
+        if (userId) {
+          // Use fresh client to avoid stuck state
+          const client = createFreshSupabaseClient();
+          const { data: profile } = await client
             .from('profiles')
             .select('filtered_groups, filtered_address, filtered_latitude, filtered_longitude, filtered_radius_km')
-            .eq('id', user.id)
+            .eq('id', userId)
             .single();
 
           if (profile) {
@@ -143,11 +146,11 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         setGroups(sortedGroups);
 
         // Ensure General group is always in selected filters if profile didn't have filters set
-        if (user) {
-          const { data: profile } = await supabase
+        if (userId) {
+          const { data: profile } = await client
             .from('profiles')
             .select('filtered_groups')
-            .eq('id', user.id)
+            .eq('id', userId)
             .single();
 
           const generalGroup = sortedGroups.find(g => g.group_type === 'General');
@@ -287,8 +290,9 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
   const handleApplyFilters = async () => {
     // Save filters to profile
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (!userId) return;
 
       const updates: any = {
         filtered_groups: selectedGroupFilters,
@@ -301,10 +305,12 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         updates.filtered_radius_km = parseInt(radiusFilter);
       }
 
-      const { error } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { error } = await client
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (error) {
         console.error('Error saving filters:', error);

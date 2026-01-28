@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Bell, MapPin, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { useSessionRefresh } from "@/hooks";
 import { toast } from "sonner";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
@@ -78,13 +78,16 @@ const NotificationSettings = () => {
 
   const fetchUserData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (user) {
-        const { data: profile } = await supabase
+      if (userId) {
+        // Use fresh client to avoid stuck state
+        const client = createFreshSupabaseClient();
+        const { data: profile } = await client
           .from('profiles')
           .select('ranking, formatted_address, latitude, longitude')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
 
         if (profile) {
@@ -104,14 +107,17 @@ const NotificationSettings = () => {
 
   const fetchNotificationFilters = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) return;
+      if (!userId) return;
 
-      const { data: filters } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { data: filters } = await client
         .from('notification_match_filters')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (filters) {
@@ -161,16 +167,17 @@ const NotificationSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         toast.error("You must be logged in");
         return;
       }
 
       // Prepare filter data (filters are always enabled)
       const filterData = {
-        user_id: user.id,
+        user_id: userId,
         location_enabled: true,
         location_address: selectedPlaceData?.formatted_address || locationAddress,
         location_latitude: locationLatitude,
@@ -180,8 +187,10 @@ const NotificationSettings = () => {
         updated_at: new Date().toISOString(),
       };
 
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
       // Upsert (insert or update)
-      const { error } = await supabase
+      const { error } = await client
         .from('notification_match_filters')
         .upsert(filterData, {
           onConflict: 'user_id'

@@ -23,7 +23,7 @@ import {
 import { formatParticipantName } from "@/lib/matchParticipants";
 import { useState, useEffect } from "react";
 import EditMatchDialog from "@/components/EditMatchDialog";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { createThoughtReactionNotifications } from "@/lib/notifications";
 import { toast } from "sonner";
 
@@ -180,12 +180,15 @@ export const MatchCard = ({
         }
 
         // Create notification for the thought author
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
+        // Get user ID synchronously from localStorage (never hangs)
+        const userId = getUserIdFromStorage();
+        if (userId) {
+          // Use fresh client to avoid stuck state
+          const client = createFreshSupabaseClient();
+          const { data: profile } = await client
             .from('profiles')
             .select('first_name, last_name')
-            .eq('id', user.id)
+            .eq('id', userId)
             .single();
 
           const reactorName = profile

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, readSessionFromStorage, createFreshSupabaseClient } from '@/integrations/supabase/client';
+import { supabase, readSessionFromStorage, createFreshSupabaseClient, getUserIdFromStorage } from '@/integrations/supabase/client';
 
 /**
  * Hook for fetching and managing events data
@@ -95,31 +95,11 @@ export const useEvents = (): UseEventsReturn => {
     const localStorageInfo = readSessionFromStorage();
     console.log('[Events] localStorage session:', localStorageInfo);
 
-    // getSession() with 3 second timeout - it can hang after token refresh
-    const getSessionWithTimeout = () => {
-      return Promise.race([
-        supabase.auth.getSession(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout after 3s')), 3000))
-      ]);
-    };
-
-    try {
-      const result = await getSessionWithTimeout() as any;
-      const inMemorySession = result?.data?.session;
-      const inMemoryExpiresIn = inMemorySession?.expires_at
-        ? inMemorySession.expires_at - Math.floor(Date.now() / 1000)
-        : null;
-      console.log('[Events] in-memory session:', {
-        expiresIn: inMemoryExpiresIn,
-        hasAccessToken: !!inMemorySession?.access_token,
-        userId: inMemorySession?.user?.id?.substring(0, 8) || null,
-      });
-      if (localStorageInfo && !inMemorySession) {
-        console.error('[Events] MISMATCH: localStorage has session but getSession() returned NULL!');
-      }
-    } catch (diagErr: any) {
-      console.error('[Events] getSession() FAILED/TIMED OUT:', diagErr?.message);
-      console.log('[Events] Using fresh client to bypass stuck state...');
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    console.log('[Events] getUserIdFromStorage result:', userId?.substring(0, 8) || null);
+    if (localStorageInfo && !userId) {
+      console.error('[Events] MISMATCH: localStorage has session but no user ID!');
     }
 
     // Use fresh client to bypass potentially stuck main client
@@ -425,12 +405,8 @@ export const useEvents = (): UseEventsReturn => {
   }, []);
 
   useEffect(() => {
-    // Populate userIdRef from the current session without blocking.
-    // We read the session synchronously from localStorage via getSession(),
-    // but do NOT await it in the fetch path — only here at setup time.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      userIdRef.current = session?.user?.id ?? null;
-    });
+    // Populate userIdRef from localStorage (synchronous, never hangs).
+    userIdRef.current = getUserIdFromStorage();
 
     // Keep userIdRef up-to-date when auth state changes (login, logout, token refresh).
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface EventData {
   title: string;
@@ -25,17 +25,20 @@ export interface EventData {
 
 export const createEvent = async (eventData: EventData) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       console.error("No user logged in");
       return null;
     }
 
-    const { data, error } = await (supabase as any)
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await (client as any)
       .from('events')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         title: eventData.title,
         description: eventData.description,
         full_description: eventData.full_description || null,

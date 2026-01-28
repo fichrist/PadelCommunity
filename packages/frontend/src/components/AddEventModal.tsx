@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface AddEventModalProps {
@@ -48,8 +48,9 @@ const AddEventModal = ({ open, onOpenChange, selectedDate, editingEvent, onSucce
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) {
       toast.error("You must be logged in");
       return;
     }
@@ -59,11 +60,13 @@ const AddEventModal = ({ open, onOpenChange, selectedDate, editingEvent, onSucce
       description: description || null,
       tag: tag || null,
       event_date: format(eventDate, "yyyy-MM-dd"),
-      user_id: user.id,
+      user_id: userId,
     };
 
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
     if (editingEvent) {
-      const { error } = await supabase
+      const { error } = await client
         .from('personal_events')
         .update(eventData)
         .eq('id', editingEvent.id);
@@ -74,7 +77,7 @@ const AddEventModal = ({ open, onOpenChange, selectedDate, editingEvent, onSucce
       }
       toast.success("Event updated successfully");
     } else {
-      const { error } = await supabase
+      const { error } = await client
         .from('personal_events')
         .insert([eventData]);
 

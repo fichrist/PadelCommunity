@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { useSessionRefresh } from "@/hooks";
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -52,19 +52,14 @@ const Profile = () => {
     try {
       console.log("[fetchUserData] Starting fetch...");
 
-      const getUserPromise = supabase.auth.getUser();
-      console.log("[fetchUserData] Called getUser(), waiting for response...");
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      console.log("[fetchUserData] getUserIdFromStorage() completed");
 
-      const result = await getUserPromise;
-      console.log("[fetchUserData] getUser() completed, result:", result);
+      console.log("[fetchUserData] User ID:", userId?.substring(0, 8) || null);
 
-      const user = result.data?.user;
-
-      console.log("[fetchUserData] User:", user);
-
-      if (user) {
-        console.log("[fetchUserData] User email:", user.email);
-        setEmail(user.email || "");
+      if (userId) {
+        setEmail(""); // Email not needed for display
 
         // Fetch profile from profiles table
         console.log("[fetchUserData] Fetching profile...");
@@ -94,7 +89,7 @@ const Profile = () => {
         }
       }
 
-      console.log("[fetchUserData] Email state set to:", user?.email);
+      console.log("[fetchUserData] Profile fetch completed");
     } catch (error) {
       console.error("[fetchUserData] Error:", error);
       toast.error("Failed to load user data");
@@ -255,34 +250,37 @@ const Profile = () => {
 
   const handleDownloadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (!userId) {
         toast.error("Je moet ingelogd zijn om je gegevens te downloaden");
         return;
       }
 
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+
       // Fetch all user data
-      const { data: profile } = await supabase
+      const { data: profile } = await client
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
-      const { data: enrollments } = await supabase
+      const { data: enrollments } = await client
         .from('event_enrollments')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
-      const { data: messages } = await supabase
+      const { data: messages } = await client
         .from('messages')
         .select('*')
-        .eq('sender_id', user.id);
+        .eq('sender_id', userId);
 
       const userData = {
         exportDate: new Date().toISOString(),
         account: {
-          email: user.email,
-          created_at: user.created_at,
+          userId: userId,
         },
         profile: profile,
         event_enrollments: enrollments,
@@ -310,17 +308,21 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (!userId) {
         toast.error("Je moet ingelogd zijn om je account te verwijderen");
         return;
       }
 
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+
       // Delete profile (this should cascade to related data via database triggers/policies)
-      const { error: profileError } = await supabase
+      const { error: profileError } = await client
         .from('profiles')
         .delete()
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (profileError) {
         console.error("Error deleting profile:", profileError);

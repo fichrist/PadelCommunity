@@ -9,7 +9,7 @@ import padelBackground from "@/assets/padel-background.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 interface AppLayoutProps {
@@ -50,19 +50,17 @@ const AppLayout = ({
 
     const checkAuth = async () => {
       try {
-        // Use getSession() (localStorage read) instead of getUser() (network call).
-        // getUser() fails when the access token has expired, making the user appear
-        // logged out even though the refresh token is still valid.
-        // autoRefreshToken will refresh the token in the background and
-        // onAuthStateChange will update the state when ready.
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsLoggedIn(!!session?.user);
+        // Get user ID synchronously from localStorage (never hangs)
+        const userId = getUserIdFromStorage();
+        setIsLoggedIn(!!userId);
 
-        if (session?.user) {
-          const { data: profile } = await supabase
+        if (userId) {
+          // Use fresh client to avoid stuck state
+          const client = createFreshSupabaseClient();
+          const { data: profile } = await client
             .from('profiles')
             .select('tp_user_id')
-            .eq('id', session.user.id)
+            .eq('id', userId)
             .single();
 
           setHasTpUserId(!!profile?.tp_user_id);
@@ -100,12 +98,15 @@ const AppLayout = ({
     });
 
     const handleProfileUpdate = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (userId) {
+        // Use fresh client to avoid stuck state
+        const client = createFreshSupabaseClient();
+        const { data: profile } = await client
           .from('profiles')
           .select('tp_user_id')
-          .eq('id', session.user.id)
+          .eq('id', userId)
           .single();
 
         setHasTpUserId(!!profile?.tp_user_id);
@@ -129,15 +130,13 @@ const AppLayout = ({
     // Skip during the initial auth check to avoid double-work.
     if (authLoading) return;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const loggedIn = !!session?.user;
-      if (loggedIn !== isLoggedIn) {
-        console.log('AppLayout: Auth state changed on navigation', { loggedIn });
-        setIsLoggedIn(loggedIn);
-      }
-    }).catch((err) => {
-      console.warn('AppLayout: Navigation session check failed', err);
-    });
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    const loggedIn = !!userId;
+    if (loggedIn !== isLoggedIn) {
+      console.log('AppLayout: Auth state changed on navigation', { loggedIn });
+      setIsLoggedIn(loggedIn);
+    }
   }, [location.pathname]);
 
   const isActive = (path: string) => {

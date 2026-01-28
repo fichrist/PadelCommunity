@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, UserPlus, Heart, Ban, Trophy, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
 interface Notification {
@@ -58,13 +58,16 @@ const NotificationDropdown = () => {
   // Fetch notifications on mount
   useEffect(() => {
     const fetchNotifications = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (!userId) return;
 
-      const { data, error } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { data, error } = await client
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -81,9 +84,9 @@ const NotificationDropdown = () => {
     // Subscribe to new notifications
     let channel: any;
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-
+    // Get user ID synchronously (never hangs)
+    const userId = getUserIdFromStorage();
+    if (userId) {
       channel = supabase
         .channel('notifications')
         .on(
@@ -92,7 +95,7 @@ const NotificationDropdown = () => {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
-            filter: `user_id=eq.${data.user.id}`
+            filter: `user_id=eq.${userId}`
           },
           (payload) => {
             setNotifications(prev => [payload.new as Notification, ...prev]);
@@ -100,7 +103,7 @@ const NotificationDropdown = () => {
           }
         )
         .subscribe();
-    });
+    }
 
     return () => {
       if (channel) {
@@ -187,13 +190,16 @@ const NotificationDropdown = () => {
   };
 
   const handleDeleteAllNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) return;
 
-    const { error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { error } = await client
       .from('notifications')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) {
       toast.error('Failed to delete notifications');

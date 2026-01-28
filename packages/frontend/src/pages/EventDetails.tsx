@@ -22,7 +22,7 @@ import EventCard from "@/components/EventCard";
 import CommunityEventCard from "@/components/CommunityEventCard";
 import { getEventById, deleteEvent } from "@/lib/events";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import ThoughtsModal from "@/components/ThoughtsModal";
 import { getThoughtsByEventId } from "@/lib/thoughts";
 import { format } from "date-fns";
@@ -107,11 +107,9 @@ const EventDetails = () => {
 
   // Fetch current user
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    getCurrentUser();
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    setCurrentUserId(userId);
   }, [refreshKey]);
 
   // Fetch event from database

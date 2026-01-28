@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Loader2, Search, Ban, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { processMatchParticipants } from "@/lib/matchParticipants";
 import { createMatchNotifications } from "@/lib/notifications";
 
@@ -96,13 +96,16 @@ const CreateMatch = () => {
   // Fetch user's favorites, blocked users and profile data on mount
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (userId) {
+        // Use fresh client to avoid stuck state
+        const client = createFreshSupabaseClient();
         // Fetch favorites, blocked users, address, name and allowed groups
-        const { data: profile } = await supabase
+        const { data: profile } = await client
           .from('profiles')
           .select('favorite_users, blocked_users, formatted_address, latitude, longitude, first_name, last_name, display_name, playtomic_user_id, allowed_groups')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
 
         if (profile?.formatted_address) {
@@ -183,14 +186,17 @@ const CreateMatch = () => {
 
       setIsSearching(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        // Get user ID synchronously from localStorage (never hangs)
+        const userId = getUserIdFromStorage();
+        if (!userId) return;
 
-        const { data: profiles } = await supabase
+        // Use fresh client to avoid stuck state
+        const client = createFreshSupabaseClient();
+        const { data: profiles } = await client
           .from('profiles')
           .select('id, first_name, last_name, display_name, avatar_url, club_name')
           .or(`first_name.ilike.%${playerSearch.trim()}%,last_name.ilike.%${playerSearch.trim()}%,display_name.ilike.%${playerSearch.trim()}%`)
-          .neq('id', user.id)
+          .neq('id', userId)
           .limit(10);
 
         if (profiles) {
@@ -226,17 +232,20 @@ const CreateMatch = () => {
     toast.success(`${player.name} added to favorites`);
   };
 
-  const handleUnblockUser = async (userId: string) => {
-    const newBlockedIds = blockedUserIds.filter(id => id !== userId);
+  const handleUnblockUser = async (userIdToUnblock: string) => {
+    const newBlockedIds = blockedUserIds.filter(id => id !== userIdToUnblock);
     setBlockedUserIds(newBlockedIds);
-    setBlockedUsers(prev => prev.filter(u => u.id !== userId));
+    setBlockedUsers(prev => prev.filter(u => u.id !== userIdToUnblock));
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (userId) {
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      await client
         .from('profiles')
         .update({ blocked_users: newBlockedIds })
-        .eq('id', user.id);
+        .eq('id', userId);
     }
     toast.success("User unblocked");
   };
@@ -282,29 +291,33 @@ const CreateMatch = () => {
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         toast.error("You must be logged in to create a match");
         navigate('/');
         return;
       }
 
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+
       // Save new favorites to profile if any were added
       if (newFavoriteIds.length > 0) {
-        const { data: currentProfile } = await supabase
+        const { data: currentProfile } = await client
           .from('profiles')
           .select('favorite_users')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
 
         const existingFavorites = currentProfile?.favorite_users || [];
         const updatedFavorites = [...new Set([...existingFavorites, ...newFavoriteIds])];
 
-        await supabase
+        await client
           .from('profiles')
           .update({ favorite_users: updatedFavorites })
-          .eq('id', user.id);
+          .eq('id', userId);
       }
 
       // Use user-selected groups
@@ -314,7 +327,7 @@ const CreateMatch = () => {
       let restrictedUsers: string[] | null = null;
       if (publishToFavoritesOnly && selectedFavorites.length > 0) {
         // Include selected favorites and the organizer
-        restrictedUsers = [...selectedFavorites, user.id];
+        restrictedUsers = [...selectedFavorites, userId];
       }
 
       if (withoutUrl) {
@@ -324,7 +337,7 @@ const CreateMatch = () => {
           .insert({
             url: null,
             group_ids: groupIds,
-            created_by: user.id,
+            created_by: userId,
             status: 'confirmed',
             restricted_users: restrictedUsers,
             message: message.trim() || null,
@@ -346,8 +359,8 @@ const CreateMatch = () => {
           match_id: matchData.id,
           name: userName,
           playtomic_user_id: userPlaytomicId,
-          player_profile_id: user.id,
-          added_by_profile_id: user.id,
+          player_profile_id: userId,
+          added_by_profile_id: userId,
           team_id: 0,
           scraped_from_playtomic: false,
         });
@@ -365,7 +378,7 @@ const CreateMatch = () => {
             group_ids: groupIds,
             restricted_users: restrictedUsers,
           },
-          user.id
+          userId
         );
 
         navigate('/community', {
@@ -421,7 +434,7 @@ const CreateMatch = () => {
           .insert({
             url: url.trim(),
             group_ids: groupIds,
-            created_by: user.id,
+            created_by: userId,
             status: 'confirmed',
             restricted_users: restrictedUsers,
             message: message.trim() || null,
@@ -461,7 +474,7 @@ const CreateMatch = () => {
             group_ids: groupIds,
             restricted_users: restrictedUsers,
           },
-          user.id
+          userId
         );
 
         // Insert participants if available
@@ -477,7 +490,7 @@ const CreateMatch = () => {
             price: p.price,
             payment_status: p.payment_status,
             registration_date: p.registration_date,
-            added_by_profile_id: user.id,
+            added_by_profile_id: userId,
             scraped_from_playtomic: true
           }));
 
@@ -493,7 +506,7 @@ const CreateMatch = () => {
 
             // Process participants: set playtomic_user_id on profiles and link to participants
             if (insertedParticipants && insertedParticipants.length > 0) {
-              await processMatchParticipants(insertedParticipants, user.id);
+              await processMatchParticipants(insertedParticipants, userId);
             }
 
             toast.success(`Match created with ${matchDetails.participants.length} participants!`);

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from '@/integrations/supabase/client';
 
 /**
  * Hook for managing event enrollments
@@ -37,19 +37,23 @@ export const useEventEnrollment = (): UseEventEnrollmentReturn => {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         setError('You must be logged in to enroll');
         return false;
       }
 
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+
       // Check if already enrolled
-      const { data: existing } = await supabase
+      const { data: existing } = await client
         .from('enrollments')
         .select('id')
         .eq('event_id', eventId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single();
 
       if (existing) {
@@ -58,11 +62,11 @@ export const useEventEnrollment = (): UseEventEnrollmentReturn => {
       }
 
       // Create enrollment
-      const { error: enrollError } = await supabase
+      const { error: enrollError } = await client
         .from('enrollments')
         .insert({
           event_id: eventId,
-          user_id: user.id,
+          user_id: userId,
           is_anonymous: isAnonymous,
         });
 
@@ -83,18 +87,21 @@ export const useEventEnrollment = (): UseEventEnrollmentReturn => {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         setError('You must be logged in');
         return false;
       }
 
-      const { error: unenrollError } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { error: unenrollError } = await client
         .from('enrollments')
         .delete()
         .eq('event_id', eventId)
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (unenrollError) throw unenrollError;
 

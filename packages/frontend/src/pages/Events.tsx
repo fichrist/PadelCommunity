@@ -36,7 +36,7 @@ import {
   useSessionRefresh,
   calculateDistance,
 } from "@/hooks";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import spiritualBackground from "@/assets/spiritual-background.jpg";
 import elenaProfile from "@/assets/elena-profile.jpg";
@@ -301,12 +301,15 @@ const Events = () => {
   };
 
   const handleSetupComplete = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (userId) {
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { data: profile } = await client
         .from("profiles")
         .select("tp_user_id")
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
 
       if (profile?.tp_user_id) {

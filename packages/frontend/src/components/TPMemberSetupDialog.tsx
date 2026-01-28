@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { updateProfile } from "@/lib/profiles";
 
@@ -132,8 +132,9 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         .eq('tp_user_id', tpUserId)
         .single();
 
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (existingProfile && existingProfile.id !== currentUser?.id) {
+      // Get user ID synchronously from localStorage (never hangs)
+      const currentUserId = getUserIdFromStorage();
+      if (existingProfile && existingProfile.id !== currentUserId) {
         toast.error("This Tennis & Padel Vlaanderen account is already linked to another profile.");
         setSaving(false);
         return;
@@ -164,9 +165,10 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
         throw new Error("Failed to update profile");
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         throw new Error("You must be logged in");
       }
 
@@ -206,10 +208,12 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
       await updateProfile({ filtered_groups: groupIds });
 
       // Create or update notification match filter with address and 30km radius
-      const { error: filterError } = await (supabase as any)
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { error: filterError } = await (client as any)
         .from('notification_match_filters')
         .upsert({
-          user_id: user.id,
+          user_id: userId,
           location_enabled: true,
           location_address: address.trim(),
           location_latitude: addressCoords.lat,

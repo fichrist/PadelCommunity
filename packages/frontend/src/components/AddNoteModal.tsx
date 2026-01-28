@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface AddNoteModalProps {
@@ -41,8 +41,9 @@ const AddNoteModal = ({ open, onOpenChange, selectedDate, editingNote, onSuccess
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) {
       toast.error("You must be logged in");
       return;
     }
@@ -50,11 +51,13 @@ const AddNoteModal = ({ open, onOpenChange, selectedDate, editingNote, onSuccess
     const noteData = {
       content,
       note_date: format(noteDate, "yyyy-MM-dd"),
-      user_id: user.id,
+      user_id: userId,
     };
 
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
     if (editingNote) {
-      const { error } = await supabase
+      const { error } = await client
         .from('calendar_notes')
         .update(noteData)
         .eq('id', editingNote.id);
@@ -65,7 +68,7 @@ const AddNoteModal = ({ open, onOpenChange, selectedDate, editingNote, onSuccess
       }
       toast.success("Note updated successfully");
     } else {
-      const { error } = await supabase
+      const { error } = await client
         .from('calendar_notes')
         .insert([noteData]);
 

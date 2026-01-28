@@ -5,7 +5,7 @@
 // NEW: Addresses are now referenced from profiles via address_id
 // =====================================================
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface Address {
   id: string;
@@ -31,17 +31,21 @@ export interface Address {
  */
 export async function getCurrentUserAddress(): Promise<Address | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return null;
     }
 
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+
     // Get the user's profile to find their address_id
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await client
       .from('profiles')
       .select('address_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile?.address_id) {
@@ -73,20 +77,24 @@ export async function getCurrentUserAddress(): Promise<Address | null> {
 export async function saveAddress(addressData: Partial<Address>): Promise<boolean> {
   try {
     console.log("saveAddress called with:", addressData);
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log("Current user:", user?.id);
-    
-    if (!user) {
+
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    console.log("Current user:", userId?.substring(0, 8) || null);
+
+    if (!userId) {
       console.error('No authenticated user');
       throw new Error('No authenticated user');
     }
 
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+
     // Get the user's profile to check if they already have an address
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await client
       .from('profiles')
       .select('address_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (profileError) {
@@ -143,10 +151,10 @@ export async function saveAddress(addressData: Partial<Address>): Promise<boolea
       addressId = data.id;
 
       // Link the new address to the profile
-      const { error: linkError } = await supabase
+      const { error: linkError } = await client
         .from('profiles')
         .update({ address_id: addressId })
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (linkError) {
         console.error('Error linking address to profile:', linkError);

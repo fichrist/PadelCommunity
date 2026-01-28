@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, Trash2, Reply, X } from "lucide-react";
 import { createThought, createEventThought, createHealerProfileThought, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { createThoughtAddedNotifications } from "@/lib/notifications";
 
@@ -222,11 +222,9 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
 
   // Get current user on mount
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    getCurrentUser();
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    setCurrentUserId(userId);
   }, []);
 
   const handleSubmitThought = async () => {

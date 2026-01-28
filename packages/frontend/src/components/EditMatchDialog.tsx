@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X, Loader2, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 interface EditMatchDialogProps {
   open: boolean;
@@ -38,18 +38,20 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
 
   useEffect(() => {
     const fetchGroups = async () => {
-      // Get current user's profile to check allowed_groups
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         console.error('No authenticated user');
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { data: profile, error: profileError } = await client
         .from('profiles')
         .select('allowed_groups')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       if (profileError) {

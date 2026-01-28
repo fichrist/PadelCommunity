@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import padelBackground from "@/assets/padel-background.jpg";
 
@@ -18,9 +18,10 @@ const HeroSection = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
+    const checkAuth = () => {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      setIsLoggedIn(!!userId);
     };
     checkAuth();
 

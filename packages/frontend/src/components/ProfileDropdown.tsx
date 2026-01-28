@@ -10,7 +10,7 @@ import {
 import { User, LogOut, Shield, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { getCurrentProfile } from "@/lib/profiles";
 
 interface ProfileDropdownProps {
@@ -46,19 +46,19 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
   useEffect(() => {
     // Fetch the current user's information
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (user) {
+      if (userId) {
         // Fetch profile from profiles table
         const profile = await getCurrentProfile();
 
-        // Get display name from profile or fallback to email
+        // Get display name from profile or fallback to "My Page"
         const name = profile?.display_name ||
                      profile?.first_name ||
-                     user.email?.split('@')[0] ||
                      "My Page";
         setDisplayName(name);
-        setUserEmail(user.email || "");
+        setUserEmail("");
         setInitials(getInitials(profile?.first_name, profile?.last_name, name));
 
         // Only set avatar URL if profile has one, otherwise leave undefined

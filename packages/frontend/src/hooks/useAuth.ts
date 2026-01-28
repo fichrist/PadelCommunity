@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from '@/integrations/supabase/client';
 
 /**
  * Hook for authentication state and user profile management
@@ -40,7 +40,9 @@ export const useAuth = (): UseAuthReturn => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { data: profile, error } = await client
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -63,14 +65,15 @@ export const useAuth = (): UseAuthReturn => {
   };
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session using synchronous localStorage read (never hangs)
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Get user ID synchronously from localStorage (never hangs)
+        const userId = getUserIdFromStorage();
 
-        if (session?.user) {
-          setCurrentUserId(session.user.id);
-          await fetchUserProfile(session.user.id);
+        if (userId) {
+          setCurrentUserId(userId);
+          await fetchUserProfile(userId);
         }
       } catch (error) {
         console.error('Error fetching session:', error);

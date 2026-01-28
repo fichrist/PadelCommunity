@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface Thought {
   id?: string;
@@ -17,17 +17,20 @@ export interface Thought {
  */
 export async function createThought(postId: string, content: string, parentThoughtId?: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('thoughts')
       .insert({
         post_id: postId,
-        user_id: user.id,
+        user_id: userId,
         content: content.trim(),
         parent_thought_id: parentThoughtId || null,
       })
@@ -51,17 +54,20 @@ export async function createThought(postId: string, content: string, parentThoug
  */
 export async function createEventThought(eventId: string, content: string, parentThoughtId?: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('thoughts')
       .insert({
         event_id: eventId,
-        user_id: user.id,
+        user_id: userId,
         content: content.trim(),
         parent_thought_id: parentThoughtId || null,
       } as any)
@@ -85,17 +91,20 @@ export async function createEventThought(eventId: string, content: string, paren
  */
 export async function createHealerProfileThought(healerProfileId: string, content: string, parentThoughtId?: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('thoughts')
       .insert({
         healer_profile_id: healerProfileId,
-        user_id: user.id,
+        user_id: userId,
         content: content.trim(),
         parent_thought_id: parentThoughtId || null,
       } as any)
@@ -119,17 +128,20 @@ export async function createHealerProfileThought(healerProfileId: string, conten
  */
 export async function createMatchThought(matchId: string, content: string, parentThoughtId?: string): Promise<{ success: boolean; thoughtId?: string; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
 
-    if (!user) {
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('thoughts')
       .insert({
         match_id: matchId,
-        user_id: user.id,
+        user_id: userId,
         content: content.trim(),
         parent_thought_id: parentThoughtId || null,
       } as any)

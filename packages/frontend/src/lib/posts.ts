@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface Post {
   id?: string;
@@ -18,16 +18,19 @@ export interface Post {
  */
 export async function createPost(post: Post): Promise<{ success: boolean; postId?: string; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('posts')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         title: post.title,
         content: post.content,
         url: post.url || null,
@@ -208,11 +211,12 @@ export async function deletePost(postId: string): Promise<boolean> {
  */
 export async function uploadPostImage(file: File): Promise<string | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) return null;
 
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `post-images/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
@@ -240,11 +244,12 @@ export async function uploadPostImage(file: File): Promise<string | null> {
  */
 export async function uploadPostVideo(file: File): Promise<string | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) return null;
 
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `post-videos/${fileName}`;
 
     const { error: uploadError } = await supabase.storage

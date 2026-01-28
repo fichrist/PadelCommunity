@@ -133,6 +133,98 @@ export function createFreshSupabaseClient() {
 }
 
 /**
+ * Safe wrapper for getSession() that falls back to localStorage if it hangs.
+ * Use this instead of supabase.auth.getSession() throughout the app.
+ */
+export async function getSessionSafe(timeoutMs = 3000): Promise<{ user: { id: string; email?: string } | null; accessToken: string | null }> {
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout')), timeoutMs))
+    ]) as any;
+
+    const session = result?.data?.session;
+    return {
+      user: session?.user || null,
+      accessToken: session?.access_token || null,
+    };
+  } catch (err) {
+    // Fallback to localStorage
+    console.warn('[getSessionSafe] getSession() timed out, using localStorage fallback');
+    const stored = readFullSessionFromStorage();
+    return {
+      user: stored?.user || null,
+      accessToken: stored?.accessToken || null,
+    };
+  }
+}
+
+/**
+ * Safe wrapper for getUser() that falls back to localStorage if it hangs.
+ * Use this instead of supabase.auth.getUser() throughout the app.
+ */
+export async function getUserSafe(timeoutMs = 3000): Promise<{ id: string; email?: string } | null> {
+  try {
+    const result = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('getUser timeout')), timeoutMs))
+    ]) as any;
+
+    return result?.data?.user || null;
+  } catch (err) {
+    // Fallback to localStorage
+    console.warn('[getUserSafe] getUser() timed out, using localStorage fallback');
+    const stored = readFullSessionFromStorage();
+    return stored?.user || null;
+  }
+}
+
+/**
+ * Reads the full session from localStorage including user data.
+ */
+function readFullSessionFromStorage(): { user: { id: string; email?: string } | null; accessToken: string | null } | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return {
+          user: data.user || null,
+          accessToken: data.access_token || null,
+        };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * SYNCHRONOUS helper to get user ID from localStorage.
+ * This NEVER hangs because it doesn't call any async Supabase methods.
+ * Use this whenever you just need the user ID for filtering/queries.
+ */
+export function getUserIdFromStorage(): string | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return data.user?.id || null;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Diagnostic: reads the auth session directly from localStorage,
  * completely bypassing the Supabase client, locks, and getSession().
  * This tells us the raw truth about what's stored.

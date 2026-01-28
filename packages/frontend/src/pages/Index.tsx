@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -19,9 +19,10 @@ const Index = () => {
 
   useEffect(() => {
     // Check if user is already logged in, redirect to community
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
+    const checkAuth = () => {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (userId) {
         navigate('/community', { state: { fromIndex: true } });
       }
     };

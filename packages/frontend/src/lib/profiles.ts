@@ -4,7 +4,7 @@
 // Helper functions for working with profiles in your React app
 // =====================================================
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface Profile {
   id: string;
@@ -43,16 +43,19 @@ export interface Profile {
  */
 export async function getCurrentProfile(): Promise<Profile | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       return null;
     }
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (error) {
@@ -97,30 +100,25 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
   console.log('[updateProfile] Starting update with:', updates);
 
   try {
-    console.log('[updateProfile] About to call getUser...');
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
 
-    // Try calling getUser directly
-    const authResponse = await supabase.auth.getUser();
+    console.log('[updateProfile] getUserIdFromStorage result:', userId?.substring(0, 8) || null);
 
-    console.log('[updateProfile] getUser completed');
-    console.log('[updateProfile] Auth response:', authResponse);
-
-    const user = authResponse?.data?.user;
-
-    if (!user) {
+    if (!userId) {
       console.error('[updateProfile] No authenticated user found');
-      console.error('[updateProfile] Full auth response:', authResponse);
       throw new Error('No authenticated user');
     }
 
-    console.log('[updateProfile] User ID:', user.id);
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
 
     // If ranking is being updated, automatically update allowed_groups
     if (updates.ranking) {
       console.log('[updateProfile] Ranking update detected, updating allowed_groups...');
 
       // Fetch all ranked groups
-      const { data: rankedGroups, error: groupsError } = await supabase
+      const { data: rankedGroups, error: groupsError } = await client
         .from('groups')
         .select('id, ranking_level')
         .eq('group_type', 'Ranked');
@@ -158,10 +156,10 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
         console.log('[updateProfile] Matching group IDs for ranking:', matchingGroupIds);
 
         // Get current profile to preserve existing General groups
-        const { data: currentProfile } = await supabase
+        const { data: currentProfile } = await client
           .from('profiles')
           .select('group_ids')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
 
         // Preserve General groups (those not in ranked groups list)
@@ -180,10 +178,10 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
 
     console.log('[updateProfile] About to update database...');
 
-    const updateResponse = await supabase
+    const updateResponse = await client
       .from('profiles')
       .update(updates)
-      .eq('id', user.id)
+      .eq('id', userId)
       .select();
 
     console.log('[updateProfile] Database update completed');
@@ -208,17 +206,18 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
  */
 export async function uploadAvatar(file: File): Promise<string | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       throw new Error('No authenticated user');
     }
 
     // Create a unique file name
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+    const fileName = `${userId}/${Math.random()}.${fileExt}`;
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage (storage doesn't hang like auth)
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, file, {
@@ -238,11 +237,12 @@ export async function uploadAvatar(file: File): Promise<string | null> {
 
     const avatarUrl = data.publicUrl;
 
-    // Update profile with new avatar URL
-    const { error: updateError } = await supabase
+    // Update profile with new avatar URL using fresh client
+    const client = createFreshSupabaseClient();
+    const { error: updateError } = await client
       .from('profiles')
       .update({ avatar_url: avatarUrl })
-      .eq('id', user.id);
+      .eq('id', userId);
 
     if (updateError) {
       console.error('Error updating profile with avatar URL:', updateError);
@@ -261,15 +261,16 @@ export async function uploadAvatar(file: File): Promise<string | null> {
  */
 export async function deleteAvatar(): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+
+    if (!userId) {
       throw new Error('No authenticated user');
     }
 
     // Get current profile to find avatar URL
     const profile = await getCurrentProfile();
-    
+
     if (!profile?.avatar_url) {
       return true; // Nothing to delete
     }
@@ -291,11 +292,12 @@ export async function deleteAvatar(): Promise<boolean> {
       return false;
     }
 
-    // Update profile to remove avatar URL
-    const { error: updateError } = await supabase
+    // Update profile to remove avatar URL using fresh client
+    const client = createFreshSupabaseClient();
+    const { error: updateError } = await client
       .from('profiles')
       .update({ avatar_url: null })
-      .eq('id', user.id);
+      .eq('id', userId);
 
     if (updateError) {
       console.error('Error updating profile to remove avatar URL:', updateError);

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Search, MoreVertical, Circle, MessageCircle, Plus, Home, User, Users, Calendar, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -72,14 +72,15 @@ const Chat = () => {
 
   // Fetch current user
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+    const fetchCurrentUser = () => {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      if (!userId) {
         toast.error("Please log in to access chat");
         navigate("/login");
         return;
       }
-      setCurrentUser(user);
+      setCurrentUser({ id: userId });
     };
     fetchCurrentUser();
   }, [navigate, refreshKey]);

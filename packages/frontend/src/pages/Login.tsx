@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import SignupCard from "@/components/SignupCard";
 import { Trophy } from "lucide-react";
 import padelBackground from "@/assets/padel-background.jpg";
@@ -10,10 +10,11 @@ const Login = () => {
 
   useEffect(() => {
     // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Login - Current session:", session);
-      if (session) {
+    const checkUser = () => {
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
+      console.log("Login - Current user:", userId?.substring(0, 8) || null);
+      if (userId) {
         // Redirect to events if already logged in
         console.log("Login - Redirecting to /events");
         navigate('/events', { replace: true });

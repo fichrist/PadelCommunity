@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Search, User, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 interface PlayerResult {
   name: string;
@@ -91,20 +91,23 @@ const Admin = () => {
     setIsSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user ID synchronously from localStorage (never hangs)
+      const userId = getUserIdFromStorage();
 
-      if (!user) {
+      if (!userId) {
         throw new Error("You must be logged in");
       }
 
-      const { error: updateError } = await supabase
+      // Use fresh client to avoid stuck state
+      const client = createFreshSupabaseClient();
+      const { error: updateError } = await client
         .from('profiles')
         .update({
           ranking: selectedPlayer.ranking,
           tp_membership_number: selectedPlayer.userId,
           tp_user_id: parseInt(selectedPlayer.userId),
         } as any)
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (updateError) throw updateError;
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import AddEventModal from "./AddEventModal";
 import AddNoteModal from "./AddNoteModal";
@@ -39,13 +39,16 @@ const PersonalCalendar = () => {
   }, []);
 
   const fetchEvents = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) return;
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('personal_events')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('event_date', { ascending: true });
 
     if (error) {
@@ -56,13 +59,16 @@ const PersonalCalendar = () => {
   };
 
   const fetchNotes = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Get user ID synchronously from localStorage (never hangs)
+    const userId = getUserIdFromStorage();
+    if (!userId) return;
 
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state
+    const client = createFreshSupabaseClient();
+    const { data, error } = await client
       .from('calendar_notes')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('note_date', { ascending: true });
 
     if (error) {
