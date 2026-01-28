@@ -33,6 +33,7 @@ import {
   useEventEnrollment,
   useMatchManagement,
   useThoughts,
+  useSessionRefresh,
   calculateDistance,
 } from "@/hooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +66,7 @@ const Events = () => {
 
   // Authentication
   const { currentUserId, currentUser, isLoading: authLoading } = useAuth();
+  const refreshKey = useSessionRefresh();
 
   // Geolocation filtering
   const geolocation = useGeolocation();
@@ -112,6 +114,11 @@ const Events = () => {
 
   // Thoughts for matches
   const matchThoughts = useThoughts("match", selectedMatchForThoughts?.id || null);
+
+  // Re-fetch data when the session is restored after tab inactivity
+  useEffect(() => {
+    if (refreshKey > 0) refetch();
+  }, [refreshKey]);
 
   // ========================================
   // EFFECTS

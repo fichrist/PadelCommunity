@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useSessionRefresh } from "@/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +30,7 @@ import { format } from "date-fns";
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const refreshKey = useSessionRefresh();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false);
@@ -110,7 +112,7 @@ const EventDetails = () => {
       setCurrentUserId(user?.id || null);
     };
     getCurrentUser();
-  }, []);
+  }, [refreshKey]);
 
   // Fetch event from database
   useEffect(() => {
@@ -180,7 +182,7 @@ const EventDetails = () => {
     };
     
     fetchEvent();
-  }, [eventId]);
+  }, [eventId, refreshKey]);
 
   // Fetch organizer and attendees
   useEffect(() => {

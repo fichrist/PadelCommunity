@@ -6,6 +6,7 @@ import { ArrowLeft, Bell, MapPin, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSessionRefresh } from "@/hooks";
 import { toast } from "sonner";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ interface Group {
 
 const NotificationSettings = () => {
   const navigate = useNavigate();
+  const refreshKey = useSessionRefresh();
   const [loading, setLoading] = useState(false);
 
   // Location filters (always enabled)
@@ -36,7 +38,7 @@ const NotificationSettings = () => {
     fetchGroups();
     fetchUserData();
     fetchNotificationFilters();
-  }, []);
+  }, [refreshKey]);
 
   const fetchGroups = async () => {
     try {

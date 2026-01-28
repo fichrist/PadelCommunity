@@ -6,6 +6,9 @@
 // Authentication
 export * from './useAuth';
 
+// Session refresh after tab inactivity
+export * from './useSessionRefresh';
+
 // Geolocation and distance
 export * from './useGeolocation';
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSessionRefresh } from "@/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ interface UserProfile {
 }
 
 const Chat = () => {
+  const refreshKey = useSessionRefresh();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -80,7 +82,7 @@ const Chat = () => {
       setCurrentUser(user);
     };
     fetchCurrentUser();
-  }, [navigate]);
+  }, [navigate, refreshKey]);
 
   // Fetch conversations
   useEffect(() => {

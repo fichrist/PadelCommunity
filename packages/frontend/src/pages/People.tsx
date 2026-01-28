@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useSessionRefresh } from "@/hooks";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -40,6 +41,7 @@ const People = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showBlockedOnly, setShowBlockedOnly] = useState(false);
   const navigate = useNavigate();
+  const refreshKey = useSessionRefresh();
 
   // Fetch current user and their favorites/blocked users
   useEffect(() => {
@@ -66,7 +68,7 @@ const People = () => {
     };
 
     fetchCurrentUser();
-  }, []);
+  }, [refreshKey]);
 
   // Fetch people from database
   useEffect(() => {
@@ -83,8 +85,14 @@ const People = () => {
 
       if (!profiles) return;
 
+      // Filter out profiles with no name filled in
+      const profilesWithName = profiles.filter((profile: any) => {
+        const hasName = profile.display_name || profile.first_name || profile.last_name;
+        return !!hasName;
+      });
+
       // Format people data
-      const formattedPeople = profiles.map((profile: any) => {
+      const formattedPeople = profilesWithName.map((profile: any) => {
         const name = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
         const clubName = profile.club_name || 'No club';
         const ranking = profile.ranking || null;
@@ -114,7 +122,7 @@ const People = () => {
     };
 
     fetchPeople();
-  }, []);
+  }, [refreshKey]);
 
   // Apply all filters - exclude the logged-in user
   let filteredPeople = people.filter(person => person.id !== currentUserId);

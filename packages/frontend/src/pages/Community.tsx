@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks";
+import { useAuth, useSessionRefresh } from "@/hooks";
 import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
 import { getThoughtsByMatchId, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { createThoughtAddedNotifications } from "@/lib/notifications";
@@ -42,6 +42,7 @@ const Community = () => {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   const { currentUserId } = useAuth();
+  const refreshKey = useSessionRefresh();
 
   // Show registration dialog when navigating from index page with incomplete profile
   useEffect(() => {
@@ -136,7 +137,7 @@ const Community = () => {
     };
 
     fetchMatches();
-  }, [selectedGroupId, selectedMatchId, currentUserId]);
+  }, [selectedGroupId, selectedMatchId, currentUserId, refreshKey]);
 
   // Real-time subscriptions for matches and participants
   useEffect(() => {

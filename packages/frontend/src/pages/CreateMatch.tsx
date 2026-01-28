@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSessionRefresh } from "@/hooks";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ interface FavoriteUser {
 
 const CreateMatch = () => {
   const navigate = useNavigate();
+  const refreshKey = useSessionRefresh();
   const [url, setUrl] = useState("");
   const [withoutUrl, setWithoutUrl] = useState(false);
   const defaultDate = (() => {
@@ -169,7 +171,7 @@ const CreateMatch = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [refreshKey]);
 
   // Search players when search query changes
   useEffect(() => {

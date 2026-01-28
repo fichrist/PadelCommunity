@@ -41,9 +41,15 @@ const App = () => {
       }
     });
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         supabase.auth.startAutoRefresh();
+        // Force an immediate session refresh so the token is valid
+        // before any page tries to fetch data after being inactive.
+        const { error } = await supabase.auth.refreshSession();
+        if (!error) {
+          window.dispatchEvent(new Event('supabase-session-restored'));
+        }
       } else {
         supabase.auth.stopAutoRefresh();
       }

@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSessionRefresh } from "@/hooks";
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
@@ -18,6 +19,7 @@ import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const refreshKey = useSessionRefresh();
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +46,7 @@ const Profile = () => {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [refreshKey]);
 
   const fetchUserData = async () => {
     try {

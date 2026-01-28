@@ -37,6 +37,17 @@ const AppLayout = ({
   const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   useEffect(() => {
+    // Safety timeout: if the auth check takes too long (e.g. Supabase client
+    // hangs trying to refresh an expired token), stop the spinner and treat
+    // the user as logged out so the app remains usable.
+    const authTimeout = setTimeout(() => {
+      if (authLoading) {
+        console.warn('AppLayout: Auth check timed out, continuing as logged out');
+        setIsLoggedIn(false);
+        setAuthLoading(false);
+      }
+    }, 5000);
+
     const checkAuth = async () => {
       try {
         // Use getSession() (localStorage read) instead of getUser() (network call).
@@ -59,6 +70,7 @@ const AppLayout = ({
       } catch (error) {
         console.error('AppLayout: Auth check failed:', error);
       } finally {
+        clearTimeout(authTimeout);
         setAuthLoading(false);
       }
     };
@@ -103,6 +115,7 @@ const AppLayout = ({
     window.addEventListener('profile-updated', handleProfileUpdate);
 
     return () => {
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
       window.removeEventListener('profile-updated', handleProfileUpdate);
     };

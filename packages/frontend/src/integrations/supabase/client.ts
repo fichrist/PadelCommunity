@@ -5,6 +5,38 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Wrap fetch with a 10-second timeout so Supabase requests (including
+// internal token refreshes) can never hang indefinitely. Without this,
+// an unreachable Supabase server (e.g. paused free-tier project, network
+// issue after sleep) causes getSession() to hang and the app to freeze.
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  // If the caller already provided a signal, listen to it as well.
+  if (init?.signal) {
+    init.signal.addEventListener('abort', () => controller.abort());
+  }
+
+  return fetch(input, { ...init, signal: controller.signal })
+    .finally(() => clearTimeout(timeout));
+};
+
+// Supabase v2 uses navigator.locks to coordinate auth sessions across
+// browser tabs. This can cause the entire app to freeze when a lock from
+// a previous context (e.g. before F5 refresh, after sleep) is never
+// released. Every Supabase query internally calls getSession() which
+// waits on this lock, so a stuck lock hangs ALL data fetching silently.
+// This custom lock implementation runs functions directly without
+// cross-tab coordination, which is safe for single-tab usage.
+const navigatorLockNoOp = async (
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<any>
+) => {
+  return await fn();
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -15,5 +47,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'implicit',
-  }
+    lock: navigatorLockNoOp,
+  },
+  global: {
+    fetch: fetchWithTimeout,
+  },
 });
