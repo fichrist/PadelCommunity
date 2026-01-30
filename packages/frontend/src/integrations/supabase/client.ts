@@ -244,7 +244,7 @@ async function directTokenRefresh(): Promise<boolean> {
 
 /**
  * Force-trigger a token refresh.
- * First tries the Supabase client (10s timeout). If that hangs,
+ * First tries the Supabase client (60s timeout). If that hangs,
  * falls back to a direct REST API call that bypasses the client entirely.
  */
 export async function syncRefreshToken(): Promise<boolean> {
@@ -265,12 +265,12 @@ export async function syncRefreshToken(): Promise<boolean> {
 
     console.log('[syncRefreshToken] Token expiring soon, refreshing...');
 
-    // Try the client-based refresh first with a short timeout (10s)
+    // Try the client-based refresh first with a timeout (60s)
     try {
       const result = await Promise.race([
         supabase.auth.refreshSession(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('refreshSession timeout (10s)')), 10000)
+          setTimeout(() => reject(new Error('refreshSession timeout (60s)')), 60000)
         )
       ]) as any;
 
