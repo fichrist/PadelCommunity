@@ -7,7 +7,6 @@ import { format } from "date-fns";
  */
 
 interface NotificationFilter {
-  location_enabled: boolean;
   location_latitude: number | null;
   location_longitude: number | null;
   location_radius_km: number;
@@ -52,24 +51,20 @@ function calculateDistance(
  */
 function matchMeetsFilterCriteria(
   match: Match,
-  filter: NotificationFilter
+  filter: NotificationFilter,
+  options?: { skipGroupFilter?: boolean }
 ): boolean {
   console.log(`\n=== Filter Check for Match ${match.id} ===`);
   console.log("Filter:", filter);
   console.log("Match:", match);
 
-  // Check location filter
-  if (filter.location_enabled) {
+  // Check location filter (enabled when filter has coordinates)
+  const locationFilterActive = filter.location_latitude && filter.location_longitude;
+  if (locationFilterActive) {
     console.log("Location filter is ENABLED");
-    // If location filter is enabled, both match and filter must have coordinates
-    if (
-      !match.latitude ||
-      !match.longitude ||
-      !filter.location_latitude ||
-      !filter.location_longitude
-    ) {
-      // If location filter is enabled but coordinates are missing, exclude the match
-      console.log(`Match ${match.id} excluded: missing coordinates`);
+    // If location filter is active but match has no coordinates, exclude the match
+    if (!match.latitude || !match.longitude) {
+      console.log(`Match ${match.id} excluded: match missing coordinates`);
       return false;
     }
 
@@ -88,13 +83,18 @@ function matchMeetsFilterCriteria(
     }
   }
 
-  // Check group filter (primary filter)
+  // Check group filter (primary filter) - skip if explicitly requested (e.g. restricted matches)
+  if (options?.skipGroupFilter) {
+    console.log("Group filter SKIPPED (restricted match)");
+  }
+
   console.log("Checking group filter:", {
     group_ids: filter.group_ids,
     match_group_ids: match.group_ids,
+    skipped: !!options?.skipGroupFilter,
   });
 
-  if (filter.group_ids && filter.group_ids.length > 0) {
+  if (!options?.skipGroupFilter && filter.group_ids && filter.group_ids.length > 0) {
     console.log("Group filter is ENABLED with groups:", filter.group_ids);
     if (match.group_ids && match.group_ids.length > 0) {
       const hasMatchingGroup = match.group_ids.some((groupId) =>
@@ -137,6 +137,65 @@ async function getBlockedUsersForUser(userId: string): Promise<string[]> {
     console.error("Unexpected error in getBlockedUsersForUser:", error);
     return [];
   }
+}
+
+/**
+ * Get all unique user IDs who have shared a thought on a match.
+ * Used to include thought authors as notification recipients.
+ */
+async function getThoughtAuthorsForMatch(matchId: string): Promise<string[]> {
+  try {
+    const { data: thoughts, error } = await supabase
+      .from("thoughts")
+      .select("user_id")
+      .eq("match_id", matchId);
+
+    if (error) {
+      console.error("Error fetching thought authors:", error);
+      return [];
+    }
+
+    const uniqueAuthors = [...new Set(
+      (thoughts || []).map((t) => t.user_id).filter(Boolean)
+    )];
+
+    return uniqueAuthors;
+  } catch (error) {
+    console.error("Unexpected error in getThoughtAuthorsForMatch:", error);
+    return [];
+  }
+}
+
+/**
+ * Merge participant IDs with thought author IDs for a match,
+ * excluding a specific user (e.g. the action performer).
+ * Returns deduplicated array of user IDs.
+ */
+async function getMatchNotificationRecipients(
+  matchId: string,
+  excludeUserId: string,
+  organizerBlockedUsers: string[]
+): Promise<string[]> {
+  // Get participants
+  const { data: participants } = await supabase
+    .from("match_participants")
+    .select("player_profile_id")
+    .eq("match_id", matchId)
+    .not("player_profile_id", "is", null);
+
+  const participantIds = (participants || [])
+    .map((p) => p.player_profile_id)
+    .filter(Boolean) as string[];
+
+  // Get thought authors
+  const thoughtAuthorIds = await getThoughtAuthorsForMatch(matchId);
+
+  // Merge and deduplicate, excluding the action performer and blocked users
+  const allIds = [...new Set([...participantIds, ...thoughtAuthorIds])];
+
+  return allIds.filter(
+    (id) => id !== excludeUserId && !organizerBlockedUsers.includes(id)
+  );
 }
 
 /**
@@ -246,14 +305,15 @@ export async function createMatchNotifications(
         console.log(`User ${profile.id}: No filter found, creating notification`);
       } else {
         console.log(`User ${profile.id}: Checking filter...`, {
-          location_enabled: filter.location_enabled,
           location_radius_km: filter.location_radius_km,
           group_ids: filter.group_ids,
         });
       }
 
       // Create notification if user has no filter OR match meets the filter criteria
-      if (!filter || matchMeetsFilterCriteria(match, filter)) {
+      // For restricted matches, skip the group filter since the creator explicitly chose the recipients
+      const isRestricted = match.restricted_users && match.restricted_users.length > 0;
+      if (!filter || matchMeetsFilterCriteria(match, filter, { skipGroupFilter: isRestricted })) {
         console.log(`User ${profile.id}: Creating notification`);
 
         const message =
@@ -321,44 +381,22 @@ export async function createParticipantJoinedNotifications(
       .eq("id", matchId)
       .single();
 
-    // Get all current participants in this match (except the one who just joined)
-    const { data: participants, error: participantsError } = await supabase
-      .from("match_participants")
-      .select("player_profile_id")
-      .eq("match_id", matchId)
-      .not("player_profile_id", "is", null);
+    // Get blocked users for the organizer
+    const blockedUsers = match?.created_by
+      ? await getBlockedUsersForUser(match.created_by)
+      : [];
 
-    if (participantsError) {
-      console.error("Error fetching participants:", participantsError);
-      return;
-    }
+    // Get all recipients: participants + thought authors (excluding the joiner and blocked users)
+    const uniqueUserIds = await getMatchNotificationRecipients(
+      matchId,
+      newParticipantId,
+      blockedUsers
+    );
 
-    if (!participants || participants.length === 0) {
-      console.log("No participants found to notify");
-      return;
-    }
-
-    // Filter out the participant who just joined and get unique user IDs
-    let uniqueUserIds = [
-      ...new Set(
-        participants
-          .map((p) => p.player_profile_id)
-          .filter((id) => id && id !== newParticipantId)
-      ),
-    ];
-
-    // Filter out users blocked by the organizer
-    if (match?.created_by) {
-      const blockedUsers = await getBlockedUsersForUser(match.created_by);
-      if (blockedUsers.length > 0) {
-        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
-      }
-    }
-
-    console.log(`Found ${uniqueUserIds.length} participants to notify`);
+    console.log(`Found ${uniqueUserIds.length} recipients to notify (participants + thought authors)`);
 
     if (uniqueUserIds.length === 0) {
-      console.log("No other participants to notify");
+      console.log("No recipients to notify");
       return;
     }
 
@@ -428,44 +466,22 @@ export async function createParticipantLeftNotifications(
       .eq("id", matchId)
       .single();
 
-    // Get all current participants in this match (after the deletion)
-    const { data: participants, error: participantsError } = await supabase
-      .from("match_participants")
-      .select("player_profile_id")
-      .eq("match_id", matchId)
-      .not("player_profile_id", "is", null);
+    // Get blocked users for the organizer
+    const blockedUsers = match?.created_by
+      ? await getBlockedUsersForUser(match.created_by)
+      : [];
 
-    if (participantsError) {
-      console.error("Error fetching participants:", participantsError);
-      return;
-    }
+    // Get all recipients: participants + thought authors (excluding the leaver and blocked users)
+    const uniqueUserIds = await getMatchNotificationRecipients(
+      matchId,
+      removedParticipantId,
+      blockedUsers
+    );
 
-    if (!participants || participants.length === 0) {
-      console.log("No participants found to notify");
-      return;
-    }
-
-    // Filter out the participant who just left and get unique user IDs
-    let uniqueUserIds = [
-      ...new Set(
-        participants
-          .map((p) => p.player_profile_id)
-          .filter((id) => id && id !== removedParticipantId)
-      ),
-    ];
-
-    // Filter out users blocked by the organizer
-    if (match?.created_by) {
-      const blockedUsers = await getBlockedUsersForUser(match.created_by);
-      if (blockedUsers.length > 0) {
-        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
-      }
-    }
-
-    console.log(`Found ${uniqueUserIds.length} participants to notify`);
+    console.log(`Found ${uniqueUserIds.length} recipients to notify (participants + thought authors)`);
 
     if (uniqueUserIds.length === 0) {
-      console.log("No other participants to notify");
+      console.log("No recipients to notify");
       return;
     }
 
@@ -530,7 +546,7 @@ export async function createThoughtReactionNotifications(
   emoji: string
 ): Promise<void> {
   try {
-    console.log(`Creating reaction notification for thought ${thoughtId}`);
+    console.log(`Creating reaction notifications for thought ${thoughtId}`);
 
     // Get the thought to find the author
     const { data: thought, error: thoughtError } = await supabase
@@ -544,12 +560,6 @@ export async function createThoughtReactionNotifications(
       return;
     }
 
-    // Don't notify if the reactor is the author
-    if (thought.user_id === reactorId) {
-      console.log("Reactor is the author, not creating notification");
-      return;
-    }
-
     // Get match details for the notification message
     const { data: match } = await supabase
       .from("matches")
@@ -557,13 +567,23 @@ export async function createThoughtReactionNotifications(
       .eq("id", matchId)
       .single();
 
-    // Don't notify if the thought author is blocked by the organizer
-    if (match?.created_by) {
-      const blockedUsers = await getBlockedUsersForUser(match.created_by);
-      if (blockedUsers.includes(thought.user_id)) {
-        console.log("Thought author is blocked by organizer, not creating notification");
-        return;
-      }
+    // Get blocked users for the organizer
+    const blockedUsers = match?.created_by
+      ? await getBlockedUsersForUser(match.created_by)
+      : [];
+
+    // Get all recipients: participants + thought authors (excluding the reactor and blocked users)
+    const uniqueUserIds = await getMatchNotificationRecipients(
+      matchId,
+      reactorId,
+      blockedUsers
+    );
+
+    console.log(`Found ${uniqueUserIds.length} recipients to notify (participants + thought authors)`);
+
+    if (uniqueUserIds.length === 0) {
+      console.log("No recipients to notify");
+      return;
     }
 
     // Truncate thought content if too long (max 50 characters)
@@ -579,8 +599,9 @@ export async function createThoughtReactionNotifications(
 
     const message = `${reactorName} reacted ${emoji} to: "${truncatedThought}" (${matchInfo})`;
 
-    const notification = {
-      user_id: thought.user_id,
+    // Create notifications for all recipients
+    const notifications = uniqueUserIds.map((userId) => ({
+      user_id: userId,
       type: "thought_reaction",
       title: "New Reaction on Thought",
       message,
@@ -588,18 +609,20 @@ export async function createThoughtReactionNotifications(
       match_id: matchId,
       read: false,
       created_at: new Date().toISOString(),
-    };
+    }));
 
-    console.log("Creating reaction notification:", notification);
+    console.log(`Creating ${notifications.length} reaction notifications`);
 
-    const { error: insertError } = await supabase
-      .from("notifications")
-      .insert(notification);
+    if (notifications.length > 0) {
+      const { error: insertError } = await supabase
+        .from("notifications")
+        .insert(notifications);
 
-    if (insertError) {
-      console.error("Error inserting reaction notification:", insertError);
-    } else {
-      console.log("Successfully created reaction notification");
+      if (insertError) {
+        console.error("Error inserting reaction notifications:", insertError);
+      } else {
+        console.log(`Successfully created ${notifications.length} reaction notifications`);
+      }
     }
   } catch (error) {
     console.error("Error in createThoughtReactionNotifications:", error);
@@ -630,44 +653,22 @@ export async function createThoughtAddedNotifications(
       .eq("id", matchId)
       .single();
 
-    // Get all current participants in this match
-    const { data: participants, error: participantsError } = await supabase
-      .from("match_participants")
-      .select("player_profile_id")
-      .eq("match_id", matchId)
-      .not("player_profile_id", "is", null);
+    // Get blocked users for the organizer
+    const blockedUsers = match?.created_by
+      ? await getBlockedUsersForUser(match.created_by)
+      : [];
 
-    if (participantsError) {
-      console.error("Error fetching participants:", participantsError);
-      return;
-    }
+    // Get all recipients: participants + thought authors (excluding the author and blocked users)
+    const uniqueUserIds = await getMatchNotificationRecipients(
+      matchId,
+      authorId,
+      blockedUsers
+    );
 
-    if (!participants || participants.length === 0) {
-      console.log("No participants found to notify");
-      return;
-    }
-
-    // Filter out the author and get unique user IDs
-    let uniqueUserIds = [
-      ...new Set(
-        participants
-          .map((p) => p.player_profile_id)
-          .filter((id) => id && id !== authorId)
-      ),
-    ];
-
-    // Filter out users blocked by the organizer
-    if (match?.created_by) {
-      const blockedUsers = await getBlockedUsersForUser(match.created_by);
-      if (blockedUsers.length > 0) {
-        uniqueUserIds = uniqueUserIds.filter((id) => !blockedUsers.includes(id));
-      }
-    }
-
-    console.log(`Found ${uniqueUserIds.length} participants to notify`);
+    console.log(`Found ${uniqueUserIds.length} recipients to notify (participants + thought authors)`);
 
     if (uniqueUserIds.length === 0) {
-      console.log("No other participants to notify");
+      console.log("No recipients to notify");
       return;
     }
 

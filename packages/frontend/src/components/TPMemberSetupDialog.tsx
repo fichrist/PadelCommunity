@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient, setFilteredGroupsCache } from "@/integrations/supabase/client";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { updateProfile } from "@/lib/profiles";
 
@@ -207,14 +207,21 @@ const TPMemberSetupDialog = ({ open, onOpenChange, onSaveComplete }: TPMemberSet
       // Save filtered_groups on the profile to match allowed groups
       await updateProfile({ filtered_groups: groupIds });
 
+      // Update the cache for faster loading on community page
+      setFilteredGroupsCache({
+        filtered_groups: groupIds,
+        filtered_address: address.trim(),
+        filtered_latitude: addressCoords.lat,
+        filtered_longitude: addressCoords.lng,
+        filtered_radius_km: 30,
+      });
+
       // Create or update notification match filter with address and 30km radius
-      // Use fresh client to avoid stuck state
-      const client = createFreshSupabaseClient();
-      const { error: filterError } = await (client as any)
+      const notifClient = createFreshSupabaseClient();
+      const { error: filterError } = await (notifClient as any)
         .from('notification_match_filters')
         .upsert({
           user_id: userId,
-          location_enabled: true,
           location_address: address.trim(),
           location_latitude: addressCoords.lat,
           location_longitude: addressCoords.lng,

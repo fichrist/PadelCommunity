@@ -13,16 +13,18 @@ const locks = new Map<string, Promise<any>>();
 
 const inMemoryLock = async (
   name: string,
-  acquireTimeout: number,
+  _acquireTimeout: number,
   fn: () => Promise<any>
 ) => {
+  // Use 60s timeout instead of Supabase's default (which can be too short
+  // for slow token refresh after long inactivity)
+  const acquireTimeout = 60000;
   const startTime = Date.now();
 
   // Wait for any existing lock with timeout
   while (locks.has(name)) {
     if (Date.now() - startTime > acquireTimeout) {
-      console.warn(`inMemoryLock: Timeout waiting for lock "${name}", proceeding anyway`);
-      break;
+      throw new Error(`inMemoryLock: Timeout waiting for lock "${name}" after 60s`);
     }
     await new Promise(resolve => setTimeout(resolve, 50));
   }
@@ -64,23 +66,73 @@ const getAccessTokenFromStorage = (): string | null => {
 };
 
 /**
+ * Read refresh token directly from localStorage.
+ */
+const getRefreshTokenFromStorage = (): string | null => {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return data.refresh_token || null;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Get the localStorage key for the auth token.
+ */
+const getAuthStorageKey = (): string | null => {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+      return key;
+    }
+  }
+  return null;
+};
+
+/**
  * Custom fetch that adds Authorization header from localStorage.
  * This bypasses the potentially hanging getSession() call.
+ * Token refresh is handled by the keepalive timer and visibility handler,
+ * NOT inline here — to avoid adding latency to every data request.
  */
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const token = getAccessTokenFromStorage();
 
   const headers = new Headers(init?.headers);
 
-  // Only add auth header if we have a token and one isn't already set
-  if (token && !headers.has('Authorization')) {
+  // Override Authorization with the user's JWT for data (PostgREST) requests
+  // so that RLS (auth.uid()) works. But SKIP auth endpoint requests —
+  // those need the anon key in Authorization, and overriding with an expired
+  // user JWT would cause token refresh to fail after inactivity.
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+  const isAuthRequest = url.includes('/auth/v1/');
+
+  if (token && !isAuthRequest) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  return fetch(input, {
-    ...init,
-    headers,
-  });
+  // 60s timeout for every Supabase request
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 // Import the supabase client like this:
@@ -98,6 +150,229 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   global: {
     fetch: customFetch,
   },
+});
+
+// =====================================================
+// PROACTIVE TOKEN REFRESH
+// =====================================================
+// Keeps the access token fresh by proactively refreshing
+// every 10 minutes, instead of waiting until it expires.
+// This prevents RLS errors after inactivity.
+
+/**
+ * Read token expiry from localStorage (seconds until expiry).
+ * Returns null if no session found.
+ */
+function getTokenExpirySeconds(): number | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        const expiresAt = data.expires_at || 0;
+        if (!expiresAt) return null;
+        return expiresAt - Math.floor(Date.now() / 1000);
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Direct token refresh via Supabase REST API.
+ * Bypasses the client's internal lock/session machinery entirely.
+ * Used as fallback when supabase.auth.refreshSession() hangs.
+ */
+async function directTokenRefresh(): Promise<boolean> {
+  const refreshToken = getRefreshTokenFromStorage();
+  const storageKey = getAuthStorageKey();
+  if (!refreshToken || !storageKey) {
+    console.error('[directTokenRefresh] No refresh token or storage key found');
+    return false;
+  }
+
+  console.log('[directTokenRefresh] Calling auth API directly...');
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!response.ok) {
+    console.error('[directTokenRefresh] API returned', response.status);
+    return false;
+  }
+
+  const data = await response.json();
+  if (!data.access_token || !data.refresh_token) {
+    console.error('[directTokenRefresh] Invalid response data');
+    return false;
+  }
+
+  // Write the new session directly into localStorage
+  const existing = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  existing.access_token = data.access_token;
+  existing.refresh_token = data.refresh_token;
+  existing.expires_at = data.expires_at;
+  existing.expires_in = data.expires_in;
+  if (data.user) existing.user = data.user;
+  localStorage.setItem(storageKey, JSON.stringify(existing));
+
+  // Sync the main Supabase client's internal state so getSession() and
+  // onAuthStateChange listeners stay consistent with localStorage.
+  try {
+    await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+  } catch (err) {
+    // Non-fatal: localStorage is already updated, data operations will work
+    console.warn('[directTokenRefresh] setSession sync failed, continuing:', err);
+  }
+
+  const newExpiry = getTokenExpirySeconds();
+  console.log(`[directTokenRefresh] Succeeded, new expiry in ${newExpiry}s`);
+  return true;
+}
+
+/**
+ * Force-trigger a token refresh.
+ * First tries the Supabase client (10s timeout). If that hangs,
+ * falls back to a direct REST API call that bypasses the client entirely.
+ */
+export async function syncRefreshToken(): Promise<boolean> {
+  try {
+    const secondsLeft = getTokenExpirySeconds();
+    if (secondsLeft === null) {
+      console.log('[syncRefreshToken] No session found, skipping');
+      return false;
+    }
+
+    console.log(`[syncRefreshToken] Token expires in ${secondsLeft}s`);
+
+    // Only refresh if token expires within 15 minutes (900s)
+    if (secondsLeft > 900) {
+      console.log('[syncRefreshToken] Token still fresh, skipping');
+      return true;
+    }
+
+    console.log('[syncRefreshToken] Token expiring soon, refreshing...');
+
+    // Try the client-based refresh first with a short timeout (10s)
+    try {
+      const result = await Promise.race([
+        supabase.auth.refreshSession(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('refreshSession timeout (10s)')), 10000)
+        )
+      ]) as any;
+
+      if (!result?.error) {
+        const newExpiry = getTokenExpirySeconds();
+        console.log(`[syncRefreshToken] Client refresh succeeded, new expiry in ${newExpiry}s`);
+        return true;
+      }
+      console.warn('[syncRefreshToken] Client refresh failed:', result.error.message);
+    } catch (err: any) {
+      console.warn('[syncRefreshToken] Client refresh timed out:', err.message);
+    }
+
+    // Fallback: direct API call (bypasses client lock/session machinery)
+    console.log('[syncRefreshToken] Falling back to direct API refresh...');
+    return await directTokenRefresh();
+  } catch (err: any) {
+    console.error('[syncRefreshToken] Error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Proactive keepalive: refreshes the token every 10 minutes.
+ * This ensures the token never expires during inactivity.
+ * Multiple attempts are made if refresh fails.
+ */
+let _keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+
+function startTokenKeepalive() {
+  // Don't start multiple intervals
+  if (_keepaliveInterval) return;
+
+  const KEEPALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+  const MAX_RETRY_ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 5000; // 5 seconds between retries
+
+  console.log('[TokenKeepalive] Starting proactive token refresh (every 10 min)');
+
+  _keepaliveInterval = setInterval(async () => {
+    const userId = getUserIdFromStorage();
+    if (!userId) {
+      // No user logged in, skip
+      return;
+    }
+
+    let success = false;
+    for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+      success = await syncRefreshToken();
+      if (success) break;
+
+      console.warn(`[TokenKeepalive] Attempt ${attempt}/${MAX_RETRY_ATTEMPTS} failed`);
+      if (attempt < MAX_RETRY_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
+
+    if (!success) {
+      console.error('[TokenKeepalive] All refresh attempts failed, session may be invalid');
+      window.dispatchEvent(new Event('supabase-session-invalid'));
+    }
+  }, KEEPALIVE_INTERVAL_MS);
+}
+
+function stopTokenKeepalive() {
+  if (_keepaliveInterval) {
+    clearInterval(_keepaliveInterval);
+    _keepaliveInterval = null;
+    console.log('[TokenKeepalive] Stopped');
+  }
+}
+
+// Start keepalive when there's a logged-in user
+if (getUserIdFromStorage()) {
+  startTokenKeepalive();
+}
+
+// Manage keepalive based on auth state
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    startTokenKeepalive();
+  } else if (event === 'SIGNED_OUT') {
+    stopTokenKeepalive();
+  }
+});
+
+// Also refresh proactively when the page becomes visible again after being hidden
+// (e.g., user switches back to the tab after being away)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    const userId = getUserIdFromStorage();
+    if (!userId) return;
+
+    const secondsLeft = getTokenExpirySeconds();
+    console.log(`[visibilitychange] Tab visible again, token expires in ${secondsLeft}s`);
+
+    // If token expires within 15 minutes, refresh immediately
+    if (secondsLeft !== null && secondsLeft < 900) {
+      console.log('[visibilitychange] Token expiring soon, refreshing...');
+      await syncRefreshToken();
+    }
+  }
 });
 
 /**
@@ -136,7 +411,7 @@ export function createFreshSupabaseClient() {
  * Safe wrapper for getSession() that falls back to localStorage if it hangs.
  * Use this instead of supabase.auth.getSession() throughout the app.
  */
-export async function getSessionSafe(timeoutMs = 3000): Promise<{ user: { id: string; email?: string } | null; accessToken: string | null }> {
+export async function getSessionSafe(timeoutMs = 60000): Promise<{ user: { id: string; email?: string } | null; accessToken: string | null }> {
   try {
     const result = await Promise.race([
       supabase.auth.getSession(),
@@ -163,7 +438,7 @@ export async function getSessionSafe(timeoutMs = 3000): Promise<{ user: { id: st
  * Safe wrapper for getUser() that falls back to localStorage if it hangs.
  * Use this instead of supabase.auth.getUser() throughout the app.
  */
-export async function getUserSafe(timeoutMs = 3000): Promise<{ id: string; email?: string } | null> {
+export async function getUserSafe(timeoutMs = 60000): Promise<{ id: string; email?: string } | null> {
   try {
     const result = await Promise.race([
       supabase.auth.getUser(),
@@ -308,3 +583,88 @@ export async function debugAuthState() {
     console.error('debugAuthState: Failed', err);
   }
 }
+
+// =====================================================
+// FILTERED GROUPS CACHE
+// =====================================================
+// Cache filtered_groups in localStorage for faster loading
+// on the community page. Updated when user changes filters.
+
+const FILTERED_GROUPS_CACHE_KEY = 'padel-filtered-groups-cache';
+
+export interface FilteredGroupsCache {
+  userId: string;
+  filtered_groups: string[];
+  filtered_address: string | null;
+  filtered_latitude: number | null;
+  filtered_longitude: number | null;
+  filtered_radius_km: number | null;
+  cachedAt: number; // timestamp
+}
+
+/**
+ * Get cached filtered_groups from localStorage.
+ * Returns null if no cache exists or cache is for a different user.
+ */
+export function getFilteredGroupsFromCache(): FilteredGroupsCache | null {
+  try {
+    const userId = getUserIdFromStorage();
+    if (!userId) return null;
+
+    const raw = localStorage.getItem(FILTERED_GROUPS_CACHE_KEY);
+    if (!raw) return null;
+
+    const cache = JSON.parse(raw) as FilteredGroupsCache;
+
+    // Ensure cache is for the current user
+    if (cache.userId !== userId) {
+      console.log('[FilteredGroupsCache] Cache is for different user, clearing');
+      localStorage.removeItem(FILTERED_GROUPS_CACHE_KEY);
+      return null;
+    }
+
+    return cache;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save filtered_groups to localStorage cache.
+ */
+export function setFilteredGroupsCache(data: Omit<FilteredGroupsCache, 'userId' | 'cachedAt'>): void {
+  try {
+    const userId = getUserIdFromStorage();
+    if (!userId) return;
+
+    const cache: FilteredGroupsCache = {
+      ...data,
+      userId,
+      cachedAt: Date.now(),
+    };
+
+    localStorage.setItem(FILTERED_GROUPS_CACHE_KEY, JSON.stringify(cache));
+    console.log('[FilteredGroupsCache] Cache updated:', cache.filtered_groups?.length, 'groups');
+  } catch (err) {
+    console.error('[FilteredGroupsCache] Failed to save cache:', err);
+  }
+}
+
+/**
+ * Clear the filtered_groups cache (e.g., on logout).
+ */
+export function clearFilteredGroupsCache(): void {
+  try {
+    localStorage.removeItem(FILTERED_GROUPS_CACHE_KEY);
+    console.log('[FilteredGroupsCache] Cache cleared');
+  } catch {
+    // Ignore errors
+  }
+}
+
+// Clear cache on logout
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    clearFilteredGroupsCache();
+  }
+});

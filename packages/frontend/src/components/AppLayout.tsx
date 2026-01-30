@@ -185,21 +185,8 @@ const AppLayout = ({
                     className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
                     onClick={() => navigate('/community')}
                   >
-                    <Users className={`h-9 w-9 ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
+                    <Trophy className={`h-9 w-9 ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
                     {isActive('/community') && (
-                      <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
-                    )}
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
-                    onClick={() => navigate('/events')}
-                  >
-                    <Trophy className={`h-9 w-9 ${isActive('/events') || isActive('/event/') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
-                    {(isActive('/events') || isActive('/event/')) && (
                       <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
                     )}
                   </Button>
@@ -211,7 +198,7 @@ const AppLayout = ({
                     className="p-4 rounded-xl hover:bg-muted/70 relative transition-all hover:scale-110"
                     onClick={() => navigate('/people')}
                   >
-                    <User className={`h-9 w-9 ${isActive('/people') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
+                    <Users className={`h-9 w-9 ${isActive('/people') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`} />
                     {isActive('/people') && (
                       <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full"></div>
                     )}

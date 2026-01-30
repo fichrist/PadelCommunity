@@ -21,6 +21,7 @@ import {
   Smile
 } from "lucide-react";
 import { formatParticipantName } from "@/lib/matchParticipants";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import EditMatchDialog from "@/components/EditMatchDialog";
 import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
@@ -74,44 +75,69 @@ export const MatchCard = ({
 
   // Track reactions per thought from database
   const [thoughtReactions, setThoughtReactions] = useState<Record<string, Record<string, string[]>>>({});
+  // Map user IDs to display names for reaction tooltips
+  const [reactorNames, setReactorNames] = useState<Record<string, string>>({});
 
   // Fetch reactions for all thoughts when component mounts or thoughts change
   useEffect(() => {
+    if (!thoughts || thoughts.length === 0) return;
+
+    const thoughtIds = thoughts.map(t => t.id);
+
     const fetchReactions = async () => {
-      if (!thoughts || thoughts.length === 0) return;
+      try {
+        const client = createFreshSupabaseClient();
+        const { data, error } = await client
+          .from('thought_reactions')
+          .select('*')
+          .in('thought_id', thoughtIds);
 
-      const thoughtIds = thoughts.map(t => t.id);
+        if (error) {
+          console.error('Error fetching reactions:', error);
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from('thought_reactions')
-        .select('*')
-        .in('thought_id', thoughtIds);
+        // Group reactions by thought_id and emoji
+        const reactionsMap: Record<string, Record<string, string[]>> = {};
+        const allUserIds = new Set<string>();
+        data?.forEach(reaction => {
+          if (!reactionsMap[reaction.thought_id]) {
+            reactionsMap[reaction.thought_id] = {};
+          }
+          if (!reactionsMap[reaction.thought_id][reaction.emoji]) {
+            reactionsMap[reaction.thought_id][reaction.emoji] = [];
+          }
+          reactionsMap[reaction.thought_id][reaction.emoji].push(reaction.user_id);
+          allUserIds.add(reaction.user_id);
+        });
 
-      if (error) {
-        console.error('Error fetching reactions:', error);
-        return;
+        setThoughtReactions(reactionsMap);
+
+        // Fetch display names for all reactors
+        if (allUserIds.size > 0) {
+          const { data: profiles } = await client
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .in('id', Array.from(allUserIds));
+
+          if (profiles) {
+            const names: Record<string, string> = {};
+            profiles.forEach(p => {
+              names[p.id] = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown';
+            });
+            setReactorNames(prev => ({ ...prev, ...names }));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching reactions:', err);
       }
-
-      // Group reactions by thought_id and emoji
-      const reactionsMap: Record<string, Record<string, string[]>> = {};
-      data?.forEach(reaction => {
-        if (!reactionsMap[reaction.thought_id]) {
-          reactionsMap[reaction.thought_id] = {};
-        }
-        if (!reactionsMap[reaction.thought_id][reaction.emoji]) {
-          reactionsMap[reaction.thought_id][reaction.emoji] = [];
-        }
-        reactionsMap[reaction.thought_id][reaction.emoji].push(reaction.user_id);
-      });
-
-      setThoughtReactions(reactionsMap);
     };
 
     fetchReactions();
 
-    // Subscribe to real-time updates for reactions
+    // Subscribe to real-time updates for reactions (unique channel per match)
     const subscription = supabase
-      .channel('thought-reactions-changes')
+      .channel(`thought-reactions-${match.id}`)
       .on(
         'postgres_changes',
         {
@@ -128,7 +154,7 @@ export const MatchCard = ({
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [thoughts]);
+  }, [thoughts, match.id]);
 
   const handleSubmitThought = async () => {
     if (!newThought.trim() || !onSubmitThought) return;
@@ -145,14 +171,34 @@ export const MatchCard = ({
   const handleReaction = async (thoughtId: string, emoji: string) => {
     if (!currentUserId) return;
 
-    try {
-      const thoughtReactionsMap = thoughtReactions[thoughtId] || {};
-      const emojiReactions = thoughtReactionsMap[emoji] || [];
-      const hasReacted = emojiReactions.includes(currentUserId);
+    const thoughtReactionsMap = thoughtReactions[thoughtId] || {};
+    const emojiReactions = thoughtReactionsMap[emoji] || [];
+    const hasReacted = emojiReactions.includes(currentUserId);
+
+    // Optimistic UI update
+    setThoughtReactions(prev => {
+      const updated = { ...prev };
+      const thoughtMap = { ...(updated[thoughtId] || {}) };
+      const users = [...(thoughtMap[emoji] || [])];
 
       if (hasReacted) {
-        // Remove this specific emoji reaction
-        const { error } = await supabase
+        thoughtMap[emoji] = users.filter(id => id !== currentUserId);
+        if (thoughtMap[emoji].length === 0) delete thoughtMap[emoji];
+      } else {
+        thoughtMap[emoji] = [...users, currentUserId];
+      }
+
+      updated[thoughtId] = thoughtMap;
+      return updated;
+    });
+
+    setShowEmojiPicker(null);
+
+    try {
+      const client = createFreshSupabaseClient();
+
+      if (hasReacted) {
+        const { error } = await client
           .from('thought_reactions')
           .delete()
           .eq('thought_id', thoughtId)
@@ -164,8 +210,7 @@ export const MatchCard = ({
           toast.error('Failed to remove reaction');
         }
       } else {
-        // Add reaction - insert new emoji (multiple different emojis per user allowed)
-        const { error } = await supabase
+        const { error } = await client
           .from('thought_reactions')
           .insert({
             thought_id: thoughtId,
@@ -180,11 +225,8 @@ export const MatchCard = ({
         }
 
         // Create notification for the thought author
-        // Get user ID synchronously from localStorage (never hangs)
         const userId = getUserIdFromStorage();
         if (userId) {
-          // Use fresh client to avoid stuck state
-          const client = createFreshSupabaseClient();
           const { data: profile } = await client
             .from('profiles')
             .select('first_name, last_name')
@@ -207,8 +249,6 @@ export const MatchCard = ({
     } catch (error) {
       console.error('Error in handleReaction:', error);
     }
-
-    setShowEmojiPicker(null);
   };
 
   const handleEditThought = (thought: any) => {
@@ -496,6 +536,7 @@ export const MatchCard = ({
                       availableEmojis={availableEmojis}
                       onReaction={handleReaction}
                       thoughtReactions={thoughtReactions}
+                      reactorNames={reactorNames}
                     />
                   ))
                 ) : (
@@ -559,6 +600,7 @@ interface ThoughtItemProps {
   availableEmojis: string[];
   onReaction: (thoughtId: string, emoji: string) => void;
   thoughtReactions: Record<string, Record<string, string[]>>;
+  reactorNames: Record<string, string>;
   depth?: number;
 }
 
@@ -577,6 +619,7 @@ const ThoughtItem = ({
   availableEmojis,
   onReaction,
   thoughtReactions,
+  reactorNames,
   depth = 0
 }: ThoughtItemProps) => {
   const isOwnMessage = thought.user_id && currentUserId && thought.user_id === currentUserId;
@@ -644,14 +687,6 @@ const ThoughtItem = ({
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setShowEmojiPicker(showEmojiPicker === thought.id ? null : thought.id)}
-                      className="h-6 w-6 p-0 rounded-full shadow-md"
-                    >
-                      <Smile className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
                       onClick={() => onEdit(thought)}
                       className="h-6 w-6 p-0 rounded-full shadow-md"
                     >
@@ -682,39 +717,53 @@ const ThoughtItem = ({
 
               {/* Emoji picker */}
               {showEmojiPicker === thought.id && (
-                <div className="flex gap-1 mt-1 p-2 bg-background border border-border rounded-lg shadow-lg">
-                  {availableEmojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => onReaction(thought.id, emoji)}
-                      className="text-lg hover:scale-125 transition-transform p-1 rounded hover:bg-muted"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(null)} />
+                  <div className="relative z-50 flex gap-1 mt-1 p-2 bg-background border border-border rounded-lg shadow-lg">
+                    {availableEmojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => onReaction(thought.id, emoji)}
+                        className="text-lg hover:scale-125 transition-transform p-1 rounded hover:bg-muted"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
 
               {/* Display reactions */}
               {Object.keys(reactions).length > 0 && (
                 <div className="flex gap-1 mt-1 flex-wrap">
+                  <TooltipProvider delayDuration={300}>
                   {Object.entries(reactions).map(([emoji, userIds]) => {
                     if (userIds.length === 0) return null;
                     const userReacted = currentUserId && userIds.includes(currentUserId);
+                    const names = userIds.map(id => reactorNames[id] || 'Unknown').join(', ');
                     return (
-                      <button
-                        key={emoji}
-                        onClick={() => onReaction(thought.id, emoji)}
-                        className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
-                          userReacted
-                            ? 'bg-primary/20 border-primary'
-                            : 'bg-muted border-border hover:bg-muted/70'
-                        }`}
-                      >
-                        {emoji} {userIds.length}
-                      </button>
+                      <Tooltip key={emoji}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => !isOwnMessage && onReaction(thought.id, emoji)}
+                            className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+                              isOwnMessage
+                                ? 'bg-muted border-border cursor-default'
+                                : userReacted
+                                  ? 'bg-primary/20 border-primary cursor-pointer'
+                                  : 'bg-muted border-border hover:bg-muted/70 cursor-pointer'
+                            }`}
+                          >
+                            {emoji} {userIds.length}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">{names}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
+                  </TooltipProvider>
                 </div>
               )}
             </>

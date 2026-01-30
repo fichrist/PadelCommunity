@@ -13,18 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth, useSessionRefresh } from "@/hooks";
+import { supabase, createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks";
 import { createParticipantJoinedNotifications, createParticipantLeftNotifications } from "@/lib/notifications";
 import { getThoughtsByMatchId, createMatchThought, updateThought, deleteThought } from "@/lib/thoughts";
 import { createThoughtAddedNotifications } from "@/lib/notifications";
-import { fetchMatchesForGroup, fetchMatchById } from "@/lib/matches";
+import { fetchMatchesForGroup, fetchMatchById, fetchFavoritesMatches } from "@/lib/matches";
 import TPMemberSetupDialog from "@/components/TPMemberSetupDialog";
 
 const Community = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupType, setSelectedGroupType] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,6 @@ const Community = () => {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   const { currentUserId } = useAuth();
-  const refreshKey = useSessionRefresh();
 
   // Show registration dialog when navigating from index page with incomplete profile
   useEffect(() => {
@@ -104,7 +104,11 @@ const Community = () => {
         }
         // Otherwise fetch all matches for the selected group
         else if (selectedGroupId) {
-          enrichedMatches = await fetchMatchesForGroup(selectedGroupId, currentUserId);
+          if (selectedGroupType === 'Favorites') {
+            enrichedMatches = await fetchFavoritesMatches(currentUserId);
+          } else {
+            enrichedMatches = await fetchMatchesForGroup(selectedGroupId, currentUserId);
+          }
         }
 
         if (enrichedMatches.length === 0 && (selectedMatchId || selectedGroupId)) {
@@ -137,7 +141,7 @@ const Community = () => {
     };
 
     fetchMatches();
-  }, [selectedGroupId, selectedMatchId, currentUserId, refreshKey]);
+  }, [selectedGroupId, selectedMatchId, currentUserId]);
 
   // Real-time subscriptions for matches and participants
   useEffect(() => {
@@ -217,103 +221,118 @@ const Community = () => {
     const confirmed = window.confirm("Are you sure you want to delete this match?");
     if (!confirmed) return;
 
-    const { error } = await supabase
-      .from('matches')
-      .delete()
-      .eq('id', matchId);
+    try {
+      const client = createFreshSupabaseClient();
+      const { error } = await client
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
 
-    if (error) {
-      console.error('Error deleting match:', error);
+      if (error) {
+        console.error('Error deleting match:', error);
+        toast.error('Failed to delete match');
+        return;
+      }
+
+      toast.success('Match deleted successfully');
+      setMatches(prev => prev.filter(m => m.id !== matchId));
+    } catch (err) {
+      console.error('Error deleting match:', err);
       toast.error('Failed to delete match');
-      return;
     }
-
-    toast.success('Match deleted successfully');
-    setMatches(matches.filter(m => m.id !== matchId));
   };
 
   const handleAddPlayer = async (matchId: string) => {
-    if (!currentUserId) {
+    const userId = currentUserId || getUserIdFromStorage();
+    if (!userId) {
       toast.error("You must be logged in to add a player");
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("first_name, last_name, playtomic_user_id")
-      .eq("id", currentUserId)
-      .single();
+    try {
+      const client = createFreshSupabaseClient();
 
-    const playerName = profile
-      ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Spot reserved"
-      : "Spot reserved";
+      const { data: profile } = await client
+        .from("profiles")
+        .select("first_name, last_name, playtomic_user_id")
+        .eq("id", userId)
+        .single();
 
-    const { error } = await supabase.from("match_participants").insert({
-      match_id: matchId,
-      name: playerName,
-      playtomic_user_id: profile?.playtomic_user_id || null,
-      player_profile_id: currentUserId,
-      added_by_profile_id: currentUserId,
-      scraped_from_playtomic: false,
-    });
+      const playerName = profile
+        ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Spot reserved"
+        : "Spot reserved";
 
-    if (error) {
-      console.error("Error adding player:", error);
-      toast.error(`Failed to add player: ${error.message}`);
-      return;
-    }
+      const { error } = await client.from("match_participants").insert({
+        match_id: matchId,
+        name: playerName,
+        playtomic_user_id: profile?.playtomic_user_id || null,
+        player_profile_id: userId,
+        added_by_profile_id: userId,
+        scraped_from_playtomic: false,
+      });
 
-    await createParticipantJoinedNotifications(matchId, playerName, currentUserId);
-    toast.success("Player spot reserved!");
+      if (error) {
+        console.error("Error adding player:", error);
+        toast.error(`Failed to add player: ${error.message}`);
+        return;
+      }
 
-    // Refetch the updated match
-    const { data: updatedMatch } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        match_participants (
-          id,
-          playtomic_user_id,
-          added_by_profile_id,
-          player_profile_id,
-          name,
-          team_id,
-          gender,
-          level_value,
-          level_confidence,
-          price,
-          payment_status,
-          registration_date,
-          scraped_from_playtomic,
-          created_at,
-          player_profile:player_profile_id (
-            avatar_url,
-            ranking
+      await createParticipantJoinedNotifications(matchId, playerName, userId);
+      toast.success("Player spot reserved!");
+
+      // Refetch the updated match
+      const { data: updatedMatch } = await client
+        .from('matches')
+        .select(`
+          *,
+          match_participants (
+            id,
+            playtomic_user_id,
+            added_by_profile_id,
+            player_profile_id,
+            name,
+            team_id,
+            gender,
+            level_value,
+            level_confidence,
+            price,
+            payment_status,
+            registration_date,
+            scraped_from_playtomic,
+            created_at,
+            player_profile:player_profile_id (
+              avatar_url,
+              ranking
+            )
           )
-        )
-      `)
-      .eq('id', matchId)
-      .single();
+        `)
+        .eq('id', matchId)
+        .single();
 
-    if (updatedMatch) {
-      const enrichedMatch = {
-        ...updatedMatch,
-        match_participants: updatedMatch.match_participants?.map((p: any) => ({
-          ...p,
-          avatar_url: p.player_profile?.avatar_url || null,
-          profile_ranking: p.player_profile?.ranking || null,
-        })).sort((a: any, b: any) => {
-          const timeA = new Date(a.created_at).getTime();
-          const timeB = new Date(b.created_at).getTime();
-          return timeA - timeB;
-        }) || []
-      };
-      setMatches(matches.map(m => m.id === matchId ? enrichedMatch : m));
+      if (updatedMatch) {
+        const enrichedMatch = {
+          ...updatedMatch,
+          match_participants: updatedMatch.match_participants?.map((p: any) => ({
+            ...p,
+            avatar_url: p.player_profile?.avatar_url || null,
+            profile_ranking: p.player_profile?.ranking || null,
+          })).sort((a: any, b: any) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeA - timeB;
+          }) || []
+        };
+        setMatches(prev => prev.map(m => m.id === matchId ? enrichedMatch : m));
+      }
+    } catch (err) {
+      console.error("Error adding player:", err);
+      toast.error("Failed to add player");
     }
   };
 
   const handleDeleteParticipant = async (participantId: string) => {
-    if (!currentUserId) {
+    const userId = currentUserId || getUserIdFromStorage();
+    if (!userId) {
       toast.error("You must be logged in to delete a participant");
       return;
     }
@@ -331,66 +350,73 @@ const Community = () => {
     const playerName = participant?.name || "A player";
     const playerProfileId = participant?.player_profile_id;
 
-    const { error } = await supabase
-      .from("match_participants")
-      .delete()
-      .eq("id", participantId);
+    try {
+      const client = createFreshSupabaseClient();
 
-    if (error) {
-      console.error("Error deleting participant:", error);
-      toast.error(`Failed to delete participant: ${error.message}`);
-      return;
-    }
+      const { error } = await client
+        .from("match_participants")
+        .delete()
+        .eq("id", participantId);
 
-    if (playerProfileId) {
-      await createParticipantLeftNotifications(match.id, playerName, playerProfileId);
-    }
+      if (error) {
+        console.error("Error deleting participant:", error);
+        toast.error(`Failed to delete participant: ${error.message}`);
+        return;
+      }
 
-    toast.success("Participant removed!");
+      if (playerProfileId) {
+        await createParticipantLeftNotifications(match.id, playerName, playerProfileId);
+      }
 
-    // Refetch the updated match
-    const { data: updatedMatch } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        match_participants (
-          id,
-          playtomic_user_id,
-          added_by_profile_id,
-          player_profile_id,
-          name,
-          team_id,
-          gender,
-          level_value,
-          level_confidence,
-          price,
-          payment_status,
-          registration_date,
-          scraped_from_playtomic,
-          created_at,
-          player_profile:player_profile_id (
-            avatar_url,
-            ranking
+      toast.success("Participant removed!");
+
+      // Refetch the updated match
+      const { data: updatedMatch } = await client
+        .from('matches')
+        .select(`
+          *,
+          match_participants (
+            id,
+            playtomic_user_id,
+            added_by_profile_id,
+            player_profile_id,
+            name,
+            team_id,
+            gender,
+            level_value,
+            level_confidence,
+            price,
+            payment_status,
+            registration_date,
+            scraped_from_playtomic,
+            created_at,
+            player_profile:player_profile_id (
+              avatar_url,
+              ranking
+            )
           )
-        )
-      `)
-      .eq('id', match.id)
-      .single();
+        `)
+        .eq('id', match.id)
+        .single();
 
-    if (updatedMatch) {
-      const enrichedMatch = {
-        ...updatedMatch,
-        match_participants: updatedMatch.match_participants?.map((p: any) => ({
-          ...p,
-          avatar_url: p.player_profile?.avatar_url || null,
-          profile_ranking: p.player_profile?.ranking || null,
-        })).sort((a: any, b: any) => {
-          const timeA = new Date(a.created_at).getTime();
-          const timeB = new Date(b.created_at).getTime();
-          return timeA - timeB;
-        }) || []
-      };
-      setMatches(matches.map(m => m.id === match.id ? enrichedMatch : m));
+      if (updatedMatch) {
+        const enrichedMatch = {
+          ...updatedMatch,
+          match_participants: updatedMatch.match_participants?.map((p: any) => ({
+            ...p,
+            avatar_url: p.player_profile?.avatar_url || null,
+            profile_ranking: p.player_profile?.ranking || null,
+          })).sort((a: any, b: any) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeA - timeB;
+          }) || []
+        };
+        setMatches(prev => prev.map(m => m.id === match.id ? enrichedMatch : m));
+      }
+    } catch (err) {
+      console.error("Error deleting participant:", err);
+      toast.error("Failed to delete participant");
     }
   };
 
@@ -407,18 +433,24 @@ const Community = () => {
 
     if (result.success) {
       // Create notifications for thoughts
-      if (currentUserId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, last_name")
-          .eq("id", currentUserId)
-          .single();
+      const userId = currentUserId || getUserIdFromStorage();
+      if (userId) {
+        try {
+          const client = createFreshSupabaseClient();
+          const { data: profile } = await client
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("id", userId)
+            .single();
 
-        const authorName = profile
-          ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Someone"
-          : "Someone";
+          const authorName = profile
+            ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Someone"
+            : "Someone";
 
-        await createThoughtAddedNotifications(matchId, authorName, currentUserId, content);
+          await createThoughtAddedNotifications(matchId, authorName, userId, content);
+        } catch (err) {
+          console.error("Error creating thought notifications:", err);
+        }
       }
 
       toast.success("Thought shared successfully!");
@@ -470,7 +502,9 @@ const Community = () => {
       const match = await fetchMatchById(selectedMatchId, currentUserId);
       setMatches(match ? [match] : []);
     } else if (selectedGroupId) {
-      const enrichedMatches = await fetchMatchesForGroup(selectedGroupId, currentUserId);
+      const enrichedMatches = selectedGroupType === 'Favorites'
+        ? await fetchFavoritesMatches(currentUserId)
+        : await fetchMatchesForGroup(selectedGroupId, currentUserId);
       setMatches(enrichedMatches);
     }
   };
@@ -481,10 +515,11 @@ const Community = () => {
     setSelectedMatchId(matchId);
   };
 
-  const handleGroupSelect = (groupId: string | null) => {
+  const handleGroupSelect = (groupId: string | null, groupType?: string) => {
     // Clear match selection and set the group
     setSelectedMatchId(null);
     setSelectedGroupId(groupId);
+    setSelectedGroupType(groupType || null);
   };
 
   return (
@@ -553,6 +588,7 @@ const Community = () => {
           />
           <MyMatchesList
             currentUserId={currentUserId}
+            selectedMatchId={selectedMatchId}
             onMatchClick={handleMyMatchClick}
           />
         </div>

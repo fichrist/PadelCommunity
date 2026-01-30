@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Trophy, Filter, MapPin } from "lucide-react";
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { Users, Trophy, Heart, Filter, MapPin } from "lucide-react";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient, getFilteredGroupsFromCache, setFilteredGroupsCache } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,14 +17,14 @@ interface Group {
   id: string;
   name: string;
   description: string | null;
-  group_type: 'General' | 'Ranked';
+  group_type: 'General' | 'Ranked' | 'Favorites';
   ranking_level: string | null;
   created_at: string;
   member_count?: number;
 }
 
 interface GroupsListProps {
-  onGroupSelect: (groupId: string) => void;
+  onGroupSelect: (groupId: string, groupType: string) => void;
   selectedGroupId: string | null;
 }
 
@@ -39,9 +39,33 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
   const [memberProfiles, setMemberProfiles] = useState<Array<{ id: string; allowed_groups: string[]; latitude: number | null; longitude: number | null }>>([]);
 
   useEffect(() => {
+    // Load from cache immediately for instant display
+    const cache = getFilteredGroupsFromCache();
+    if (cache) {
+      console.log('[GroupsList] Using cached filters:', cache.filtered_groups?.length, 'groups');
+      if (cache.filtered_groups && cache.filtered_groups.length > 0) {
+        setSelectedGroupFilters(cache.filtered_groups);
+      }
+      if (cache.filtered_address) {
+        setAddressFilter(cache.filtered_address);
+        if (cache.filtered_latitude && cache.filtered_longitude) {
+          setAddressCoords({
+            lat: cache.filtered_latitude,
+            lng: cache.filtered_longitude
+          });
+        }
+      }
+      if (cache.filtered_radius_km) {
+        setRadiusFilter(cache.filtered_radius_km.toString());
+      }
+    }
+
     const fetchGroups = async () => {
       try {
-        const { data, error } = await (supabase as any)
+        // Use fresh client for all queries to avoid stuck state after inactivity
+        const freshClient = createFreshSupabaseClient();
+
+        const { data, error } = await (freshClient as any)
           .from('groups')
           .select('*')
           .order('created_at', { ascending: true });
@@ -49,7 +73,7 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         if (error) throw error;
 
         // Fetch all profiles with location and allowed_groups data
-        const { data: profiles, error: profilesError } = await supabase
+        const { data: profiles, error: profilesError } = await freshClient
           .from('profiles')
           .select('id, allowed_groups, latitude, longitude');
 
@@ -59,19 +83,18 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
           setMemberProfiles(profiles || []);
         }
 
-        // Load current user's saved filters
+        // Load current user's saved filters from server (validates cache)
         // Get user ID synchronously from localStorage (never hangs)
         const userId = getUserIdFromStorage();
         if (userId) {
-          // Use fresh client to avoid stuck state
-          const client = createFreshSupabaseClient();
-          const { data: profile } = await client
+          const { data: profile } = await freshClient
             .from('profiles')
             .select('filtered_groups, filtered_address, filtered_latitude, filtered_longitude, filtered_radius_km')
             .eq('id', userId)
             .single();
 
           if (profile) {
+            // Update state with server data
             if (profile.filtered_groups && profile.filtered_groups.length > 0) {
               setSelectedGroupFilters(profile.filtered_groups);
             }
@@ -87,17 +110,29 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
             if (profile.filtered_radius_km) {
               setRadiusFilter(profile.filtered_radius_km.toString());
             }
+
+            // Update cache with server data
+            setFilteredGroupsCache({
+              filtered_groups: profile.filtered_groups || [],
+              filtered_address: profile.filtered_address,
+              filtered_latitude: profile.filtered_latitude,
+              filtered_longitude: profile.filtered_longitude,
+              filtered_radius_km: profile.filtered_radius_km,
+            });
           }
         }
 
-        // Fetch member count for each group
+        // Fetch member count for each group (use freshClient to avoid stuck state)
         const groupsWithMemberCount = await Promise.all(
           (data || []).map(async (group: Group) => {
             let count = 0;
 
-            if (group.group_type === 'General') {
+            if (group.group_type === 'Favorites') {
+              // Favorites group has no member count - it's per-user
+              count = 0;
+            } else if (group.group_type === 'General') {
               // For General groups, count all profiles
-              const { count: totalCount, error: countError } = await supabase
+              const { count: totalCount, error: countError } = await freshClient
                 .from('profiles')
                 .select('*', { count: 'exact', head: true });
 
@@ -108,7 +143,7 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
               }
             } else {
               // For Ranked groups, count profiles with this group_id in allowed_groups
-              const { count: rankedCount, error: countError } = await supabase
+              const { count: rankedCount, error: countError } = await freshClient
                 .from('profiles')
                 .select('*', { count: 'exact', head: true })
                 .contains('allowed_groups', [group.id]);
@@ -124,11 +159,12 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
           })
         );
 
-        // Sort groups: General first, then Ranked by ranking level
+        // Sort groups: General first, then Favorites, then Ranked by ranking level
+        const typeOrder = { 'General': 0, 'Favorites': 1, 'Ranked': 2 };
         const sortedGroups = groupsWithMemberCount.sort((a: Group, b: Group) => {
-          // General groups come first
-          if (a.group_type === 'General' && b.group_type !== 'General') return -1;
-          if (a.group_type !== 'General' && b.group_type === 'General') return 1;
+          const orderA = typeOrder[a.group_type] ?? 99;
+          const orderB = typeOrder[b.group_type] ?? 99;
+          if (orderA !== orderB) return orderA - orderB;
 
           // Both are ranked groups, sort by ranking level
           if (a.group_type === 'Ranked' && b.group_type === 'Ranked') {
@@ -147,7 +183,7 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
 
         // Ensure General group is always in selected filters if profile didn't have filters set
         if (userId) {
-          const { data: profile } = await client
+          const { data: profile } = await freshClient
             .from('profiles')
             .select('filtered_groups')
             .eq('id', userId)
@@ -200,6 +236,8 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
   const filteredGroups = useMemo(() => {
     return groups
       .filter(group => {
+        // General and Favorites groups are always visible
+        if (group.group_type === 'General' || group.group_type === 'Favorites') return true;
         // Only show groups that are in the user's filtered_groups
         if (selectedGroupFilters.length === 0) {
           return true; // If no filters set, show all groups
@@ -208,6 +246,11 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
       })
       .map(group => {
         let filteredMemberCount = group.member_count || 0;
+
+        // Favorites group doesn't have member counts
+        if (group.group_type === 'Favorites') {
+          return { ...group, member_count: 0 };
+        }
 
         // Apply filters to count members
         if (addressCoords || selectedGroupFilters.length > 0) {
@@ -298,12 +341,29 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         filtered_groups: selectedGroupFilters,
       };
 
+      // Build cache data
+      const cacheData = {
+        filtered_groups: selectedGroupFilters,
+        filtered_address: null as string | null,
+        filtered_latitude: null as number | null,
+        filtered_longitude: null as number | null,
+        filtered_radius_km: null as number | null,
+      };
+
       if (addressFilter && addressCoords) {
         updates.filtered_address = addressFilter;
         updates.filtered_latitude = addressCoords.lat;
         updates.filtered_longitude = addressCoords.lng;
         updates.filtered_radius_km = parseInt(radiusFilter);
+
+        cacheData.filtered_address = addressFilter;
+        cacheData.filtered_latitude = addressCoords.lat;
+        cacheData.filtered_longitude = addressCoords.lng;
+        cacheData.filtered_radius_km = parseInt(radiusFilter);
       }
+
+      // Update cache immediately for instant feedback
+      setFilteredGroupsCache(cacheData);
 
       // Use fresh client to avoid stuck state
       const client = createFreshSupabaseClient();
@@ -416,20 +476,18 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Groups</Label>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                      {groups.map((group) => (
+                      {groups.filter(g => g.group_type === 'Ranked').map((group) => (
                         <div key={group.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`group-filter-${group.id}`}
                             checked={selectedGroupFilters.includes(group.id)}
                             onCheckedChange={() => handleToggleGroupFilter(group.id)}
-                            disabled={group.group_type === 'General'}
                           />
                           <label
                             htmlFor={`group-filter-${group.id}`}
-                            className={`text-sm flex-1 ${group.group_type === 'General' ? 'cursor-default text-muted-foreground' : 'cursor-pointer'}`}
+                            className="text-sm flex-1 cursor-pointer"
                           >
                             {group.name}
-                            {group.group_type === 'General' && <span className="ml-1 text-xs">(mandatory)</span>}
                           </label>
                         </div>
                       ))}
@@ -455,7 +513,7 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
           {filteredGroups.map((group) => (
             <div
               key={group.id}
-              onClick={() => onGroupSelect(group.id)}
+              onClick={() => onGroupSelect(group.id, group.group_type)}
               className={`p-4 rounded-lg border transition-colors cursor-pointer ${
                 selectedGroupId === group.id
                   ? 'border-primary bg-primary/10'
@@ -466,6 +524,8 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
                 <div className="flex items-center gap-2">
                   {group.group_type === 'General' ? (
                     <Users className="h-5 w-5 text-primary flex-shrink-0" />
+                  ) : group.group_type === 'Favorites' ? (
+                    <Heart className="h-5 w-5 text-primary flex-shrink-0" />
                   ) : (
                     <Trophy className="h-5 w-5 text-primary flex-shrink-0" />
                   )}
@@ -476,9 +536,11 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
                     {group.description}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  {group.member_count === 1 ? '1 member' : `${group.member_count || 0} members`}
-                </p>
+                {group.group_type !== 'Favorites' && (
+                  <p className="text-xs text-muted-foreground">
+                    {group.member_count === 1 ? '1 member' : `${group.member_count || 0} members`}
+                  </p>
+                )}
               </div>
             </div>
           ))}

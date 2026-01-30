@@ -18,7 +18,7 @@ export interface Event {
   longitude: number | null;
   max_participants: number;
   price: number;
-  organizer_id: string;
+  user_id: string;
   created_at: string;
   tags?: string[];
   intention?: string;
@@ -113,11 +113,6 @@ export const useEvents = (): UseEventsReturn => {
         .from('events')
         .select(`
           *,
-          profiles:organizer_id (
-            first_name,
-            last_name,
-            avatar_url
-          ),
           enrollments (
             id,
             user_id,
@@ -413,13 +408,6 @@ export const useEvents = (): UseEventsReturn => {
       userIdRef.current = session?.user?.id ?? null;
     });
 
-    // Re-fetch data when the session is restored after a token refresh.
-    const handleSessionRestored = () => {
-      console.log('useEvents: Session restored, refetching data');
-      fetchEvents();
-    };
-    window.addEventListener('supabase-session-restored', handleSessionRestored);
-
     fetchEvents();
 
     // Set up realtime subscriptions for matches and participants
@@ -542,7 +530,6 @@ export const useEvents = (): UseEventsReturn => {
     return () => {
       console.log('useEvents: Cleaning up subscriptions');
       authSub.unsubscribe();
-      window.removeEventListener('supabase-session-restored', handleSessionRestored);
       supabase.removeChannel(matchesChannel);
     };
   }, [fetchEvents, refetchSingleMatch]);
@@ -590,11 +577,6 @@ export const useEvent = (eventId: string | null) => {
           .from('events')
           .select(`
             *,
-            profiles:organizer_id (
-              first_name,
-              last_name,
-              avatar_url
-            ),
             enrollments (
               id,
               user_id,

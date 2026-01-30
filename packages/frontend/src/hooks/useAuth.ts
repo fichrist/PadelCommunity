@@ -91,8 +91,17 @@ export const useAuth = (): UseAuthReturn => {
           setCurrentUserId(session.user.id);
           await fetchUserProfile(session.user.id);
         } else {
-          setCurrentUserId(null);
-          setCurrentUser(null);
+          // Before clearing user state, check if there's still a valid token
+          // in localStorage. After inactivity, Supabase may fire spurious
+          // SIGNED_OUT events even though the token is still refreshable.
+          const fallbackId = getUserIdFromStorage();
+          if (fallbackId) {
+            console.log('[useAuth] Ignoring SIGNED_OUT — token still in localStorage');
+            setCurrentUserId(fallbackId);
+          } else {
+            setCurrentUserId(null);
+            setCurrentUser(null);
+          }
         }
         setIsLoading(false);
       }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSessionRefresh } from "@/hooks";
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,42 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Loader2, Search, Ban, UserPlus } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Ban, UserPlus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { processMatchParticipants } from "@/lib/matchParticipants";
 import { createMatchNotifications } from "@/lib/notifications";
-
-// Function to fetch match details from Playtomic URL
-const fetchPlaytomicMatchDetails = async (url: string) => {
-  try {
-    const azureFunctionUrl = import.meta.env.VITE_AZURE_FUNCTION_URL || 'http://localhost:7071';
-    console.log('Calling Azure Function at:', `${azureFunctionUrl}/api/y`);
-    console.log('Scraping URL:', url);
-
-    const response = await fetch(`${azureFunctionUrl}/api/scrapePlaytomic`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
-    });
-
-    console.log('Azure Function response status:', response.status, response.statusText);
-    const data = await response.json();
-    console.log('Azure Function response data:', data);
-
-    if (!response.ok || !data.success) {
-      console.warn('Could not fetch match details from URL:', data.error);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error fetching match details:', error);
-    return null;
-  }
-};
+import { fetchPlaytomicMatchDetails } from "@/lib/playtomic";
 
 interface FavoriteUser {
   id: string;
@@ -56,7 +27,6 @@ interface FavoriteUser {
 
 const CreateMatch = () => {
   const navigate = useNavigate();
-  const refreshKey = useSessionRefresh();
   const [url, setUrl] = useState("");
   const [withoutUrl, setWithoutUrl] = useState(false);
   const defaultDate = (() => {
@@ -120,21 +90,37 @@ const CreateMatch = () => {
 
         // Fetch allowed group details
         if (profile?.allowed_groups && profile.allowed_groups.length > 0) {
-          const { data: groups } = await (supabase as any)
+          const { data: groups } = await (client as any)
             .from('groups')
             .select('id, name, group_type, ranking_level')
             .in('id', profile.allowed_groups);
 
           if (groups) {
-            setAllowedGroups(groups);
+            // Filter out Favorites (automatic based on restricted_users, not selectable)
+            const nonFavorites = groups.filter((g: any) => g.group_type !== 'Favorites');
+            // Sort: General first, then Ranked by numeric value
+            const sorted = nonFavorites.sort((a: any, b: any) => {
+              if (a.group_type === 'General' && b.group_type !== 'General') return -1;
+              if (a.group_type !== 'General' && b.group_type === 'General') return 1;
+              if (a.group_type === 'Ranked' && b.group_type === 'Ranked') {
+                const getNum = (level: string | null) => {
+                  if (!level) return 0;
+                  const m = level.match(/\d+/);
+                  return m ? parseInt(m[0]) : 0;
+                };
+                return getNum(a.ranking_level) - getNum(b.ranking_level);
+              }
+              return 0;
+            });
+            setAllowedGroups(sorted);
             // All selected by default
-            setSelectedGroups(groups.map((g: any) => g.id));
+            setSelectedGroups(sorted.map((g: any) => g.id));
           }
         }
 
         // Fetch favorite users details
         if (profile?.favorite_users && profile.favorite_users.length > 0) {
-          const { data: favorites } = await supabase
+          const { data: favorites } = await client
             .from('profiles')
             .select('id, first_name, last_name, display_name, avatar_url, club_name')
             .in('id', profile.favorite_users);
@@ -155,7 +141,7 @@ const CreateMatch = () => {
         // Fetch blocked users details
         if (profile?.blocked_users && profile.blocked_users.length > 0) {
           setBlockedUserIds(profile.blocked_users);
-          const { data: blocked } = await supabase
+          const { data: blocked } = await client
             .from('profiles')
             .select('id, first_name, last_name, display_name, avatar_url, club_name')
             .in('id', profile.blocked_users);
@@ -174,7 +160,7 @@ const CreateMatch = () => {
     };
 
     fetchUserData();
-  }, [refreshKey]);
+  }, []);
 
   // Search players when search query changes
   useEffect(() => {
@@ -300,7 +286,7 @@ const CreateMatch = () => {
         return;
       }
 
-      // Use fresh client to avoid stuck state
+      // Use fresh client (customFetch auto-refreshes token if needed)
       const client = createFreshSupabaseClient();
 
       // Save new favorites to profile if any were added
@@ -314,14 +300,14 @@ const CreateMatch = () => {
         const existingFavorites = currentProfile?.favorite_users || [];
         const updatedFavorites = [...new Set([...existingFavorites, ...newFavoriteIds])];
 
-        await client
+        await (client as any)
           .from('profiles')
           .update({ favorite_users: updatedFavorites })
           .eq('id', userId);
       }
 
-      // Use user-selected groups
-      const groupIds = [...selectedGroups];
+      // Use user-selected groups (empty when publishing to favorites only)
+      const groupIds = publishToFavoritesOnly ? [] : [...selectedGroups];
 
       // Prepare restricted_users array if publish to favorites only
       let restrictedUsers: string[] | null = null;
@@ -332,7 +318,7 @@ const CreateMatch = () => {
 
       if (withoutUrl) {
         // Create match without URL - no scraping
-        const { data: matchData, error: insertError } = await supabase
+        const { data: matchData, error: insertError } = await (client as any)
           .from('matches')
           .insert({
             url: null,
@@ -355,7 +341,7 @@ const CreateMatch = () => {
         if (insertError) throw insertError;
 
         // Add the creator as the first participant in team 0
-        await supabase.from('match_participants').insert({
+        await (client as any).from('match_participants').insert({
           match_id: matchData.id,
           name: userName,
           playtomic_user_id: userPlaytomicId,
@@ -384,13 +370,13 @@ const CreateMatch = () => {
         navigate('/community', {
           state: {
             refetchData: true,
-            selectGroupId: groupIds.length > 0 ? groupIds[0] : null
+            selectMatchId: matchData.id,
           }
         });
       } else {
         // Create match with URL - existing scraping flow
         // Check if a match with this URL already exists
-        const { data: existingMatches, error: checkError } = await supabase
+        const { data: existingMatches, error: checkError } = await (client as any)
           .from('matches')
           .select('id, url')
           .eq('url', url.trim());
@@ -429,7 +415,7 @@ const CreateMatch = () => {
         console.log('Fetched match details:', matchDetails);
 
         // Now create the match with all the scraped data
-        const { data: matchData, error: insertError } = await supabase
+        const { data: matchData, error: insertError } = await (client as any)
           .from('matches')
           .insert({
             url: url.trim(),
@@ -494,7 +480,7 @@ const CreateMatch = () => {
             scraped_from_playtomic: true
           }));
 
-          const { data: insertedParticipants, error: participantsError } = await supabase
+          const { data: insertedParticipants, error: participantsError } = await (client as any)
             .from('match_participants')
             .insert(participantsToInsert)
             .select();
@@ -513,11 +499,11 @@ const CreateMatch = () => {
           }
         }
 
-        // Navigate to community page and trigger a refetch, with the first group ID to auto-select
+        // Navigate to community page and show the newly created match
         navigate('/community', {
           state: {
             refetchData: true,
-            selectGroupId: groupIds.length > 0 ? groupIds[0] : null
+            selectMatchId: matchData.id,
           }
         });
       }
@@ -636,39 +622,6 @@ const CreateMatch = () => {
                 </p>
               </div>
 
-              {/* Group Selection */}
-              {allowedGroups.length > 0 && (
-                <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
-                  <Label className="text-sm font-medium">Publish to groups:</Label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {allowedGroups.map((group) => (
-                      <div key={group.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50">
-                        <Checkbox
-                          id={`group-${group.id}`}
-                          checked={selectedGroups.includes(group.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedGroups(prev => [...prev, group.id]);
-                            } else {
-                              setSelectedGroups(prev => prev.filter(id => id !== group.id));
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`group-${group.id}`}
-                          className="flex-1 cursor-pointer text-sm"
-                        >
-                          {group.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {selectedGroups.length === 0 && (
-                    <p className="text-sm text-destructive">Please select at least one group</p>
-                  )}
-                </div>
-              )}
-
               {/* Publish to Favorites Only */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -681,7 +634,12 @@ const CreateMatch = () => {
                   <Switch
                     id="favorites-toggle"
                     checked={publishToFavoritesOnly}
-                    onCheckedChange={setPublishToFavoritesOnly}
+                    onCheckedChange={(checked) => {
+                      setPublishToFavoritesOnly(checked);
+                      if (checked) {
+                        setSelectedFavorites(favoriteUsers.map(f => f.id));
+                      }
+                    }}
                   />
                 </div>
 
@@ -830,6 +788,41 @@ const CreateMatch = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Group Selection - only when not publishing to favorites only */}
+              {!publishToFavoritesOnly && allowedGroups.length > 0 && (
+                <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+                  <Label className="text-sm font-medium">Publish to groups:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {allowedGroups.map((group) => (
+                      <Badge
+                        key={group.id}
+                        variant={selectedGroups.includes(group.id) ? "default" : "outline"}
+                        className="cursor-pointer text-sm px-3 py-1.5"
+                        onClick={() => {
+                          if (selectedGroups.includes(group.id)) {
+                            if (selectedGroups.length === 1) {
+                              toast.error("Match must belong to at least one group");
+                              return;
+                            }
+                            setSelectedGroups(prev => prev.filter(id => id !== group.id));
+                          } else {
+                            setSelectedGroups(prev => [...prev, group.id]);
+                          }
+                        }}
+                      >
+                        {group.name}
+                        {selectedGroups.includes(group.id) && (
+                          <X className="h-3 w-3 ml-1" />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  {selectedGroups.length === 0 && (
+                    <p className="text-sm text-destructive">Please select at least one group</p>
+                  )}
                 </div>
               )}
 

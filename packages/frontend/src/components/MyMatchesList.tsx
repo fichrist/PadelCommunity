@@ -3,30 +3,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, Users, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
 interface MyMatchesListProps {
   currentUserId: string | null;
+  selectedMatchId: string | null;
   onMatchClick: (matchId: string) => void;
 }
 
-const MyMatchesList = ({ currentUserId, onMatchClick }: MyMatchesListProps) => {
+const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatchesListProps) => {
   const [myMatches, setMyMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
     const fetchMyMatches = async () => {
-      if (!currentUserId) {
+      // Use currentUserId from auth hook, fall back to localStorage
+      const userId = currentUserId || getUserIdFromStorage();
+      if (!userId) {
         setMyMatches([]);
         return;
       }
 
       setIsLoading(true);
       try {
-        // Build query based on showPast toggle
-        let query = supabase
+        // Use fresh client to avoid stuck state after inactivity
+        const client = createFreshSupabaseClient();
+        let query = (client as any)
           .from('matches')
           .select(`
             id,
@@ -63,9 +67,9 @@ const MyMatchesList = ({ currentUserId, onMatchClick }: MyMatchesListProps) => {
 
         // Filter to only include matches where user is involved as organizer or participant
         const userMatches = (data || []).filter((match: any) => {
-          const isOrganizer = match.created_by === currentUserId;
+          const isOrganizer = match.created_by === userId;
           const isParticipant = match.match_participants?.some(
-            (p: any) => p.player_profile_id === currentUserId || p.added_by_profile_id === currentUserId
+            (p: any) => p.player_profile_id === userId || p.added_by_profile_id === userId
           );
           return isOrganizer || isParticipant;
         });
@@ -150,7 +154,11 @@ const MyMatchesList = ({ currentUserId, onMatchClick }: MyMatchesListProps) => {
               <div
                 key={match.id}
                 onClick={() => onMatchClick(match.id)}
-                className="p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer space-y-1"
+                className={`p-3 rounded-lg border transition-colors cursor-pointer space-y-1 ${
+                  selectedMatchId === match.id
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                }`}
               >
                 {/* Time */}
                 {match.match_date && (

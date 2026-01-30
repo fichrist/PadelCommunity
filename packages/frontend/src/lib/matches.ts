@@ -4,7 +4,7 @@
 // Business logic for working with matches
 // =====================================================
 
-import { supabase } from "@/integrations/supabase/client";
+import { createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface MatchParticipant {
   id: string;
@@ -48,8 +48,11 @@ export async function fetchMatchesForGroup(
   currentUserId: string | null
 ): Promise<Match[]> {
   try {
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
     // First fetch the matches
-    const { data: matchesData, error: matchesError } = await supabase
+    const { data: matchesData, error: matchesError } = await client
       .from('matches')
       .select(`
         *,
@@ -98,6 +101,62 @@ export async function fetchMatchesForGroup(
 }
 
 /**
+ * Fetch matches for the Favorites group - matches where currentUserId is in restricted_users
+ */
+export async function fetchFavoritesMatches(
+  currentUserId: string | null
+): Promise<Match[]> {
+  if (!currentUserId) return [];
+
+  try {
+    const client = createFreshSupabaseClient();
+
+    const { data: matchesData, error: matchesError } = await client
+      .from('matches')
+      .select(`
+        *,
+        match_participants (
+          id,
+          playtomic_user_id,
+          added_by_profile_id,
+          player_profile_id,
+          name,
+          team_id,
+          gender,
+          level_value,
+          level_confidence,
+          price,
+          payment_status,
+          registration_date,
+          scraped_from_playtomic,
+          created_at,
+          player_profile:player_profile_id (
+            avatar_url,
+            ranking
+          )
+        )
+      `)
+      .contains('restricted_users', [currentUserId])
+      .order('match_date', { ascending: true });
+
+    if (matchesError) {
+      console.error('Error fetching favorites matches:', matchesError);
+      return [];
+    }
+
+    if (!matchesData || matchesData.length === 0) {
+      return [];
+    }
+
+    const filteredMatches = await filterMatchesByBlockedUsers(matchesData, currentUserId);
+    return enrichMatches(filteredMatches);
+  } catch (error) {
+    console.error('Error in fetchFavoritesMatches:', error);
+    return [];
+  }
+}
+
+/**
  * Fetch a single match by ID, filtering if organizer blocked the current user
  */
 export async function fetchMatchById(
@@ -105,7 +164,10 @@ export async function fetchMatchById(
   currentUserId: string | null
 ): Promise<Match | null> {
   try {
-    const { data: matchData, error: matchError } = await supabase
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
+    const { data: matchData, error: matchError } = await client
       .from('matches')
       .select(`
         *,
@@ -175,8 +237,11 @@ async function filterMatchesByBlockedUsers(
     return matches;
   }
 
+  // Use fresh client to avoid stuck state after inactivity
+  const client = createFreshSupabaseClient();
+
   // Fetch blocked_users for all organizers
-  const { data: profiles, error } = await supabase
+  const { data: profiles, error } = await client
     .from('profiles')
     .select('id, blocked_users')
     .in('id', organizerIds);

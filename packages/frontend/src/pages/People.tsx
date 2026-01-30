@@ -14,7 +14,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, readSessionFromStorage, createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { useSessionRefresh } from "@/hooks";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -41,7 +40,6 @@ const People = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showBlockedOnly, setShowBlockedOnly] = useState(false);
   const navigate = useNavigate();
-  const refreshKey = useSessionRefresh();
 
   // Fetch current user and their favorites/blocked users
   useEffect(() => {
@@ -71,7 +69,7 @@ const People = () => {
     };
 
     fetchCurrentUser();
-  }, [refreshKey]);
+  }, []);
 
   // Fetch people from database
   useEffect(() => {
@@ -148,7 +146,7 @@ const People = () => {
     };
 
     fetchPeople();
-  }, [refreshKey]);
+  }, []);
 
   // Apply all filters - exclude the logged-in user
   let filteredPeople = people.filter(person => person.id !== currentUserId);

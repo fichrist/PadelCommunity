@@ -1,4 +1,4 @@
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 
 export interface Thought {
   id?: string;
@@ -24,7 +24,6 @@ export async function createThought(postId: string, content: string, parentThoug
       return { success: false, error: "User not authenticated" };
     }
 
-    // Use fresh client to avoid stuck state
     const client = createFreshSupabaseClient();
     const { data, error } = await client
       .from('thoughts')
@@ -61,7 +60,6 @@ export async function createEventThought(eventId: string, content: string, paren
       return { success: false, error: "User not authenticated" };
     }
 
-    // Use fresh client to avoid stuck state
     const client = createFreshSupabaseClient();
     const { data, error } = await client
       .from('thoughts')
@@ -98,7 +96,6 @@ export async function createHealerProfileThought(healerProfileId: string, conten
       return { success: false, error: "User not authenticated" };
     }
 
-    // Use fresh client to avoid stuck state
     const client = createFreshSupabaseClient();
     const { data, error } = await client
       .from('thoughts')
@@ -135,7 +132,6 @@ export async function createMatchThought(matchId: string, content: string, paren
       return { success: false, error: "User not authenticated" };
     }
 
-    // Use fresh client to avoid stuck state
     const client = createFreshSupabaseClient();
     const { data, error } = await client
       .from('thoughts')
@@ -165,7 +161,10 @@ export async function createMatchThought(matchId: string, content: string, paren
  */
 export async function getThoughtsByMatchId(matchId: string): Promise<any[]> {
   try {
-    const { data: thoughts, error: thoughtsError } = await (supabase
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
+    const { data: thoughts, error: thoughtsError } = await (client
       .from('thoughts')
       .select('id, content, created_at, user_id, parent_thought_id') as any)
       .eq('match_id', matchId)
@@ -184,7 +183,7 @@ export async function getThoughtsByMatchId(matchId: string): Promise<any[]> {
     const userIds = [...new Set(thoughts.map((t: any) => t.user_id))] as string[];
 
     // Fetch profiles for all users
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await client
       .from('profiles')
       .select('id, first_name, last_name, display_name, avatar_url')
       .in('id', userIds);
@@ -247,7 +246,10 @@ export async function getThoughtsByMatchId(matchId: string): Promise<any[]> {
  */
 export async function getThoughtsByHealerProfileId(healerProfileId: string): Promise<any[]> {
   try {
-    const { data: thoughts, error: thoughtsError } = await (supabase
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
+    const { data: thoughts, error: thoughtsError } = await (client
       .from('thoughts')
       .select('id, content, created_at, user_id, parent_thought_id') as any)
       .eq('healer_profile_id', healerProfileId)
@@ -266,7 +268,7 @@ export async function getThoughtsByHealerProfileId(healerProfileId: string): Pro
     const userIds = [...new Set(thoughts.map((t: any) => t.user_id))] as string[];
 
     // Fetch profiles for all users
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await client
       .from('profiles')
       .select('id, first_name, last_name, display_name, avatar_url')
       .in('id', userIds);
@@ -329,7 +331,10 @@ export async function getThoughtsByHealerProfileId(healerProfileId: string): Pro
  */
 export async function getThoughtsByEventId(eventId: string): Promise<any[]> {
   try {
-    const { data: thoughts, error: thoughtsError } = await (supabase
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
+    const { data: thoughts, error: thoughtsError } = await (client
       .from('thoughts')
       .select('id, content, created_at, user_id, parent_thought_id') as any)
       .eq('event_id', eventId)
@@ -348,7 +353,7 @@ export async function getThoughtsByEventId(eventId: string): Promise<any[]> {
     const userIds = [...new Set(thoughts.map((t: any) => t.user_id))] as string[];
 
     // Fetch profiles for all users
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await client
       .from('profiles')
       .select('id, first_name, last_name, display_name, avatar_url')
       .in('id', userIds);
@@ -411,8 +416,11 @@ export async function getThoughtsByEventId(eventId: string): Promise<any[]> {
  */
 export async function getThoughtsByPostId(postId: string): Promise<any[]> {
   try {
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
     // First, fetch thoughts including parent_thought_id
-    const { data: thoughts, error: thoughtsError } = await supabase
+    const { data: thoughts, error: thoughtsError } = await client
       .from('thoughts')
       .select('id, content, created_at, user_id, parent_thought_id')
       .eq('post_id', postId)
@@ -434,7 +442,7 @@ export async function getThoughtsByPostId(postId: string): Promise<any[]> {
     const userIds = [...new Set(thoughts.map(t => t.user_id))];
 
     // Fetch profiles for all users
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await client
       .from('profiles')
       .select('id, first_name, last_name, display_name, avatar_url')
       .in('id', userIds);
@@ -500,7 +508,10 @@ export async function getThoughtsByPostId(postId: string): Promise<any[]> {
  */
 export async function getUserThoughts(userId: string): Promise<Thought[]> {
   try {
-    const { data, error } = await supabase
+    // Use fresh client to avoid stuck state after inactivity
+    const client = createFreshSupabaseClient();
+
+    const { data, error } = await client
       .from('thoughts')
       .select('*')
       .eq('user_id', userId)
@@ -523,7 +534,8 @@ export async function getUserThoughts(userId: string): Promise<Thought[]> {
  */
 export async function updateThought(thoughtId: string, content: string): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const client = createFreshSupabaseClient();
+    const { error } = await client
       .from('thoughts')
       .update({
         content: content.trim(),
@@ -547,7 +559,8 @@ export async function updateThought(thoughtId: string, content: string): Promise
  */
 export async function deleteThought(thoughtId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const client = createFreshSupabaseClient();
+    const { error } = await client
       .from('thoughts')
       .delete()
       .eq('id', thoughtId);

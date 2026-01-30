@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSessionRefresh } from "@/hooks";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,6 @@ interface UserProfile {
 }
 
 const Chat = () => {
-  const refreshKey = useSessionRefresh();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -83,7 +82,7 @@ const Chat = () => {
       setCurrentUser({ id: userId });
     };
     fetchCurrentUser();
-  }, [navigate, refreshKey]);
+  }, [navigate]);
 
   // Fetch conversations
   useEffect(() => {
@@ -91,8 +90,11 @@ const Chat = () => {
 
     const fetchConversations = async () => {
       try {
+        // Use fresh client to avoid stuck state after inactivity
+        const client = createFreshSupabaseClient();
+
         // Get conversations where user is a participant
-        const { data: participantData, error: participantError } = await supabase
+        const { data: participantData, error: participantError } = await client
           .from('conversation_participants')
           .select('conversation_id, last_read_at')
           .eq('user_id', currentUser.id);
@@ -108,7 +110,7 @@ const Chat = () => {
         const conversationIds = participantData.map(p => p.conversation_id);
 
         // Get conversation details
-        const { data: conversationsData, error: conversationsError } = await supabase
+        const { data: conversationsData, error: conversationsError } = await client
           .from('conversations')
           .select('*')
           .in('id', conversationIds)
@@ -120,14 +122,14 @@ const Chat = () => {
         const conversationsWithDetails = await Promise.all(
           (conversationsData || []).map(async (conv) => {
             // Get all participants
-            const { data: participantsData } = await supabase
+            const { data: participantsData } = await client
               .from('conversation_participants')
               .select('user_id')
               .eq('conversation_id', conv.id);
 
             // Get profiles for all participants
             const participantIds = participantsData?.map(p => p.user_id) || [];
-            const { data: profiles } = await supabase
+            const { data: profiles } = await client
               .from('profiles')
               .select('id, display_name, avatar_url')
               .in('id', participantIds);
@@ -139,7 +141,7 @@ const Chat = () => {
             })) || [];
 
             // Get last message
-            const { data: lastMessage } = await supabase
+            const { data: lastMessage } = await client
               .from('messages')
               .select('content, created_at, sender_id')
               .eq('conversation_id', conv.id)
@@ -149,7 +151,7 @@ const Chat = () => {
 
             // Get unread count
             const userParticipant = participantData.find(p => p.conversation_id === conv.id);
-            const { count: unreadCount } = await supabase
+            const { count: unreadCount } = await client
               .from('messages')
               .select('*', { count: 'exact', head: true })
               .eq('conversation_id', conv.id)
@@ -203,13 +205,16 @@ const Chat = () => {
 
     const fetchMessages = async () => {
       try {
+        // Use fresh client to avoid stuck state after inactivity
+        const client = createFreshSupabaseClient();
+
         console.log('Fetching messages for conversation:', selectedConversationId);
 
         // Clear messages first to show loading state
         setMessages([]);
 
         // Fetch messages first
-        const { data: messagesData, error: messagesError } = await supabase
+        const { data: messagesData, error: messagesError } = await client
           .from('messages')
           .select('*')
           .eq('conversation_id', selectedConversationId)
@@ -229,7 +234,7 @@ const Chat = () => {
         const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
 
         // Fetch all sender profiles in one query
-        const { data: profiles, error: profilesError } = await supabase
+        const { data: profiles, error: profilesError } = await client
           .from('profiles')
           .select('id, display_name, avatar_url')
           .in('id', senderIds);
@@ -258,7 +263,7 @@ const Chat = () => {
         setMessages(messagesWithReactions);
 
         // Mark messages as read
-        await supabase
+        await client
           .from('conversation_participants')
           .update({ last_read_at: new Date().toISOString() })
           .eq('conversation_id', selectedConversationId)
@@ -296,8 +301,11 @@ const Chat = () => {
         async (payload) => {
           console.log('Real-time message received:', payload.new);
 
+          // Use fresh client to avoid stuck state after inactivity
+          const client = createFreshSupabaseClient();
+
           // Fetch the sender profile for the new message
-          const { data: senderData } = await supabase
+          const { data: senderData } = await client
             .from('profiles')
             .select('id, display_name, avatar_url')
             .eq('id', payload.new.sender_id)
@@ -394,7 +402,9 @@ const Chat = () => {
 
     const fetchUsers = async () => {
       try {
-        const { data, error } = await supabase
+        // Use fresh client to avoid stuck state after inactivity
+        const client = createFreshSupabaseClient();
+        const { data, error } = await client
           .from('profiles')
           .select('id, display_name, avatar_url, first_name, last_name')
           .neq('id', currentUser.id);
@@ -410,7 +420,7 @@ const Chat = () => {
 
         // If adding to existing conversation, filter out users already in the conversation
         if (isAddUserOpen && selectedConversationId) {
-          const { data: participantsData } = await supabase
+          const { data: participantsData } = await client
             .from('conversation_participants')
             .select('user_id')
             .eq('conversation_id', selectedConversationId);
@@ -443,7 +453,9 @@ const Chat = () => {
     if (messageIds.length === 0 || !currentUser) return {};
 
     try {
-      const { data, error } = await supabase
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+      const { data, error } = await client
         .from('message_reactions')
         .select('message_id, user_id, emoji')
         .in('message_id', messageIds);
@@ -490,8 +502,11 @@ const Chat = () => {
     if (!currentUser) return;
 
     try {
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+
       // Check if user has any existing reaction on this message
-      const { data: existingReactions } = await supabase
+      const { data: existingReactions } = await client
         .from('message_reactions')
         .select('id, emoji')
         .eq('message_id', messageId)
@@ -502,20 +517,20 @@ const Chat = () => {
 
         if (sameEmojiReaction) {
           // Remove the reaction if clicking the same emoji
-          await supabase
+          await client
             .from('message_reactions')
             .delete()
             .eq('id', sameEmojiReaction.id);
         } else {
           // Replace existing reaction with new emoji
           // First delete the old reaction
-          await supabase
+          await client
             .from('message_reactions')
             .delete()
             .eq('id', existingReactions[0].id);
 
           // Then add the new reaction
-          await supabase
+          await client
             .from('message_reactions')
             .insert([{
               message_id: messageId,
@@ -525,7 +540,7 @@ const Chat = () => {
         }
       } else {
         // Add new reaction (first reaction on this message)
-        await supabase
+        await client
           .from('message_reactions')
           .insert([{
             message_id: messageId,
@@ -577,9 +592,12 @@ const Chat = () => {
       // Clear input immediately for better UX
       setMessage("");
 
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+
       // Insert the message
       console.log('Attempting database insert...');
-      const { data: newMessage, error } = await supabase
+      const { data: newMessage, error } = await client
         .from('messages')
         .insert([{
           conversation_id: selectedConversationId,
@@ -603,7 +621,7 @@ const Chat = () => {
       console.log('Message inserted successfully:', newMessage.id);
 
       // Fetch the current user's profile for the message
-      const { data: currentUserProfile } = await supabase
+      const { data: currentUserProfile } = await client
         .from('profiles')
         .select('id, display_name, avatar_url')
         .eq('id', currentUser.id)
@@ -627,7 +645,7 @@ const Chat = () => {
       });
 
       // Update the conversation's updated_at timestamp
-      await supabase
+      await client
         .from('conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', selectedConversationId);
@@ -668,8 +686,11 @@ const Chat = () => {
     if (!currentUser) return;
 
     try {
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+
       // Check if conversation already exists
-      const { data: existingConversations } = await supabase
+      const { data: existingConversations } = await client
         .from('conversation_participants')
         .select('conversation_id, conversations(type)')
         .in('user_id', [currentUser.id, person.id]);
@@ -694,7 +715,7 @@ const Chat = () => {
       }
 
       // Create new conversation
-      const { data: conversation, error: convError } = await supabase
+      const { data: conversation, error: convError } = await client
         .from('conversations')
         .insert([{ type: 'direct', name: null }])
         .select()
@@ -703,7 +724,7 @@ const Chat = () => {
       if (convError) throw convError;
 
       // Add participants
-      const { error: participantError } = await supabase
+      const { error: participantError } = await client
         .from('conversation_participants')
         .insert([
           { conversation_id: conversation.id, user_id: currentUser.id },
@@ -713,7 +734,7 @@ const Chat = () => {
       if (participantError) throw participantError;
 
       // Fetch the complete profile data for the current user
-      const { data: currentUserProfile } = await supabase
+      const { data: currentUserProfile } = await client
         .from('profiles')
         .select('id, display_name, avatar_url')
         .eq('id', currentUser.id)
@@ -756,9 +777,12 @@ const Chat = () => {
     if (!currentUser || !selectedConversationId) return;
 
     try {
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+
       if (addUserMode === 'existing') {
         // Add user to existing conversation
-        const { error: participantError } = await supabase
+        const { error: participantError } = await client
           .from('conversation_participants')
           .insert([
             { conversation_id: selectedConversationId, user_id: person.id }
@@ -769,20 +793,20 @@ const Chat = () => {
         // Update conversation type to group if it was direct
         const selectedConv = conversations.find(c => c.id === selectedConversationId);
         if (selectedConv?.type === 'direct') {
-          await supabase
+          await client
             .from('conversations')
             .update({ type: 'group' })
             .eq('id', selectedConversationId);
         }
 
         // Refresh conversations to show updated participant list
-        const { data: participantsData } = await supabase
+        const { data: participantsData } = await client
           .from('conversation_participants')
           .select('user_id')
           .eq('conversation_id', selectedConversationId);
 
         const participantIds = participantsData?.map(p => p.user_id) || [];
-        const { data: profiles } = await supabase
+        const { data: profiles } = await client
           .from('profiles')
           .select('id, display_name, avatar_url')
           .in('id', participantIds);
@@ -806,7 +830,7 @@ const Chat = () => {
         toast.success(`Added ${person.display_name || 'user'} to the conversation`);
       } else {
         // Create new conversation with selected user
-        const { data: conversation, error: convError } = await supabase
+        const { data: conversation, error: convError } = await client
           .from('conversations')
           .insert([{ type: 'direct', name: null }])
           .select()
@@ -815,7 +839,7 @@ const Chat = () => {
         if (convError) throw convError;
 
         // Add participants (current user and selected user)
-        const { error: participantError } = await supabase
+        const { error: participantError } = await client
           .from('conversation_participants')
           .insert([
             { conversation_id: conversation.id, user_id: currentUser.id },
@@ -825,7 +849,7 @@ const Chat = () => {
         if (participantError) throw participantError;
 
         // Fetch the complete profile data for the current user
-        const { data: currentUserProfile } = await supabase
+        const { data: currentUserProfile } = await client
           .from('profiles')
           .select('id, display_name, avatar_url')
           .eq('id', currentUser.id)

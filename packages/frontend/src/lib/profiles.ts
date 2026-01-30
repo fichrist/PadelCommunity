@@ -193,6 +193,30 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
     }
 
     console.log('[updateProfile] Update successful, returned data:', updateResponse.data);
+
+    // Sync notification_match_filters group_ids whenever allowed_groups changes
+    if (updates.allowed_groups) {
+      const newGroupIds = updates.allowed_groups as string[];
+      console.log('[updateProfile] Syncing notification_match_filters group_ids:', newGroupIds);
+
+      // Use fresh client for write (never hangs); token is already fresh from the profile update
+      const { error: filterError } = await (client as any)
+        .from('notification_match_filters')
+        .upsert({
+          user_id: userId,
+          group_ids: newGroupIds,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+        });
+
+      if (filterError) {
+        console.error('[updateProfile] Error syncing notification filter group_ids:', filterError);
+      } else {
+        console.log('[updateProfile] Notification filter group_ids synced successfully');
+      }
+    }
+
     return true;
   } catch (error) {
     console.error('[updateProfile] Caught exception:', error);

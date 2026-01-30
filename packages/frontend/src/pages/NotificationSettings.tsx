@@ -6,7 +6,7 @@ import { ArrowLeft, Bell, MapPin, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
-import { useSessionRefresh } from "@/hooks";
+
 import { toast } from "sonner";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,12 @@ import { Input } from "@/components/ui/input";
 interface Group {
   id: string;
   name: string;
-  group_type: 'General' | 'Ranked';
+  group_type: 'General' | 'Ranked' | 'Favorites';
   ranking_level: string | null;
 }
 
 const NotificationSettings = () => {
   const navigate = useNavigate();
-  const refreshKey = useSessionRefresh();
   const [loading, setLoading] = useState(false);
 
   // Location filters (always enabled)
@@ -38,11 +37,13 @@ const NotificationSettings = () => {
     fetchGroups();
     fetchUserData();
     fetchNotificationFilters();
-  }, [refreshKey]);
+  }, []);
 
   const fetchGroups = async () => {
     try {
-      const { data, error } = await supabase
+      // Use fresh client to avoid stuck state after inactivity
+      const client = createFreshSupabaseClient();
+      const { data, error } = await (client as any)
         .from('groups')
         .select('*')
         .order('group_type', { ascending: true })
@@ -50,11 +51,12 @@ const NotificationSettings = () => {
 
       if (error) throw error;
 
-      // Sort ranked groups by numeric value
       const sortedGroups = (data || []).sort((a, b) => {
-        // General groups come first
-        if (a.group_type === 'General' && b.group_type !== 'General') return -1;
-        if (a.group_type !== 'General' && b.group_type === 'General') return 1;
+        // General first, then Favorites, then Ranked
+        const typeOrder = { 'General': 0, 'Favorites': 1, 'Ranked': 2 };
+        const orderA = typeOrder[a.group_type] ?? 99;
+        const orderB = typeOrder[b.group_type] ?? 99;
+        if (orderA !== orderB) return orderA - orderB;
 
         // For ranked groups, sort by the first number in the ranking level
         if (a.group_type === 'Ranked' && b.group_type === 'Ranked') {
@@ -129,7 +131,19 @@ const NotificationSettings = () => {
         // Use group_ids if available
         if (filters.group_ids && filters.group_ids.length > 0) {
           setSelectedGroupIds(filters.group_ids);
+          return;
         }
+      }
+
+      // Fallback: if no filter or no group_ids saved, use the user's allowed_groups
+      const { data: profile } = await client
+        .from('profiles')
+        .select('allowed_groups')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.allowed_groups && profile.allowed_groups.length > 0) {
+        setSelectedGroupIds(profile.allowed_groups);
       }
     } catch (error) {
       console.error("Error fetching notification filters:", error);
@@ -175,10 +189,9 @@ const NotificationSettings = () => {
         return;
       }
 
-      // Prepare filter data (filters are always enabled)
+      // Prepare filter data
       const filterData = {
         user_id: userId,
-        location_enabled: true,
         location_address: selectedPlaceData?.formatted_address || locationAddress,
         location_latitude: locationLatitude,
         location_longitude: locationLongitude,
@@ -187,10 +200,9 @@ const NotificationSettings = () => {
         updated_at: new Date().toISOString(),
       };
 
-      // Use fresh client to avoid stuck state
+      // Use fresh client (customFetch auto-refreshes token if needed)
       const client = createFreshSupabaseClient();
-      // Upsert (insert or update)
-      const { error } = await client
+      const { error } = await (client as any)
         .from('notification_match_filters')
         .upsert(filterData, {
           onConflict: 'user_id'
@@ -211,6 +223,7 @@ const NotificationSettings = () => {
   };
 
   const generalGroups = allGroups.filter(g => g.group_type === 'General');
+  const favoritesGroups = allGroups.filter(g => g.group_type === 'Favorites');
   const rankedGroups = allGroups.filter(g => g.group_type === 'Ranked');
 
   return (
@@ -307,6 +320,28 @@ const NotificationSettings = () => {
                       <Label className="text-sm text-muted-foreground">General</Label>
                       <div className="flex flex-wrap gap-2">
                         {generalGroups.map(group => (
+                          <Badge
+                            key={group.id}
+                            variant={selectedGroupIds.includes(group.id) ? "default" : "outline"}
+                            className="cursor-pointer text-sm px-3 py-1.5"
+                            onClick={() => handleToggleGroup(group.id)}
+                          >
+                            {group.name}
+                            {selectedGroupIds.includes(group.id) && (
+                              <X className="h-3 w-3 ml-1" />
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Favorites Groups */}
+                  {favoritesGroups.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Favorites</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {favoritesGroups.map(group => (
                           <Badge
                             key={group.id}
                             variant={selectedGroupIds.includes(group.id) ? "default" : "outline"}
