@@ -14,7 +14,6 @@ import {
   X,
   MessageCircle,
   Share2,
-  Lock,
   Edit3,
   ChevronDown,
   ChevronUp,
@@ -37,7 +36,6 @@ interface MatchCardProps {
   onCommentsClick?: (match: any) => void;
   onShareClick?: (match: any) => void;
   onProfileImageClick?: (imageUrl: string | null, name: string) => void;
-  onRestrictedUsersClick?: (matchId: string, restrictedUsers: string[] | null) => void;
   onUpdateMatch?: () => void;
   thoughts?: any[];
   onSubmitThought?: (matchId: string, content: string) => Promise<void>;
@@ -55,7 +53,6 @@ export const MatchCard = ({
   onCommentsClick,
   onShareClick,
   onProfileImageClick,
-  onRestrictedUsersClick,
   onUpdateMatch,
   thoughts = [],
   onSubmitThought,
@@ -305,8 +302,8 @@ export const MatchCard = ({
               <Share2 className="h-4 w-4" />
             </Button>
           )}
-          {/* Edit button (only for organizer) */}
-          {currentUserId === match.created_by && onUpdateMatch && (
+          {/* Edit button (organizer or restricted user) */}
+          {currentUserId && (currentUserId === match.created_by || match.restricted_users?.includes(currentUserId)) && onUpdateMatch && (
             <Button
               type="button"
               variant="ghost"
@@ -322,27 +319,8 @@ export const MatchCard = ({
               <Edit3 className="h-4 w-4" />
             </Button>
           )}
-          {/* Manage visibility button (only for organizer) */}
-          {currentUserId === match.created_by && onRestrictedUsersClick && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onRestrictedUsersClick(match.id, match.restricted_users || null);
-              }}
-              className="h-8 w-8 text-muted-foreground hover:text-primary"
-              title={match.restricted_users && match.restricted_users.length > 0
-                ? "Match is restricted - click to manage"
-                : "Match is public - click to restrict"}
-            >
-              <Lock className={`h-4 w-4 ${match.restricted_users && match.restricted_users.length > 0 ? 'text-yellow-500' : ''}`} />
-            </Button>
-          )}
-          {/* Delete button (only for organizer) */}
-          {currentUserId === match.created_by && onDeleteMatch && (
+          {/* Delete button (organizer or restricted user) */}
+          {currentUserId && (currentUserId === match.created_by || match.restricted_users?.includes(currentUserId)) && onDeleteMatch && (
             <Button
               type="button"
               variant="ghost"

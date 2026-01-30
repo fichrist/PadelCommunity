@@ -225,17 +225,14 @@ async function directTokenRefresh(): Promise<boolean> {
   if (data.user) existing.user = data.user;
   localStorage.setItem(storageKey, JSON.stringify(existing));
 
-  // Sync the main Supabase client's internal state so getSession() and
-  // onAuthStateChange listeners stay consistent with localStorage.
-  try {
-    await supabase.auth.setSession({
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-    });
-  } catch (err) {
-    // Non-fatal: localStorage is already updated, data operations will work
-    console.warn('[directTokenRefresh] setSession sync failed, continuing:', err);
-  }
+  // Fire-and-forget: don't await because setSession can hang
+  // localStorage is already updated, and customFetch reads from there
+  supabase.auth.setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+  }).catch(err => {
+    console.warn('[directTokenRefresh] setSession sync failed (non-blocking):', err);
+  });
 
   const newExpiry = getTokenExpirySeconds();
   console.log(`[directTokenRefresh] Succeeded, new expiry in ${newExpiry}s`);
@@ -244,8 +241,8 @@ async function directTokenRefresh(): Promise<boolean> {
 
 /**
  * Force-trigger a token refresh.
- * First tries the Supabase client (60s timeout). If that hangs,
- * falls back to a direct REST API call that bypasses the client entirely.
+ * Uses directTokenRefresh() as primary method because supabase.auth.refreshSession()
+ * can hang due to internal locking issues, while direct API calls are fast (~600ms).
  */
 export async function syncRefreshToken(): Promise<boolean> {
   try {
@@ -255,37 +252,7 @@ export async function syncRefreshToken(): Promise<boolean> {
       return false;
     }
 
-    console.log(`[syncRefreshToken] Token expires in ${secondsLeft}s`);
-
-    // Only refresh if token expires within 15 minutes (900s)
-    if (secondsLeft > 900) {
-      console.log('[syncRefreshToken] Token still fresh, skipping');
-      return true;
-    }
-
-    console.log('[syncRefreshToken] Token expiring soon, refreshing...');
-
-    // Try the client-based refresh first with a timeout (60s)
-    try {
-      const result = await Promise.race([
-        supabase.auth.refreshSession(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('refreshSession timeout (60s)')), 60000)
-        )
-      ]) as any;
-
-      if (!result?.error) {
-        const newExpiry = getTokenExpirySeconds();
-        console.log(`[syncRefreshToken] Client refresh succeeded, new expiry in ${newExpiry}s`);
-        return true;
-      }
-      console.warn('[syncRefreshToken] Client refresh failed:', result.error.message);
-    } catch (err: any) {
-      console.warn('[syncRefreshToken] Client refresh timed out:', err.message);
-    }
-
-    // Fallback: direct API call (bypasses client lock/session machinery)
-    console.log('[syncRefreshToken] Falling back to direct API refresh...');
+    console.log(`[syncRefreshToken] Token expires in ${secondsLeft}s, refreshing via direct API...`);
     return await directTokenRefresh();
   } catch (err: any) {
     console.error('[syncRefreshToken] Error:', err.message);
@@ -304,11 +271,11 @@ function startTokenKeepalive() {
   // Don't start multiple intervals
   if (_keepaliveInterval) return;
 
-  const KEEPALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+  const KEEPALIVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
   const MAX_RETRY_ATTEMPTS = 3;
   const RETRY_DELAY_MS = 5000; // 5 seconds between retries
 
-  console.log('[TokenKeepalive] Starting proactive token refresh (every 10 min)');
+  console.log('[TokenKeepalive] Starting proactive token refresh (every 5 min)');
 
   _keepaliveInterval = setInterval(async () => {
     const userId = getUserIdFromStorage();
@@ -317,9 +284,11 @@ function startTokenKeepalive() {
       return;
     }
 
+    console.log('[TokenKeepalive] Proactive refresh...');
+
     let success = false;
     for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
-      success = await syncRefreshToken();
+      success = await directTokenRefresh();
       if (success) break;
 
       console.warn(`[TokenKeepalive] Attempt ${attempt}/${MAX_RETRY_ATTEMPTS} failed`);
@@ -346,6 +315,8 @@ function stopTokenKeepalive() {
 // Start keepalive when there's a logged-in user
 if (getUserIdFromStorage()) {
   startTokenKeepalive();
+  console.log('[Init] User logged in, doing immediate token refresh...');
+  directTokenRefresh();
 }
 
 // Manage keepalive based on auth state
@@ -364,14 +335,8 @@ document.addEventListener('visibilitychange', async () => {
     const userId = getUserIdFromStorage();
     if (!userId) return;
 
-    const secondsLeft = getTokenExpirySeconds();
-    console.log(`[visibilitychange] Tab visible again, token expires in ${secondsLeft}s`);
-
-    // If token expires within 15 minutes, refresh immediately
-    if (secondsLeft !== null && secondsLeft < 900) {
-      console.log('[visibilitychange] Token expiring soon, refreshing...');
-      await syncRefreshToken();
-    }
+    console.log('[visibilitychange] Tab visible again, refreshing token...');
+    await directTokenRefresh();
   }
 });
 

@@ -4,7 +4,7 @@ import { Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GroupsList from "@/components/GroupsList";
 import { MatchCard } from "@/components/MatchCard";
-import { ManageRestrictedUsersDialog } from "@/components/ManageRestrictedUsersDialog";
+
 import MyMatchesList from "@/components/MyMatchesList";
 import Advertisement from "@/components/Advertisement";
 import {
@@ -35,11 +35,6 @@ const Community = () => {
     imageUrl: string | null;
     name: string;
   }>({ open: false, imageUrl: null, name: "" });
-  const [restrictedUsersDialog, setRestrictedUsersDialog] = useState<{
-    open: boolean;
-    matchId: string | null;
-    restrictedUsers: string[] | null;
-  }>({ open: false, matchId: null, restrictedUsers: null });
   const [showSetupDialog, setShowSetupDialog] = useState(false);
 
   const { currentUserId } = useAuth();
@@ -569,17 +564,6 @@ const Community = () => {
         }}
       />
 
-      {restrictedUsersDialog.matchId && currentUserId && (
-        <ManageRestrictedUsersDialog
-          open={restrictedUsersDialog.open}
-          onOpenChange={(open) => setRestrictedUsersDialog({ ...restrictedUsersDialog, open })}
-          matchId={restrictedUsersDialog.matchId}
-          currentRestrictedUsers={restrictedUsersDialog.restrictedUsers}
-          organizerId={currentUserId}
-          onUpdate={refetchMatches}
-        />
-      )}
-
       <div className="min-h-screen flex">
         <div className="flex flex-col">
           <GroupsList
@@ -615,9 +599,6 @@ const Community = () => {
                       onShareClick={handleShareClick}
                       onProfileImageClick={(imageUrl, name) =>
                         setProfileImageModal({ open: true, imageUrl, name })
-                      }
-                      onRestrictedUsersClick={(matchId, restrictedUsers) =>
-                        setRestrictedUsersDialog({ open: true, matchId, restrictedUsers })
                       }
                       defaultExpandThoughts={!!selectedMatchId}
                       onUpdateMatch={() => {
