@@ -37,14 +37,13 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTr
 
         if (error || !data) return;
 
-        // Check if user is involved
-        const isOrganizer = data.created_by === userId;
+        // Check if user is a participant
         const isParticipant = data.match_participants?.some(
           (p: any) => p.player_profile_id === userId || p.added_by_profile_id === userId
         );
 
-        // If user is involved and match is in the past, switch to past view
-        if ((isOrganizer || isParticipant) && data.match_date && new Date(data.match_date) < new Date()) {
+        // If user is a participant and match is in the past, switch to past view
+        if (isParticipant && data.match_date && new Date(data.match_date) < new Date()) {
           setShowPast(true);
         }
       } catch (err) {
@@ -104,13 +103,11 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTr
           return;
         }
 
-        // Filter to only include matches where user is involved as organizer or participant
+        // Filter to only include matches where user is a participant
         const userMatches = (data || []).filter((match: any) => {
-          const isOrganizer = match.created_by === userId;
-          const isParticipant = match.match_participants?.some(
+          return match.match_participants?.some(
             (p: any) => p.player_profile_id === userId || p.added_by_profile_id === userId
           );
-          return isOrganizer || isParticipant;
         });
 
         // Limit to 10 matches

@@ -489,7 +489,8 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
             />
           </div>
 
-          {/* Publish to Favorites Only */}
+          {/* Publish to Favorites Only — hidden when ranked groups are selected */}
+          {!selectedGroups.some(gId => groups.find(g => g.id === gId)?.group_type === 'Ranked') && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -505,6 +506,8 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
                   setPublishToFavoritesOnly(checked);
                   if (checked) {
                     setSelectedFavorites(favoriteUsers.map(f => f.id));
+                  } else {
+                    setSelectedGroups(groups.map(g => g.id));
                   }
                 }}
                 disabled={saving}
@@ -618,6 +621,7 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
               </div>
             )}
           </div>
+          )}
 
           {/* Blocked Users */}
           {blockedUsers.length > 0 && (
