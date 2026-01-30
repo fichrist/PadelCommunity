@@ -4,7 +4,7 @@
 // Helper functions for working with profiles in your React app
 // =====================================================
 
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 
 export interface Profile {
   id: string;
@@ -51,7 +51,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     }
 
     // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
+    const client = getDataClient();
     const { data, error } = await client
       .from('profiles')
       .select('*')
@@ -75,7 +75,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
  */
 export async function getProfileById(userId: string): Promise<Profile | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDataClient()
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -111,7 +111,7 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
     }
 
     // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
+    const client = getDataClient();
 
     // If ranking is being updated, automatically update allowed_groups
     if (updates.ranking) {
@@ -262,7 +262,7 @@ export async function uploadAvatar(file: File): Promise<string | null> {
     const avatarUrl = data.publicUrl;
 
     // Update profile with new avatar URL using fresh client
-    const client = createFreshSupabaseClient();
+    const client = getDataClient();
     const { error: updateError } = await client
       .from('profiles')
       .update({ avatar_url: avatarUrl })
@@ -317,7 +317,7 @@ export async function deleteAvatar(): Promise<boolean> {
     }
 
     // Update profile to remove avatar URL using fresh client
-    const client = createFreshSupabaseClient();
+    const client = getDataClient();
     const { error: updateError } = await client
       .from('profiles')
       .update({ avatar_url: null })
@@ -340,7 +340,7 @@ export async function deleteAvatar(): Promise<boolean> {
  */
 export async function getHealers(): Promise<Profile[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDataClient()
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -362,7 +362,7 @@ export async function getHealers(): Promise<Profile[]> {
  */
 export async function searchProfiles(query: string): Promise<Profile[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDataClient()
       .from('profiles')
       .select('*')
       .or(`display_name.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`)

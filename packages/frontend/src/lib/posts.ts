@@ -1,4 +1,4 @@
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 
 export interface Post {
   id?: string;
@@ -25,9 +25,7 @@ export async function createPost(post: Post): Promise<{ success: boolean; postId
       return { success: false, error: "User not authenticated" };
     }
 
-    // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
-    const { data, error } = await client
+    const { data, error } = await getDataClient()
       .from('posts')
       .insert({
         user_id: userId,
@@ -58,7 +56,7 @@ export async function createPost(post: Post): Promise<{ success: boolean; postId
  */
 export async function getAllPosts(): Promise<Post[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDataClient()
       .from('posts')
       .select('*')
       .order('created_at', { ascending: false });
@@ -81,7 +79,7 @@ export async function getAllPosts(): Promise<Post[]> {
 export async function getPostsWithDetails(): Promise<any[]> {
   try {
     // First, fetch all posts
-    const { data: posts, error: postsError } = await supabase
+    const { data: posts, error: postsError } = await getDataClient()
       .from('posts')
       .select('*')
       .order('created_at', { ascending: false });
@@ -97,7 +95,7 @@ export async function getPostsWithDetails(): Promise<any[]> {
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
         // Fetch profile - use maybeSingle to avoid errors if not found
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await getDataClient()
           .from('profiles')
           .select('id, first_name, last_name, display_name, avatar_url, bio')
           .eq('id', post.user_id)
@@ -108,7 +106,7 @@ export async function getPostsWithDetails(): Promise<any[]> {
         }
 
         // Fetch thoughts count
-        const { count, error: thoughtsError } = await supabase
+        const { count, error: thoughtsError } = await getDataClient()
           .from('thoughts')
           .select('*', { count: 'exact', head: true })
           .eq('post_id', post.id);
@@ -137,7 +135,7 @@ export async function getPostsWithDetails(): Promise<any[]> {
  */
 export async function getUserPosts(userId: string): Promise<Post[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDataClient()
       .from('posts')
       .select('*')
       .eq('user_id', userId)
@@ -160,7 +158,7 @@ export async function getUserPosts(userId: string): Promise<Post[]> {
  */
 export async function updatePost(postId: string, updates: Partial<Post>): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { error } = await getDataClient()
       .from('posts')
       .update({
         title: updates.title,
@@ -189,7 +187,7 @@ export async function updatePost(postId: string, updates: Partial<Post>): Promis
  */
 export async function deletePost(postId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { error } = await getDataClient()
       .from('posts')
       .delete()
       .eq('id', postId);

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getDataClient } from "@/integrations/supabase/client";
 
 /**
  * Platform-agnostic utility functions for managing match participants
@@ -56,7 +56,7 @@ export async function setPlaytomicUserIdOnProfiles(
   console.log(`Processing ${participants.length} participants`);
 
   // Fetch all profiles once at the beginning
-  const { data: allProfiles } = await supabase
+  const { data: allProfiles } = await getDataClient()
     .from('profiles')
     .select('id, first_name, last_name, playtomic_user_id')
     .not('first_name', 'is', null)
@@ -133,7 +133,7 @@ export async function setPlaytomicUserIdOnProfiles(
       } else {
         console.log(`💾 Setting playtomic_user_id on profile ${profileToUpdate.id}...`);
 
-        const { error: updateProfileError } = await supabase
+        const { error: updateProfileError } = await getDataClient()
           .from('profiles')
           .update({ playtomic_user_id: participant.playtomic_user_id })
           .eq('id', profileToUpdate.id);
@@ -179,7 +179,7 @@ export async function linkParticipantsToProfiles(
     console.log(`Looking for profile with playtomic_user_id: ${participant.playtomic_user_id}`);
 
     // Find profile with matching playtomic_user_id
-    const { data: profile } = await supabase
+    const { data: profile } = await getDataClient()
       .from('profiles')
       .select('id')
       .eq('playtomic_user_id', participant.playtomic_user_id)
@@ -189,7 +189,7 @@ export async function linkParticipantsToProfiles(
       console.log(`✅ Found profile: ${profile.id}`);
 
       // Update participant with player_profile_id
-      const { error: updateError } = await supabase
+      const { error: updateError } = await getDataClient()
         .from('match_participants')
         .update({ player_profile_id: profile.id })
         .eq('id', participant.id);

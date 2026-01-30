@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getDataClient } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
 /**
@@ -121,7 +121,7 @@ function matchMeetsFilterCriteria(
  */
 async function getBlockedUsersForUser(userId: string): Promise<string[]> {
   try {
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await getDataClient()
       .from("profiles")
       .select("blocked_users")
       .eq("id", userId)
@@ -145,7 +145,7 @@ async function getBlockedUsersForUser(userId: string): Promise<string[]> {
  */
 async function getThoughtAuthorsForMatch(matchId: string): Promise<string[]> {
   try {
-    const { data: thoughts, error } = await supabase
+    const { data: thoughts, error } = await getDataClient()
       .from("thoughts")
       .select("user_id")
       .eq("match_id", matchId);
@@ -177,7 +177,7 @@ async function getMatchNotificationRecipients(
   organizerBlockedUsers: string[]
 ): Promise<string[]> {
   // Get participants
-  const { data: participants } = await supabase
+  const { data: participants } = await getDataClient()
     .from("match_participants")
     .select("player_profile_id")
     .eq("match_id", matchId)
@@ -235,7 +235,7 @@ export async function createMatchNotifications(
         return;
       }
 
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError } = await getDataClient()
         .from("profiles")
         .select("id")
         .in("id", restrictedUsersExcludingCreator);
@@ -249,7 +249,7 @@ export async function createMatchNotifications(
     } else {
       // Match is public - notify all users except creator
       console.log("Match is public, fetching all users except creator");
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError } = await getDataClient()
         .from("profiles")
         .select("id")
         .neq("id", creatorId);
@@ -284,7 +284,7 @@ export async function createMatchNotifications(
     console.log(`Found ${eligibleProfiles.length} eligible users for notifications`);
 
     // Get all notification filters
-    const { data: filters } = await supabase
+    const { data: filters } = await getDataClient()
       .from("notification_match_filters")
       .select("*");
 
@@ -344,7 +344,7 @@ export async function createMatchNotifications(
     console.log(`Creating ${notifications.length} notifications`);
 
     if (notifications.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getDataClient()
         .from("notifications")
         .insert(notifications);
 
@@ -375,7 +375,7 @@ export async function createParticipantJoinedNotifications(
     console.log(`Creating participant joined notifications for match ${matchId}`);
 
     // Get match details for the notification message
-    const { data: match } = await supabase
+    const { data: match } = await getDataClient()
       .from("matches")
       .select("venue_name, match_date, created_by")
       .eq("id", matchId)
@@ -429,7 +429,7 @@ export async function createParticipantJoinedNotifications(
     console.log(`Creating ${notifications.length} participant joined notifications`);
 
     if (notifications.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getDataClient()
         .from("notifications")
         .insert(notifications);
 
@@ -460,7 +460,7 @@ export async function createParticipantLeftNotifications(
     console.log(`Creating participant left notifications for match ${matchId}`);
 
     // Get match details for the notification message
-    const { data: match } = await supabase
+    const { data: match } = await getDataClient()
       .from("matches")
       .select("venue_name, match_date, created_by")
       .eq("id", matchId)
@@ -514,7 +514,7 @@ export async function createParticipantLeftNotifications(
     console.log(`Creating ${notifications.length} participant left notifications`);
 
     if (notifications.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getDataClient()
         .from("notifications")
         .insert(notifications);
 
@@ -549,7 +549,7 @@ export async function createThoughtReactionNotifications(
     console.log(`Creating reaction notifications for thought ${thoughtId}`);
 
     // Get the thought to find the author
-    const { data: thought, error: thoughtError } = await supabase
+    const { data: thought, error: thoughtError } = await getDataClient()
       .from("thoughts")
       .select("user_id, content")
       .eq("id", thoughtId)
@@ -561,7 +561,7 @@ export async function createThoughtReactionNotifications(
     }
 
     // Get match details for the notification message
-    const { data: match } = await supabase
+    const { data: match } = await getDataClient()
       .from("matches")
       .select("venue_name, match_date, created_by")
       .eq("id", matchId)
@@ -614,7 +614,7 @@ export async function createThoughtReactionNotifications(
     console.log(`Creating ${notifications.length} reaction notifications`);
 
     if (notifications.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getDataClient()
         .from("notifications")
         .insert(notifications);
 
@@ -647,7 +647,7 @@ export async function createThoughtAddedNotifications(
     console.log(`Creating thought added notifications for match ${matchId}`);
 
     // Get match details for the notification message
-    const { data: match } = await supabase
+    const { data: match } = await getDataClient()
       .from("matches")
       .select("venue_name, match_date, created_by")
       .eq("id", matchId)
@@ -702,7 +702,7 @@ export async function createThoughtAddedNotifications(
     console.log(`Creating ${notifications.length} thought added notifications`);
 
     if (notifications.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getDataClient()
         .from("notifications")
         .insert(notifications);
 

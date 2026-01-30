@@ -5,7 +5,7 @@
 // NEW: Addresses are now referenced from profiles via address_id
 // =====================================================
 
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 
 export interface Address {
   id: string;
@@ -38,11 +38,8 @@ export async function getCurrentUserAddress(): Promise<Address | null> {
       return null;
     }
 
-    // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
-
     // Get the user's profile to find their address_id
-    const { data: profile, error: profileError } = await client
+    const { data: profile, error: profileError } = await getDataClient()
       .from('profiles')
       .select('address_id')
       .eq('id', userId)
@@ -53,7 +50,7 @@ export async function getCurrentUserAddress(): Promise<Address | null> {
     }
 
     // Fetch the address using the address_id
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('addresses')
       .select('*')
       .eq('id', profile.address_id)
@@ -87,11 +84,8 @@ export async function saveAddress(addressData: Partial<Address>): Promise<boolea
       throw new Error('No authenticated user');
     }
 
-    // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
-
     // Get the user's profile to check if they already have an address
-    const { data: profile, error: profileError } = await client
+    const { data: profile, error: profileError } = await getDataClient()
       .from('profiles')
       .select('address_id')
       .eq('id', userId)
@@ -113,7 +107,7 @@ export async function saveAddress(addressData: Partial<Address>): Promise<boolea
       };
       console.log("Update data:", updateData);
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (getDataClient() as any)
         .from('addresses')
         .update(updateData)
         .eq('id', profile.address_id)
@@ -136,7 +130,7 @@ export async function saveAddress(addressData: Partial<Address>): Promise<boolea
       };
       console.log("Insert data:", insertData);
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (getDataClient() as any)
         .from('addresses')
         .insert(insertData)
         .select()
@@ -151,7 +145,7 @@ export async function saveAddress(addressData: Partial<Address>): Promise<boolea
       addressId = data.id;
 
       // Link the new address to the profile
-      const { error: linkError } = await client
+      const { error: linkError } = await getDataClient()
         .from('profiles')
         .update({ address_id: addressId })
         .eq('id', userId);
@@ -225,7 +219,7 @@ export function parseAddressComponents(place: any): Partial<Address> {
 export async function getUserAddress(userId: string): Promise<Address | null> {
   try {
     // Get the user's profile to find their address_id
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await getDataClient()
       .from('profiles')
       .select('address_id')
       .eq('id', userId)
@@ -236,7 +230,7 @@ export async function getUserAddress(userId: string): Promise<Address | null> {
     }
 
     // Fetch the address using the address_id
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('addresses')
       .select('*')
       .eq('id', profile.address_id)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getDataClient } from '@/integrations/supabase/client';
 
 /**
  * Hook for managing chat messages
@@ -62,7 +62,7 @@ export const useMessages = (
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await getDataClient()
         .from('messages')
         .select(`
           id,
@@ -85,7 +85,7 @@ export const useMessages = (
 
       // Fetch reactions for all messages
       const messageIds = (data || []).map(m => m.id);
-      const { data: reactions, error: reactionsError } = await supabase
+      const { data: reactions, error: reactionsError } = await getDataClient()
         .from('message_reactions')
         .select('message_id, emoji, user_id')
         .in('message_id', messageIds);
@@ -162,7 +162,7 @@ export const useMessages = (
         },
         async (payload) => {
           // Fetch full message with sender details
-          const { data } = await supabase
+          const { data } = await getDataClient()
             .from('messages')
             .select(`
               id,
@@ -219,7 +219,7 @@ export const useMessages = (
       setError(null);
 
       try {
-        const { error: sendError } = await supabase.from('messages').insert({
+        const { error: sendError } = await getDataClient().from('messages').insert({
           conversation_id: conversationId,
           sender_id: currentUserId,
           content: content.trim(),
@@ -228,7 +228,7 @@ export const useMessages = (
         if (sendError) throw sendError;
 
         // Update conversation updated_at
-        await supabase
+        await getDataClient()
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', conversationId);
@@ -250,7 +250,7 @@ export const useMessages = (
       if (!currentUserId) return false;
 
       try {
-        const { error } = await supabase.from('message_reactions').insert({
+        const { error } = await getDataClient().from('message_reactions').insert({
           message_id: messageId,
           user_id: currentUserId,
           emoji,
@@ -273,7 +273,7 @@ export const useMessages = (
       if (!currentUserId) return false;
 
       try {
-        const { error } = await supabase
+        const { error } = await getDataClient()
           .from('message_reactions')
           .delete()
           .eq('message_id', messageId)
@@ -296,7 +296,7 @@ export const useMessages = (
     if (!conversationId || !currentUserId) return;
 
     try {
-      await supabase
+      await getDataClient()
         .from('conversation_participants')
         .update({ last_read_at: new Date().toISOString() })
         .eq('conversation_id', conversationId)

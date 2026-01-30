@@ -1,4 +1,4 @@
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 
 export interface EventData {
   title: string;
@@ -33,9 +33,7 @@ export const createEvent = async (eventData: EventData) => {
       return null;
     }
 
-    // Use fresh client to avoid stuck state
-    const client = createFreshSupabaseClient();
-    const { data, error } = await (client as any)
+    const { data, error } = await (getDataClient() as any)
       .from('events')
       .insert({
         user_id: userId,
@@ -77,7 +75,7 @@ export const createEvent = async (eventData: EventData) => {
 
 export const updateEvent = async (eventId: string, eventData: Partial<EventData>) => {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('events')
       .update({
         title: eventData.title,
@@ -120,7 +118,7 @@ export const updateEvent = async (eventId: string, eventData: Partial<EventData>
 
 export const getEventById = async (eventId: string) => {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('events')
       .select('*')
       .eq('id', eventId)
@@ -140,7 +138,7 @@ export const getEventById = async (eventId: string) => {
 
 export const getUserEvents = async (userId: string) => {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('events')
       .select('*')
       .eq('user_id', userId)
@@ -161,7 +159,7 @@ export const getUserEvents = async (userId: string) => {
 export const getAllEvents = async () => {
   try {
     // Fetch events with thought counts
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (getDataClient() as any)
       .from('events')
       .select(`
         *,
@@ -189,7 +187,7 @@ export const getAllEvents = async () => {
 
 export const deleteEvent = async (eventId: string) => {
   try {
-    const { error } = await (supabase as any)
+    const { error } = await (getDataClient() as any)
       .from('events')
       .delete()
       .eq('id', eventId);
