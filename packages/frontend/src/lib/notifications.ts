@@ -360,6 +360,59 @@ export async function createMatchNotifications(
 }
 
 /**
+ * Create new_match notifications for users who were newly added to a match's restricted_users list.
+ * Compares the old and new restricted_users arrays and notifies only the newly added ones.
+ */
+export async function createNotificationsForNewRestrictedUsers(
+  match: Match,
+  oldRestrictedUsers: string[] | null | undefined,
+  newRestrictedUsers: string[],
+  creatorId: string
+): Promise<void> {
+  try {
+    const oldSet = new Set(oldRestrictedUsers || []);
+    const newUserIds = newRestrictedUsers.filter(id => !oldSet.has(id) && id !== creatorId);
+
+    if (newUserIds.length === 0) {
+      console.log("No new restricted users to notify");
+      return;
+    }
+
+    console.log(`Notifying ${newUserIds.length} newly added restricted users`);
+
+    const message =
+      match.venue_name && match.match_date
+        ? `New match at ${match.venue_name} on ${format(new Date(match.match_date), "EEEE, MMMM d")}`
+        : match.match_date
+        ? `New match on ${format(new Date(match.match_date), "EEEE, MMMM d")}`
+        : "New match available";
+
+    const notifications = newUserIds.map(userId => ({
+      user_id: userId,
+      type: "new_match",
+      title: "New Match Available",
+      message,
+      link: `/community?match=${match.id}`,
+      match_id: match.id,
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    const { error } = await getDataClient()
+      .from("notifications")
+      .insert(notifications);
+
+    if (error) {
+      console.error("Error inserting notifications for new restricted users:", error);
+    } else {
+      console.log(`Created ${notifications.length} notifications for new restricted users`);
+    }
+  } catch (error) {
+    console.error("Error in createNotificationsForNewRestrictedUsers:", error);
+  }
+}
+
+/**
  * Create notifications for existing participants when a new player joins a match
  *
  * @param matchId - The ID of the match

@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +20,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { fetchPlaytomicMatchDetails } from "@/lib/playtomic";
+import { createNotificationsForNewRestrictedUsers } from "@/lib/notifications";
 import { format } from "date-fns";
 
 interface EditMatchDialogProps {
@@ -62,6 +62,7 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
   const [publishToFavoritesOnly, setPublishToFavoritesOnly] = useState(false);
   const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUser[]>([]);
   const [selectedFavorites, setSelectedFavorites] = useState<string[]>([]);
+  const [restrictedOnlyUsers, setRestrictedOnlyUsers] = useState<FavoriteUser[]>([]);
 
   // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<FavoriteUser[]>([]);
@@ -134,6 +135,35 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
           }));
           setFavoriteUsers(formatted);
         }
+      }
+
+      // Fetch restricted users who are NOT in favorites (so they still show in the list)
+      const isFavoritesMatch = match.restricted_users && match.restricted_users.length > 0;
+      if (isFavoritesMatch) {
+        const currentUserId = getUserIdFromStorage();
+        const favoriteIdSet = new Set(profile?.favorite_users || []);
+        const nonFavRestrictedIds = (match.restricted_users || [])
+          .filter((id: string) => id !== currentUserId && !favoriteIdSet.has(id));
+
+        if (nonFavRestrictedIds.length > 0) {
+          const { data: restrictedProfiles } = await client
+            .from('profiles')
+            .select('id, first_name, last_name, display_name, avatar_url, club_name')
+            .in('id', nonFavRestrictedIds);
+
+          if (restrictedProfiles) {
+            setRestrictedOnlyUsers(restrictedProfiles.map(p => ({
+              id: p.id,
+              name: p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'User',
+              avatar_url: p.avatar_url,
+              club_name: p.club_name
+            })));
+          }
+        } else {
+          setRestrictedOnlyUsers([]);
+        }
+      } else {
+        setRestrictedOnlyUsers([]);
       }
 
       // Fetch blocked users
@@ -369,6 +399,20 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
 
       if (error) throw error;
 
+      // Notify newly added restricted users (fire-and-forget)
+      if (restrictedUsers && restrictedUsers.length > 0) {
+        createNotificationsForNewRestrictedUsers(
+          {
+            id: match.id,
+            venue_name: match.venue_name,
+            match_date: updateData.match_date || match.match_date,
+          },
+          match.restricted_users,
+          restrictedUsers,
+          userId
+        );
+      }
+
       toast.success("Match updated successfully!");
       onUpdate();
       onOpenChange(false);
@@ -504,9 +548,7 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
                 checked={publishToFavoritesOnly}
                 onCheckedChange={(checked) => {
                   setPublishToFavoritesOnly(checked);
-                  if (checked) {
-                    setSelectedFavorites(favoriteUsers.map(f => f.id));
-                  } else {
+                  if (!checked) {
                     setSelectedGroups(groups.map(g => g.id));
                   }
                 }}
@@ -516,54 +558,92 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
 
             {publishToFavoritesOnly && (
               <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
-                <Label className="text-sm font-medium">Select favorites who can see this match:</Label>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {favoriteUsers.map((favorite) => (
-                    <div key={favorite.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50">
-                      <Checkbox
-                        id={`edit-favorite-${favorite.id}`}
-                        checked={selectedFavorites.includes(favorite.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedFavorites([...selectedFavorites, favorite.id]);
-                          } else {
-                            setSelectedFavorites(selectedFavorites.filter(id => id !== favorite.id));
-                          }
-                        }}
-                        disabled={saving}
-                      />
-                      <Label
-                        htmlFor={`edit-favorite-${favorite.id}`}
-                        className="flex items-center space-x-3 flex-1 cursor-pointer"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={favorite.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs bg-primary/10">
-                            {favorite.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{favorite.name}</p>
-                          {favorite.club_name && (
-                            <p className="text-xs text-muted-foreground truncate">{favorite.club_name}</p>
-                          )}
+                {/* Section A: Current restricted users (non-removable) */}
+                {selectedFavorites.length > 0 && (
+                  <>
+                    <Label className="text-sm font-medium">Players in this match:</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {/* Show favorites that are selected */}
+                      {favoriteUsers.filter(f => selectedFavorites.includes(f.id)).map((user) => (
+                        <div key={user.id} className="flex items-center space-x-3 p-2 rounded-md bg-muted/50">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs bg-primary/10">
+                              {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{user.name}</p>
+                            {user.club_name && (
+                              <p className="text-xs text-muted-foreground truncate">{user.club_name}</p>
+                            )}
+                          </div>
                         </div>
-                      </Label>
+                      ))}
+                      {/* Show restricted-only users (not in favorites) */}
+                      {restrictedOnlyUsers.filter(u => selectedFavorites.includes(u.id)).map((user) => (
+                        <div key={user.id} className="flex items-center space-x-3 p-2 rounded-md bg-muted/50">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs bg-primary/10">
+                              {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{user.name}</p>
+                            {user.club_name && (
+                              <p className="text-xs text-muted-foreground truncate">{user.club_name}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  {favoriteUsers.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No favorites yet. Use the search below to add players.</p>
-                  )}
-                </div>
-                {selectedFavorites.length === 0 && favoriteUsers.length > 0 && (
-                  <p className="text-sm text-destructive">Please select at least one favorite</p>
+                  </>
                 )}
 
-                {/* Add player search */}
-                <div className="border-t pt-3 mt-3 space-y-2">
+                {/* Section B: Add from favorites (not yet in the list) */}
+                {favoriteUsers.filter(f => !selectedFavorites.includes(f.id)).length > 0 && (
+                  <div className="border-t pt-3 mt-1 space-y-2">
+                    <Label className="text-sm font-medium">Add from favorites:</Label>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {favoriteUsers.filter(f => !selectedFavorites.includes(f.id)).map((favorite) => (
+                        <div key={favorite.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={favorite.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs bg-primary/10">
+                                {favorite.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{favorite.name}</p>
+                              {favorite.club_name && (
+                                <p className="text-xs text-muted-foreground truncate">{favorite.club_name}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedFavorites(prev => [...prev, favorite.id])}
+                            className="h-7 text-xs"
+                            disabled={saving}
+                          >
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Section C: Search for players by name */}
+                <div className="border-t pt-3 mt-1 space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    Add a player to favorites
+                    <Search className="h-4 w-4" />
+                    Search for a player to add
                   </Label>
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
