@@ -478,7 +478,7 @@ export const MatchCard = ({
                   className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-                  <span>Favorites match</span>
+                  <span>Favorites only</span>
                   {showRestrictedPlayers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
               ) : match.group_ids && match.group_ids.length > 0 ? (
