@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, UserPlus, Heart, Ban, Trophy, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient, getDataClient } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
 interface Notification {
@@ -143,11 +143,12 @@ const NotificationDropdown = () => {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Delete the notification when clicked
-    await supabase
+    // Delete the notification when clicked (fire-and-forget to not block navigation)
+    getDataClient()
       .from('notifications')
       .delete()
-      .eq('id', notification.id);
+      .eq('id', notification.id)
+      .then(({ error }) => { if (error) console.error('Error deleting notification:', error); });
 
     setNotifications(prev => prev.filter(n => n.id !== notification.id));
 
@@ -175,7 +176,7 @@ const NotificationDropdown = () => {
   const handleDeleteNotification = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    const { error } = await supabase
+    const { error } = await getDataClient()
       .from('notifications')
       .delete()
       .eq('id', notificationId);

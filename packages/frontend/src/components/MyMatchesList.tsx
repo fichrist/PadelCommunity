@@ -17,6 +17,42 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatch
   const [isLoading, setIsLoading] = useState(false);
   const [showPast, setShowPast] = useState(false);
 
+  // Auto-switch to past view when selectedMatchId is a past match
+  useEffect(() => {
+    if (!selectedMatchId || !currentUserId || showPast) return;
+
+    const checkIfPastMatch = async () => {
+      const userId = currentUserId || getUserIdFromStorage();
+      if (!userId) return;
+
+      try {
+        const client = createFreshSupabaseClient();
+        const { data, error } = await (client as any)
+          .from('matches')
+          .select('id, match_date, created_by, match_participants (id, player_profile_id, added_by_profile_id)')
+          .eq('id', selectedMatchId)
+          .single();
+
+        if (error || !data) return;
+
+        // Check if user is involved
+        const isOrganizer = data.created_by === userId;
+        const isParticipant = data.match_participants?.some(
+          (p: any) => p.player_profile_id === userId || p.added_by_profile_id === userId
+        );
+
+        // If user is involved and match is in the past, switch to past view
+        if ((isOrganizer || isParticipant) && data.match_date && new Date(data.match_date) < new Date()) {
+          setShowPast(true);
+        }
+      } catch (err) {
+        console.error('Error checking match date:', err);
+      }
+    };
+
+    checkIfPastMatch();
+  }, [selectedMatchId, currentUserId]);
+
   useEffect(() => {
     const fetchMyMatches = async () => {
       // Use currentUserId from auth hook, fall back to localStorage

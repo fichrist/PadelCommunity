@@ -19,9 +19,37 @@
 
 ### Platform-Agnostic Code
 - All business logic must be platform-agnostic (work in both React Web and React Native)
-- Use supabase client directly in lib files, not in components
 - Avoid React-specific code (useState, useEffect, etc.) in business logic files
 - Only use TypeScript/JavaScript standard features in lib files
+
+### Supabase Client Usage
+De main `supabase` client (`import { supabase }`) kan hangen door interne locking na inactiviteit. Gebruik daarom:
+
+- **Data operaties** (`.from()`, `.rpc()`): gebruik **`getDataClient()`** — dit is een singleton die `customFetch` gebruikt en nooit hangt
+- **Auth operaties** (`.auth.*`): gebruik de main `supabase` client, of de safe wrappers (`getSessionSafe`, `getUserSafe`, `getUserIdFromStorage`)
+- **Realtime** (`.channel()`): gebruik de main `supabase` client
+- **Storage** (`.storage.*`): gebruik de main `supabase` client
+- **Token refresh**: gebruik `directTokenRefresh()` of `syncRefreshToken()`, NOOIT `supabase.auth.refreshSession()`
+
+```typescript
+// ❌ BAD - kan hangen na 10+ min inactiviteit
+import { supabase } from "@/integrations/supabase/client";
+const { data } = await supabase.from('profiles').select('*');
+
+// ✅ GOOD - gebruikt data client die nooit hangt
+import { getDataClient } from "@/integrations/supabase/client";
+const { data } = await getDataClient().from('profiles').select('*');
+
+// ✅ GOOD - auth operaties via safe wrappers
+import { getUserIdFromStorage, getSessionSafe } from "@/integrations/supabase/client";
+const userId = getUserIdFromStorage(); // synchrone localStorage read
+const session = await getSessionSafe(); // met timeout fallback
+
+// ✅ GOOD - storage en realtime via main client
+import { supabase } from "@/integrations/supabase/client";
+await supabase.storage.from('avatars').upload(path, file);
+supabase.channel('my-channel').on(...).subscribe();
+```
 
 ### When Creating New Features
 1. First create the business logic function in `/lib`

@@ -105,17 +105,25 @@ const getAuthStorageKey = (): string | null => {
  * NOT inline here — to avoid adding latency to every data request.
  */
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const token = getAccessTokenFromStorage();
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+  const isAuthRequest = url.includes('/auth/v1/');
 
+  // For data requests: if the token expires within 60s, refresh it first
+  if (!isAuthRequest) {
+    const secondsLeft = getTokenExpirySeconds();
+    if (secondsLeft !== null && secondsLeft < 60) {
+      console.log(`[customFetch] Token expires in ${secondsLeft}s, refreshing before request...`);
+      await directTokenRefresh();
+    }
+  }
+
+  const token = getAccessTokenFromStorage();
   const headers = new Headers(init?.headers);
 
   // Override Authorization with the user's JWT for data (PostgREST) requests
   // so that RLS (auth.uid()) works. But SKIP auth endpoint requests —
   // those need the anon key in Authorization, and overriding with an expired
   // user JWT would cause token refresh to fail after inactivity.
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
-  const isAuthRequest = url.includes('/auth/v1/');
-
   if (token && !isAuthRequest) {
     headers.set('Authorization', `Bearer ${token}`);
   }
