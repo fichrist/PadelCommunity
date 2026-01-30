@@ -2,20 +2,22 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Users, MapPin } from "lucide-react";
-import { supabase, createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
+import { Calendar, Users, MapPin, Heart, Trophy } from "lucide-react";
+import { createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
 interface MyMatchesListProps {
   currentUserId: string | null;
   selectedMatchId: string | null;
   onMatchClick: (matchId: string) => void;
+  refreshTrigger?: number;
 }
 
-const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatchesListProps) => {
+const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTrigger }: MyMatchesListProps) => {
   const [myMatches, setMyMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showPast, setShowPast] = useState(false);
+  const [groupNames, setGroupNames] = useState<Record<string, string>>({});
 
   // Auto-switch to past view when selectedMatchId is a past match
   useEffect(() => {
@@ -78,6 +80,7 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatch
             total_spots,
             created_by,
             group_ids,
+            restricted_users,
             match_participants (
               id,
               player_profile_id,
@@ -111,7 +114,28 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatch
         });
 
         // Limit to 10 matches
-        setMyMatches(userMatches.slice(0, 10));
+        const limited = userMatches.slice(0, 10);
+        setMyMatches(limited);
+
+        // Fetch group names for matches that have group_ids and no restricted_users
+        const allGroupIds = new Set<string>();
+        limited.forEach((match: any) => {
+          const hasRestricted = match.restricted_users && match.restricted_users.length > 0;
+          if (!hasRestricted && match.group_ids?.length > 0) {
+            match.group_ids.forEach((gid: string) => allGroupIds.add(gid));
+          }
+        });
+        if (allGroupIds.size > 0) {
+          const { data: groups } = await client
+            .from('groups')
+            .select('id, name')
+            .in('id', Array.from(allGroupIds));
+          if (groups) {
+            const nameMap: Record<string, string> = {};
+            groups.forEach((g: any) => { nameMap[g.id] = g.name; });
+            setGroupNames(nameMap);
+          }
+        }
       } catch (error) {
         console.error('Error in fetchMyMatches:', error);
       } finally {
@@ -120,38 +144,7 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatch
     };
 
     fetchMyMatches();
-
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('my-matches-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'matches'
-        },
-        () => {
-          fetchMyMatches();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'match_participants'
-        },
-        () => {
-          fetchMyMatches();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [currentUserId, showPast]);
+  }, [currentUserId, showPast, refreshTrigger]);
 
   if (!currentUserId) {
     return null;
@@ -212,10 +205,22 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick }: MyMatch
                   </span>
                 </div>
 
-                {/* Players count */}
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Users className="h-3 w-3 mr-1" />
-                  {match.match_participants?.length || 0}/{match.total_spots || 4} players
+                {/* Players count and match type indicator */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Users className="h-3 w-3 mr-1" />
+                    {match.match_participants?.length || 0}/{match.total_spots || 4} players
+                  </div>
+                  {match.restricted_users && match.restricted_users.length > 0 ? (
+                    <Heart className="h-3 w-3 text-red-500 fill-red-500 flex-shrink-0" />
+                  ) : match.group_ids?.length > 0 ? (
+                    <div className="flex items-center text-xs text-muted-foreground truncate ml-2">
+                      <Trophy className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate">
+                        {match.group_ids.map((gid: string) => groupNames[gid]).filter(Boolean).join(', ') || ''}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))

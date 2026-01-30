@@ -4,7 +4,7 @@
 // Helper functions for working with profiles in your React app
 // =====================================================
 
-import { supabase, getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
+import { getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 
 export interface Profile {
   id: string;
@@ -176,15 +176,14 @@ export async function updateProfile(updates: Partial<Profile>): Promise<boolean>
       }
     }
 
-    console.log('[updateProfile] About to update database...');
+    console.log('[updateProfile] About to upsert database...');
 
     const updateResponse = await client
       .from('profiles')
-      .update(updates)
-      .eq('id', userId)
+      .upsert({ id: userId, ...updates }, { onConflict: 'id' })
       .select();
 
-    console.log('[updateProfile] Database update completed');
+    console.log('[updateProfile] Database upsert completed');
 
     if (updateResponse.error) {
       console.error('[updateProfile] Database error:', updateResponse.error);
@@ -241,8 +240,10 @@ export async function uploadAvatar(file: File): Promise<string | null> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/${Math.random()}.${fileExt}`;
 
-    // Upload to Supabase Storage (storage doesn't hang like auth)
-    const { error: uploadError } = await supabase.storage
+    // Upload to Supabase Storage using data client (main client's storage
+    // can hang because _getAccessToken() calls getSession() internally)
+    const storageClient = getDataClient().storage;
+    const { error: uploadError } = await storageClient
       .from('avatars')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -255,7 +256,7 @@ export async function uploadAvatar(file: File): Promise<string | null> {
     }
 
     // Get public URL
-    const { data } = supabase.storage
+    const { data } = storageClient
       .from('avatars')
       .getPublicUrl(fileName);
 
@@ -306,8 +307,9 @@ export async function deleteAvatar(): Promise<boolean> {
     }
     const filePath = urlParts[1];
 
-    // Delete from storage
-    const { error: deleteError } = await supabase.storage
+    // Delete from storage using data client (main client's storage
+    // can hang because _getAccessToken() calls getSession() internally)
+    const { error: deleteError } = await getDataClient().storage
       .from('avatars')
       .remove([filePath]);
 

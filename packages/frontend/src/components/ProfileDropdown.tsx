@@ -115,6 +115,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      localStorage.clear();
       navigate('/', { replace: true });
     }
   };

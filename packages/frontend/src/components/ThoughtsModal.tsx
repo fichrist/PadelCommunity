@@ -259,7 +259,11 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
             : "Someone";
 
           await createThoughtAddedNotifications(postId, authorName, currentUserId, newThought);
+          supabase.channel('notification-updates').send({ type: 'broadcast', event: 'notifications-changed', payload: {} });
         }
+
+        // Broadcast thought change to other browsers
+        supabase.channel('match-updates').send({ type: 'broadcast', event: 'thoughts-changed', payload: { matchId: postId } });
 
         toast.success(replyingToThought ? "Reply added successfully!" : "Thought shared successfully!");
         setNewThought("");
@@ -299,6 +303,7 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
     const success = await updateThought(thoughtId, editContent);
     
     if (success) {
+      supabase.channel('match-updates').send({ type: 'broadcast', event: 'thoughts-changed', payload: { matchId: postId } });
       toast.success("Thought updated successfully!");
       setEditingThoughtId(null);
       setEditContent("");
@@ -321,6 +326,7 @@ const ThoughtsModal = ({ open, onOpenChange, postId, postTitle, thoughts, isEven
       const success = await deleteThought(thoughtId);
       
       if (success) {
+        supabase.channel('match-updates').send({ type: 'broadcast', event: 'thoughts-changed', payload: { matchId: postId } });
         toast.success("Thought deleted successfully!");
         // Notify parent to refresh thoughts
         if (onThoughtAdded) {

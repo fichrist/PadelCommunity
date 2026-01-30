@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ const Community = () => {
     name: string;
   }>({ open: false, imageUrl: null, name: "" });
   const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [matchRefreshTrigger, setMatchRefreshTrigger] = useState(0);
 
   const { currentUserId } = useAuth();
 
@@ -138,63 +139,48 @@ const Community = () => {
     fetchMatches();
   }, [selectedGroupId, selectedMatchId, currentUserId]);
 
-  // Real-time subscriptions for matches and participants
+  // Ref to always call latest refetchMatches (avoids stale closure in subscription callbacks)
+  const refetchRef = useRef<() => void>();
+
+  // Real-time: postgres_changes subscriptions for cross-browser updates
   useEffect(() => {
     if (!selectedGroupId && !selectedMatchId) return;
 
     console.log('[Community] Setting up real-time subscriptions...');
 
-    // Subscribe to matches table changes
     const matchesSubscription = supabase
       .channel('community-matches-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'matches'
-        },
-        (payload) => {
-          console.log('[Community] Matches change detected:', payload);
-          // Refetch matches when a match changes
-          refetchMatches();
+        { event: '*', schema: 'public', table: 'matches' },
+        () => {
+          console.log('[Community] Matches change detected');
+          refetchRef.current?.();
         }
       )
       .subscribe();
 
-    // Subscribe to match_participants table changes
     const participantsSubscription = supabase
       .channel('community-participants-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'match_participants'
-        },
-        (payload) => {
-          console.log('[Community] Match participants change detected:', payload);
-          // Refetch matches when participants change
-          refetchMatches();
+        { event: '*', schema: 'public', table: 'match_participants' },
+        () => {
+          console.log('[Community] Match participants change detected');
+          refetchRef.current?.();
         }
       )
       .subscribe();
 
-    // Subscribe to thoughts table changes
     const thoughtsSubscription = supabase
       .channel('community-thoughts-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'thoughts'
-        },
+        { event: '*', schema: 'public', table: 'thoughts' },
         (payload: any) => {
-          console.log('[Community] Thoughts change detected:', payload);
+          console.log('[Community] Thoughts change detected');
           const matchId = payload.new?.match_id || payload.old?.match_id;
           if (matchId) {
-            // Refetch thoughts for the affected match
             getThoughtsByMatchId(matchId).then((thoughts) => {
               setMatchThoughts(prev => ({ ...prev, [matchId]: thoughts }));
             });
@@ -203,7 +189,6 @@ const Community = () => {
       )
       .subscribe();
 
-    // Cleanup subscriptions on unmount or when selectedGroupId changes
     return () => {
       console.log('[Community] Cleaning up real-time subscriptions...');
       supabase.removeChannel(matchesSubscription);
@@ -231,6 +216,7 @@ const Community = () => {
 
       toast.success('Match deleted successfully');
       setMatches(prev => prev.filter(m => m.id !== matchId));
+      setMatchRefreshTrigger(prev => prev + 1);
     } catch (err) {
       console.error('Error deleting match:', err);
       toast.error('Failed to delete match');
@@ -273,6 +259,7 @@ const Community = () => {
       }
 
       await createParticipantJoinedNotifications(matchId, playerName, userId);
+      setMatchRefreshTrigger(prev => prev + 1);
       toast.success("Player spot reserved!");
 
       // Refetch the updated match
@@ -362,7 +349,7 @@ const Community = () => {
       if (playerProfileId) {
         await createParticipantLeftNotifications(match.id, playerName, playerProfileId);
       }
-
+      setMatchRefreshTrigger(prev => prev + 1);
       toast.success("Participant removed!");
 
       // Refetch the updated match
@@ -460,7 +447,6 @@ const Community = () => {
 
     if (success) {
       toast.success("Thought updated successfully!");
-      // Refetch thoughts for all matches that might contain this thought
       Object.keys(matchThoughts).forEach(matchId => {
         fetchMatchThoughts(matchId);
       });
@@ -474,20 +460,12 @@ const Community = () => {
 
     if (success) {
       toast.success("Thought deleted successfully!");
-      // Refetch thoughts for all matches that might contain this thought
       Object.keys(matchThoughts).forEach(matchId => {
         fetchMatchThoughts(matchId);
       });
     } else {
       toast.error("Failed to delete thought");
     }
-  };
-
-  const handleShareClick = (match: any) => {
-    navigator.clipboard.writeText(
-      match.url || `${window.location.origin}/events?match=${match.id}`
-    );
-    toast.success("Link copied to clipboard!");
   };
 
   const refetchMatches = async () => {
@@ -503,6 +481,9 @@ const Community = () => {
       setMatches(enrichedMatches);
     }
   };
+
+  // Keep ref in sync so broadcast callback always calls latest refetchMatches
+  refetchRef.current = refetchMatches;
 
   const handleMyMatchClick = (matchId: string) => {
     // Clear group selection and set the specific match
@@ -574,6 +555,7 @@ const Community = () => {
             currentUserId={currentUserId}
             selectedMatchId={selectedMatchId}
             onMatchClick={handleMyMatchClick}
+            refreshTrigger={matchRefreshTrigger}
           />
         </div>
 
@@ -596,13 +578,11 @@ const Community = () => {
                       onDeleteMatch={handleDeleteMatch}
                       onAddPlayer={handleAddPlayer}
                       onDeleteParticipant={handleDeleteParticipant}
-                      onShareClick={handleShareClick}
                       onProfileImageClick={(imageUrl, name) =>
                         setProfileImageModal({ open: true, imageUrl, name })
                       }
                       defaultExpandThoughts={!!selectedMatchId}
                       onUpdateMatch={() => {
-                        // Refetch matches when a match is updated
                         refetchMatches();
                       }}
                       thoughts={matchThoughts[match.id] || []}

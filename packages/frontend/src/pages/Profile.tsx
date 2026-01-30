@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
+import { supabase, getUserIdFromStorage, createFreshSupabaseClient, getDataClient } from "@/integrations/supabase/client";
 
 import { toast } from "sonner";
 import colorfulSkyBackground from "@/assets/colorful-sky-background.jpg";
@@ -307,30 +307,20 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      // Get user ID synchronously from localStorage (never hangs)
-      const userId = getUserIdFromStorage();
-      if (!userId) {
-        toast.error("Je moet ingelogd zijn om je account te verwijderen");
+      // Delete the auth user via RPC (cascades to profile + triggers array cleanup)
+      const { error: deleteError } = await getDataClient().rpc('delete_own_account');
+
+      if (deleteError) {
+        console.error("Error deleting account:", deleteError);
+        toast.error("Kon account niet verwijderen. Neem contact met ons op.");
         return;
       }
 
-      // Use fresh client to avoid stuck state
-      const client = createFreshSupabaseClient();
+      // Clear all local storage and sign out (fire-and-forget, account is already gone)
+      localStorage.clear();
+      supabase.auth.signOut().catch(() => {});
 
-      // Delete profile (this should cascade to related data via database triggers/policies)
-      const { error: profileError } = await client
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error("Error deleting profile:", profileError);
-      }
-
-      // Sign out and redirect
-      await supabase.auth.signOut();
-
-      toast.success("Je account is verwijderd. Je wordt uitgelogd.");
+      toast.success("Je account is verwijderd.");
       navigate('/');
     } catch (error) {
       console.error("Error deleting account:", error);
@@ -387,7 +377,7 @@ const Profile = () => {
                   <Avatar className="h-32 w-32 ring-4 ring-primary/20">
                     <AvatarImage src={avatarUrl} referrerPolicy="no-referrer" />
                     <AvatarFallback className="text-3xl bg-primary/10">
-                      {firstName?.[0]?.toUpperCase() || email?.[0]?.toUpperCase() || "ME"}
+                      {(firstName?.[0] || lastName?.[0]) ? `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() : (email?.[0]?.toUpperCase() || "ME")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex gap-2">

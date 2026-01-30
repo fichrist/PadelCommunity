@@ -353,7 +353,7 @@ const CreateMatch = () => {
 
         toast.success("Match created successfully!");
 
-        // Create notifications
+        // Create notifications and broadcast to other browsers
         await createMatchNotifications(
           {
             id: matchData.id,
@@ -366,6 +366,8 @@ const CreateMatch = () => {
           },
           userId
         );
+        supabase.channel('match-updates').send({ type: 'broadcast', event: 'match-changed', payload: {} });
+        supabase.channel('notification-updates').send({ type: 'broadcast', event: 'notifications-changed', payload: {} });
 
         navigate('/community', {
           state: {
@@ -462,6 +464,8 @@ const CreateMatch = () => {
           },
           userId
         );
+        supabase.channel('match-updates').send({ type: 'broadcast', event: 'match-changed', payload: {} });
+        supabase.channel('notification-updates').send({ type: 'broadcast', event: 'notifications-changed', payload: {} });
 
         // Insert participants if available
         if (matchDetails.participants && matchDetails.participants.length > 0) {

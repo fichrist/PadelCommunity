@@ -81,7 +81,7 @@ const NotificationDropdown = () => {
 
     fetchNotifications();
 
-    // Subscribe to new notifications
+    // Subscribe to new notifications via postgres_changes
     let channel: any;
 
     // Get user ID synchronously (never hangs)
@@ -105,10 +105,20 @@ const NotificationDropdown = () => {
         .subscribe();
     }
 
+    // Also listen for broadcast messages (more reliable cross-browser delivery)
+    const broadcastChannel = supabase
+      .channel('notification-updates')
+      .on('broadcast', { event: 'notifications-changed' }, () => {
+        console.log('[NotificationDropdown] Broadcast: notifications-changed received');
+        fetchNotifications();
+      })
+      .subscribe();
+
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
       }
+      supabase.removeChannel(broadcastChannel);
     };
   }, []);
 

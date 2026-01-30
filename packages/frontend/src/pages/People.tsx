@@ -9,10 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Star, Heart, Ban, Check, ChevronsUpDown, Building2 } from "lucide-react";
+import { Search, Filter, Plus, Users, User, MessageCircle, MapPin, Tag, UserCheck, Heart, Ban, Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, readSessionFromStorage, createFreshSupabaseClient, getUserIdFromStorage } from "@/integrations/supabase/client";
+import { supabase, readSessionFromStorage, createFreshSupabaseClient, getUserIdFromStorage, getDataClient } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 // Haversine formula to calculate distance between two lat/lng points in km
@@ -182,7 +182,7 @@ const People = () => {
   const saveFavoritesToDB = async (newFavorites: string[]) => {
     if (!currentUserId) return;
 
-    const { error } = await supabase
+    const { error } = await getDataClient()
       .from('profiles')
       .update({ favorite_users: newFavorites })
       .eq('id', currentUserId);
@@ -210,7 +210,7 @@ const People = () => {
   const saveBlockedToDB = async (newBlocked: string[]) => {
     if (!currentUserId) return;
 
-    const { error } = await supabase
+    const { error } = await getDataClient()
       .from('profiles')
       .update({ blocked_users: newBlocked })
       .eq('id', currentUserId);
@@ -345,7 +345,7 @@ const People = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Star className="h-4 w-4 text-yellow-500" />
+                          <Heart className="h-4 w-4 text-red-500" />
                           <Label htmlFor="favorites-toggle" className="text-sm font-medium cursor-pointer">
                             Favorites only
                           </Label>
@@ -422,7 +422,7 @@ const People = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="p-2 h-auto hover:bg-yellow-50"
+                                className="p-2 h-auto hover:bg-red-50"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (favoriteUsers.includes(person.id)) {
@@ -432,7 +432,7 @@ const People = () => {
                                   }
                                 }}
                               >
-                                <Star className={`h-4 w-4 text-yellow-500 ${favoriteUsers.includes(person.id) ? 'fill-yellow-500' : ''}`} />
+                                <Heart className={`h-4 w-4 text-red-500 ${favoriteUsers.includes(person.id) ? 'fill-red-500' : ''}`} />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>

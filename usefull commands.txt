@@ -31,14 +31,64 @@ run azure-functions locally?
 cd c:\PadelCommunity\packages\azure-functions && func start
 
 
-om naar PRD te gaan 
-env files aanpassen is niet nodig. die gaan niet mee
-ik denk dat het volgende ook niet nodig is
-!! supabase base passwoord in the .env  UHNdr43z@Vs#Rzn   en Sofie_1998 in PRD
+----------- direct token refresh ------------------------------
+In client.ts, in de directTokenRefresh() functie:
+
+De await supabase.auth.setSession() call hangt. Verander dit naar fire-and-forget (ZONDER await) omdat localStorage al geüpdatet is en customFetch daar direct uit leest.
+
+Verander van:
+
+try {
+  await supabase.auth.setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+  });
+} catch (err) {
+  console.warn('[directTokenRefresh] setSession sync failed, continuing:', err);
+}
+
+Naar:
+
+// Fire-and-forget: don't await because setSession can hang
+// localStorage is already updated, and customFetch reads from there
+supabase.auth.setSession({
+  access_token: data.access_token,
+  refresh_token: data.refresh_token,
+}).catch(err => {
+  console.warn('[directTokenRefresh] setSession sync failed (non-blocking):', err);
+});
 
 
+------ supabase client niet direct callen in write funcions --------------------------
+In alle bestanden in lib/ en hooks/useMessages.ts:
 
-Exit code 1
-Connecting to remote database...
-failed to parse rows: ERROR: prepared statement "lrupsc_1_0" already exists (SQLSTATE 42P05)
-Try rerunning the command with --debug to t
+1. Update de import:
+   import { supabase } from "@/integrations/supabase/client"
+   →
+   import { supabase, getDataClient } from "@/integrations/supabase/client"
+
+2. Vervang alle data operaties:
+   await supabase.from(...)
+   →
+   await getDataClient().from(...)
+
+   await supabase.rpc(...)
+   →
+   await getDataClient().rpc(...)
+
+NIET vervangen:
+- supabase.auth.* (auth operaties)
+- supabase.channel(...) (realtime subscriptions)
+- supabase.storage.* (file uploads)
+
+
+--------------- volgorde ------------------------------------
+### 📋 Voor Claude Code:
+```
+In client.ts, update de customFetch functie:
+
+Voeg VOOR het ophalen van de token een check toe:
+1. Haal de URL op en check of het een auth request is
+2. Als het GEEN auth request is, check getTokenExpirySeconds()
+3. Als token verloopt binnen 60 seconden, roep directTokenRefresh() aan
+4. PAS DAARNA haal de token op met getAccessTokenFromStorage()

@@ -13,11 +13,12 @@ import {
   Plus,
   X,
   MessageCircle,
-  Share2,
   Edit3,
   ChevronDown,
   ChevronUp,
-  Smile
+  Smile,
+  Heart,
+  Trophy
 } from "lucide-react";
 import { formatParticipantName } from "@/lib/matchParticipants";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -34,7 +35,6 @@ interface MatchCardProps {
   onAddPlayer?: (matchId: string) => void;
   onDeleteParticipant?: (participantId: string) => void;
   onCommentsClick?: (match: any) => void;
-  onShareClick?: (match: any) => void;
   onProfileImageClick?: (imageUrl: string | null, name: string) => void;
   onUpdateMatch?: () => void;
   thoughts?: any[];
@@ -51,7 +51,6 @@ export const MatchCard = ({
   onAddPlayer,
   onDeleteParticipant,
   onCommentsClick,
-  onShareClick,
   onProfileImageClick,
   onUpdateMatch,
   thoughts = [],
@@ -67,6 +66,9 @@ export const MatchCard = ({
   const [editContent, setEditContent] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [editMatchDialogOpen, setEditMatchDialogOpen] = useState(false);
+  const [showRestrictedPlayers, setShowRestrictedPlayers] = useState(false);
+  const [restrictedPlayerNames, setRestrictedPlayerNames] = useState<string[]>([]);
+  const [matchGroupNames, setMatchGroupNames] = useState<string[]>([]);
 
   const availableEmojis = ["👍", "❤️", "😂", "🎾", "🔥", "👏"];
 
@@ -74,6 +76,37 @@ export const MatchCard = ({
   const [thoughtReactions, setThoughtReactions] = useState<Record<string, Record<string, string[]>>>({});
   // Map user IDs to display names for reaction tooltips
   const [reactorNames, setReactorNames] = useState<Record<string, string>>({});
+
+  // Fetch restricted player names or group names
+  useEffect(() => {
+    const fetchMatchTypeInfo = async () => {
+      const client = createFreshSupabaseClient();
+
+      if (match.restricted_users && match.restricted_users.length > 0) {
+        const { data: profiles } = await client
+          .from('profiles')
+          .select('first_name, last_name')
+          .in('id', match.restricted_users);
+
+        if (profiles) {
+          setRestrictedPlayerNames(
+            profiles.map((p: any) => `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown')
+          );
+        }
+      } else if (match.group_ids && match.group_ids.length > 0) {
+        const { data: groups } = await client
+          .from('groups')
+          .select('name')
+          .in('id', match.group_ids);
+
+        if (groups) {
+          setMatchGroupNames(groups.map((g: any) => g.name));
+        }
+      }
+    };
+
+    fetchMatchTypeInfo();
+  }, [match.restricted_users, match.group_ids]);
 
   // Fetch reactions for all thoughts when component mounts or thoughts change
   useEffect(() => {
@@ -241,6 +274,7 @@ export const MatchCard = ({
             currentUserId,
             emoji
           );
+          supabase.channel('notification-updates').send({ type: 'broadcast', event: 'notifications-changed', payload: {} });
         }
       }
     } catch (error) {
@@ -283,44 +317,9 @@ export const MatchCard = ({
           </div>
         )}
 
-        {/* Top right action buttons */}
-        <div className="absolute top-4 right-4 flex gap-1 z-10">
-          {/* Share button */}
-          {onShareClick && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onShareClick(match);
-              }}
-              className="h-8 w-8 text-muted-foreground hover:text-primary"
-              title="Share match"
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-          )}
-          {/* Edit button (organizer or restricted user) */}
-          {currentUserId && (currentUserId === match.created_by || match.restricted_users?.includes(currentUserId)) && onUpdateMatch && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setEditMatchDialogOpen(true);
-              }}
-              className="h-8 w-8 text-muted-foreground hover:text-primary"
-              title="Edit match"
-            >
-              <Edit3 className="h-4 w-4" />
-            </Button>
-          )}
-          {/* Delete button (organizer or restricted user) */}
-          {currentUserId && (currentUserId === match.created_by || match.restricted_users?.includes(currentUserId)) && onDeleteMatch && (
+        {/* Top right delete button (organizer only) */}
+        {currentUserId && currentUserId === match.created_by && onDeleteMatch && (
+          <div className="absolute top-4 right-4 z-10">
             <Button
               type="button"
               variant="ghost"
@@ -334,8 +333,8 @@ export const MatchCard = ({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Horizontal layout: Match info on left, Players on right */}
         <div className="flex gap-6">
@@ -469,6 +468,52 @@ export const MatchCard = ({
                 </Button>
               ))}
             </div>
+
+            {/* Match type indicator + edit button on same row */}
+            <div className="mt-2 flex items-center justify-between">
+              {/* Left: heart or group ranking */}
+              {match.restricted_users && match.restricted_users.length > 0 ? (
+                <button
+                  onClick={() => setShowRestrictedPlayers(!showRestrictedPlayers)}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-500 transition-colors"
+                >
+                  <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+                  <span>Favorites match</span>
+                  {showRestrictedPlayers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              ) : match.group_ids && match.group_ids.length > 0 ? (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Trophy className="h-4 w-4" />
+                  <span>{matchGroupNames.join(', ')}</span>
+                </div>
+              ) : <div />}
+
+              {/* Right: edit icon */}
+              {currentUserId && (currentUserId === match.created_by || match.restricted_users?.includes(currentUserId)) && onUpdateMatch && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setEditMatchDialogOpen(true);
+                  }}
+                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  title="Edit match"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {/* Expanded restricted player names */}
+            {showRestrictedPlayers && restrictedPlayerNames.length > 0 && (
+              <div className="mt-1 ml-5 space-y-0.5">
+                {restrictedPlayerNames.map((name, i) => (
+                  <div key={i} className="text-xs text-muted-foreground">{name}</div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
