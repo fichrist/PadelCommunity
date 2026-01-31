@@ -17,6 +17,8 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
+import UpAndDown from "./pages/UpAndDown";
+import CreateUpAndDownEvent from "./pages/CreateUpAndDownEvent";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -88,6 +90,8 @@ const App = () => {
             <Route path="/settings" element={<Navigate to="/profile" replace />} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/upanddown" element={<UpAndDown />} />
+            <Route path="/create-upanddown-event" element={<CreateUpAndDownEvent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsent />

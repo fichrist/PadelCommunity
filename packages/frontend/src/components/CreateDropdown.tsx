@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trophy } from "lucide-react";
+import { Plus, Trophy, CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface CreateDropdownProps {
@@ -33,6 +33,13 @@ const CreateDropdown = ({ onCreateShare }: CreateDropdownProps) => {
         >
           <Trophy className="h-4 w-4 text-primary" />
           <span>Create Match</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate('/create-upanddown-event')}
+          className="cursor-pointer flex items-center space-x-2 py-3"
+        >
+          <CalendarPlus className="h-4 w-4 text-primary" />
+          <span>Create Event</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
