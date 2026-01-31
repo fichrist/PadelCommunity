@@ -72,6 +72,7 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTr
           .select(`
             id,
             match_date,
+            match_time,
             duration,
             venue_name,
             city,
@@ -190,7 +191,19 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTr
                 {match.match_date && (
                   <div className="flex items-center text-sm font-medium">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {format(new Date(match.match_date), "EEE d MMM, HH:mm")}
+                    {(() => {
+                      const dateStr = match.match_date;
+                      const timeStr = match.match_time ? match.match_time.substring(0, 5) : null;
+                      const startDate = dateStr.includes("T")
+                        ? new Date(dateStr)
+                        : timeStr
+                          ? new Date(`${dateStr}T${timeStr}:00`)
+                          : new Date(dateStr);
+                      const hasTime = dateStr.includes("T") || !!timeStr;
+                      return hasTime
+                        ? format(startDate, "EEE d MMM, HH:mm")
+                        : format(startDate, "EEE d MMM");
+                    })()}
                   </div>
                 )}
 

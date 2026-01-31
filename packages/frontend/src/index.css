@@ -2,134 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
+Dark navy/gold padel theme.
 */
 
 @layer base {
   :root {
-    /* Mystical spiritual background with warm undertones */
-    --background: 35 35% 96%;
-    --foreground: 280 25% 20%;
+    /* Dark navy background */
+    --background: 218 44% 18%;
+    --foreground: 218 38% 91%;
 
-    /* Soft ethereal cards */
-    --card: 35 50% 98%;
-    --card-foreground: 280 25% 20%;
+    /* Slightly lighter navy cards */
+    --card: 218 35% 21%;
+    --card-foreground: 218 38% 91%;
 
-    --popover: 35 50% 98%;
-    --popover-foreground: 280 25% 20%;
+    --popover: 218 35% 21%;
+    --popover-foreground: 218 38% 91%;
 
-    /* Deep spiritual purple as primary */
-    --primary: 280 45% 35%;
-    --primary-foreground: 35 30% 95%;
+    /* Gold as primary */
+    --primary: 44 81% 46%;
+    --primary-foreground: 218 44% 18%;
 
-    /* Warm sage secondary */
-    --secondary: 120 30% 88%;
-    --secondary-foreground: 280 25% 25%;
+    /* Orange as secondary */
+    --secondary: 21 80% 58%;
+    --secondary-foreground: 218 44% 18%;
 
-    /* Soft muted tones */
-    --muted: 35 25% 90%;
-    --muted-foreground: 280 15% 45%;
+    /* Muted navy tones */
+    --muted: 218 30% 25%;
+    --muted-foreground: 218 22% 62%;
 
-    /* Mystical accent with aurora vibes */
-    --accent: 260 50% 65%;
-    --accent-foreground: 260 20% 15%;
+    /* Bright gold accent */
+    --accent: 47 84% 66%;
+    --accent-foreground: 218 44% 18%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Softer borders for ethereal feel */
-    --border: 35 20% 85%;
-    --input: 35 20% 85%;
-    --ring: 280 45% 65%;
+    /* Subtle navy borders */
+    --border: 218 30% 28%;
+    --input: 218 30% 23%;
+    --ring: 44 81% 46%;
 
-    /* Enhanced Spiritual Design Tokens */
-    --sage: 120 35% 82%;
-    --sage-foreground: 120 30% 20%;
+    /* Design tokens */
+    --sage: 44 81% 46%;
+    --sage-foreground: 218 44% 18%;
+    --earth: 21 80% 58%;
+    --earth-foreground: 218 44% 18%;
+    --celestial: 218 40% 24%;
+    --celestial-foreground: 218 38% 91%;
+    --lotus: 47 84% 66%;
+    --lotus-foreground: 218 44% 18%;
 
-    --earth: 35 45% 70%;
-    --earth-foreground: 35 40% 20%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(44, 81%, 46%), hsl(21, 80%, 58%));
+    --gradient-peaceful: linear-gradient(135deg, hsl(218, 44%, 18%), hsl(218, 40%, 24%));
+    --gradient-celestial: linear-gradient(135deg, hsl(218, 44%, 18%), hsl(218, 40%, 24%), hsl(218, 44%, 18%));
+    --gradient-aurora: linear-gradient(135deg, hsl(44, 81%, 46%), hsl(21, 80%, 58%));
+    --gradient-ethereal: linear-gradient(180deg, hsl(218, 44%, 18%), hsl(218, 40%, 24%));
 
-    --celestial: 240 60% 60%;
-    --celestial-foreground: 240 30% 20%;
-
-    --lotus: 290 55% 70%;
-    --lotus-foreground: 290 40% 20%;
-
-    /* Mystical Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280, 45%, 35%), hsl(260, 50%, 65%));
-    --gradient-peaceful: linear-gradient(180deg, hsl(120, 35%, 82%), hsl(35, 45%, 70%));
-    --gradient-celestial: linear-gradient(45deg, hsl(240, 60%, 60%), hsl(290, 55%, 70%));
-    --gradient-aurora: linear-gradient(135deg, hsl(280, 45%, 35%), hsl(240, 60%, 60%), hsl(290, 55%, 70%));
-    --gradient-ethereal: linear-gradient(180deg, hsl(35, 35%, 96%), hsl(35, 45%, 92%));
-
-    /* Soft mystical shadows */
-    --shadow-gentle: 0 4px 25px hsla(280, 45%, 35%, 0.12);
-    --shadow-peaceful: 0 8px 35px hsla(120, 35%, 50%, 0.08);
-    --shadow-mystical: 0 12px 40px hsla(280, 45%, 35%, 0.15);
+    /* Dark shadows */
+    --shadow-gentle: 0 4px 25px hsla(218, 44%, 10%, 0.3);
+    --shadow-peaceful: 0 8px 35px hsla(218, 44%, 10%, 0.2);
+    --shadow-mystical: 0 12px 40px hsla(218, 44%, 10%, 0.4);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 218 44% 15%;
+    --sidebar-foreground: 218 38% 91%;
+    --sidebar-primary: 44 81% 46%;
+    --sidebar-primary-foreground: 218 44% 18%;
+    --sidebar-accent: 218 35% 21%;
+    --sidebar-accent-foreground: 218 38% 91%;
+    --sidebar-border: 218 30% 28%;
+    --sidebar-ring: 44 81% 46%;
   }
 
   .dark {
-    /* Deep mystical night background */
-    --background: 280 30% 8%;
-    --foreground: 35 30% 92%;
+    /* Same as :root — entire app is dark navy/gold */
+    --background: 218 44% 18%;
+    --foreground: 218 38% 91%;
 
-    /* Dark ethereal cards */
-    --card: 280 25% 12%;
-    --card-foreground: 35 30% 92%;
+    --card: 218 35% 21%;
+    --card-foreground: 218 38% 91%;
 
-    --popover: 280 25% 12%;
-    --popover-foreground: 35 30% 92%;
+    --popover: 218 35% 21%;
+    --popover-foreground: 218 38% 91%;
 
-    /* Glowing spiritual primary */
-    --primary: 260 60% 75%;
-    --primary-foreground: 280 30% 10%;
+    --primary: 44 81% 46%;
+    --primary-foreground: 218 44% 18%;
 
-    /* Dark sage secondary */
-    --secondary: 120 20% 20%;
-    --secondary-foreground: 35 30% 92%;
+    --secondary: 21 80% 58%;
+    --secondary-foreground: 218 44% 18%;
 
-    /* Dark muted tones */
-    --muted: 280 20% 18%;
-    --muted-foreground: 35 15% 65%;
+    --muted: 218 30% 25%;
+    --muted-foreground: 218 22% 62%;
 
-    /* Mystical dark accent */
-    --accent: 280 25% 25%;
-    --accent-foreground: 35 30% 92%;
+    --accent: 47 84% 66%;
+    --accent-foreground: 218 44% 18%;
 
-    --destructive: 0 60% 45%;
-    --destructive-foreground: 35 30% 92%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Subtle dark borders */
-    --border: 280 20% 22%;
-    --input: 280 20% 22%;
-    --ring: 260 60% 75%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 218 30% 28%;
+    --input: 218 30% 23%;
+    --ring: 44 81% 46%;
+
+    --sidebar-background: 218 44% 15%;
+    --sidebar-foreground: 218 38% 91%;
+    --sidebar-primary: 44 81% 46%;
+    --sidebar-primary-foreground: 218 44% 18%;
+    --sidebar-accent: 218 35% 21%;
+    --sidebar-accent-foreground: 218 38% 91%;
+    --sidebar-border: 218 30% 28%;
+    --sidebar-ring: 44 81% 46%;
   }
 }
 

@@ -345,15 +345,28 @@ export const MatchCard = ({
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                 <span className="font-semibold">
-                  {format(new Date(match.match_date), "EEEE d MMM, HH:mm")}
-                  {match.duration &&
-                    (() => {
-                      const startDate = new Date(match.match_date);
-                      const endDate = new Date(
-                        startDate.getTime() + match.duration * 60000
-                      );
-                      return ` - ${format(endDate, "HH:mm")}`;
-                    })()}
+                  {(() => {
+                    const dateStr = match.match_date;
+                    const timeStr = match.match_time ? match.match_time.substring(0, 5) : null;
+                    const hasUrl = !!match.url;
+                    // If match_date already contains time (from URL-based matches), use it directly
+                    // Otherwise combine match_date + match_time (manual matches)
+                    const startDate = dateStr.includes("T")
+                      ? new Date(dateStr)
+                      : timeStr
+                        ? new Date(`${dateStr}T${timeStr}:00`)
+                        : new Date(dateStr);
+                    const hasTime = dateStr.includes("T") || !!timeStr;
+                    const startFormatted = hasTime
+                      ? format(startDate, "EEEE d MMM, HH:mm")
+                      : format(startDate, "EEEE d MMM");
+                    // Only show end time for URL-based matches with duration
+                    if (hasUrl && match.duration && hasTime) {
+                      const endDate = new Date(startDate.getTime() + match.duration * 60000);
+                      return `${startFormatted} - ${format(endDate, "HH:mm")}`;
+                    }
+                    return startFormatted;
+                  })()}
                 </span>
               </div>
             )}

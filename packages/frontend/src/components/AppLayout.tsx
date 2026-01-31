@@ -5,7 +5,6 @@ import { Calendar, User, MessageCircle, Plus, Trophy, LogIn, Users } from "lucid
 import { useNavigate, useLocation } from "react-router-dom";
 import spiritualLogo from "@/assets/spiritual-logo.png";
 import elenaProfile from "@/assets/elena-profile.jpg";
-import padelBackground from "@/assets/padel-background.jpg";
 import CreateDropdown from "@/components/CreateDropdown";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
@@ -155,14 +154,14 @@ const AppLayout = ({
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${padelBackground})` }}
+      className="min-h-screen"
+      style={{ background: 'linear-gradient(135deg, #1a2744 0%, #243656 50%, #1a2744 100%)' }}
     >
       {/* Background Overlay */}
       <div className="min-h-screen pt-0">
         {/* Top Navigation Bar */}
         {showNavBar && (
-          <div className="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+          <div className="backdrop-blur-md border-b sticky top-0 z-50" style={{ backgroundColor: 'rgba(26,39,68,0.9)', borderBottomColor: 'rgba(212,160,23,0.2)' }}>
           <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
               {/* Left: Logo + App Name */}

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase, getUserIdFromStorage } from "@/integrations/supabase/client";
 import SignupCard from "@/components/SignupCard";
 import { Trophy } from "lucide-react";
-import padelBackground from "@/assets/padel-background.jpg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,12 +40,7 @@ const Login = () => {
   return (
     <div
       className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-12"
-      style={{
-        backgroundImage: `url(${padelBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
+      style={{ background: 'linear-gradient(135deg, #1a2744 0%, #243656 50%, #1a2744 100%)' }}
     >
       {/* Logo and Welcome Message */}
       <div className="text-center mb-8">

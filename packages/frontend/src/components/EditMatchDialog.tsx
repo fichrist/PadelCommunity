@@ -15,13 +15,16 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Ban, UserPlus, X, Calendar, Clock } from "lucide-react";
+import { Loader2, Search, Ban, UserPlus, X, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { fetchPlaytomicMatchDetails } from "@/lib/playtomic";
 import { createNotificationsForNewRestrictedUsers } from "@/lib/notifications";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
+import { nl } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface EditMatchDialogProps {
   open: boolean;
@@ -192,7 +195,7 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
     setSelectedGroups(match.group_ids || []);
     setUrl(match.url || "");
     setMatchDate(match.match_date ? match.match_date.split('T')[0] : "");
-    setMatchTime(match.match_time || "12:00");
+    setMatchTime(match.match_time ? match.match_time.substring(0, 5) : "12:00");
     setNewFavoriteIds([]);
     setPlayerSearch("");
     setSearchResults([]);
@@ -449,7 +452,7 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
               <div className="rounded-lg border p-3 bg-muted/30 space-y-1">
                 {match.match_date && (
                   <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                     {format(new Date(match.match_date), "EEEE d MMMM yyyy")}
                     {match.match_time && (
                       <span className="ml-2 flex items-center">
@@ -487,14 +490,33 @@ const EditMatchDialog = ({ open, onOpenChange, match, onUpdate }: EditMatchDialo
               {!url.trim() && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-date">Date</Label>
-                    <Input
-                      id="edit-date"
-                      type="date"
-                      value={matchDate}
-                      onChange={(e) => setMatchDate(e.target.value)}
-                      disabled={saving}
-                    />
+                    <Label>Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={saving}
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {matchDate
+                            ? format(parse(matchDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")
+                            : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={matchDate ? parse(matchDate, "yyyy-MM-dd", new Date()) : undefined}
+                          onSelect={(date) => {
+                            if (date) setMatchDate(format(date, "yyyy-MM-dd"));
+                          }}
+                          locale={nl}
+                          weekStartsOn={1}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-time">Start Time</Label>

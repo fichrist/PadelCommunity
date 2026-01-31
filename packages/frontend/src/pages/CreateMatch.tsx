@@ -10,13 +10,17 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Loader2, Search, Ban, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Ban, UserPlus, X, Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase, getUserIdFromStorage, createFreshSupabaseClient } from "@/integrations/supabase/client";
 import { processMatchParticipants } from "@/lib/matchParticipants";
 import { createMatchNotifications } from "@/lib/notifications";
 import { fetchPlaytomicMatchDetails } from "@/lib/playtomic";
+import { format, parse } from "date-fns";
+import { nl } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface FavoriteUser {
   id: string;
@@ -579,14 +583,32 @@ const CreateMatch = () => {
               {withoutUrl && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="match-date">Date *</Label>
-                    <Input
-                      id="match-date"
-                      type="date"
-                      value={matchDate}
-                      onChange={(e) => setMatchDate(e.target.value)}
-                      required={withoutUrl}
-                    />
+                    <Label>Date *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {matchDate
+                            ? format(parse(matchDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")
+                            : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={matchDate ? parse(matchDate, "yyyy-MM-dd", new Date()) : undefined}
+                          onSelect={(date) => {
+                            if (date) setMatchDate(format(date, "yyyy-MM-dd"));
+                          }}
+                          locale={nl}
+                          weekStartsOn={1}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="match-time">Start Time *</Label>

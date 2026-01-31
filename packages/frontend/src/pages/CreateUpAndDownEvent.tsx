@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { toast } from "sonner";
 import { getUserIdFromStorage } from "@/integrations/supabase/client";
 import { createUpAndDownEvent, fetchGroups } from "@/lib/upanddown";
+import { format, parse } from "date-fns";
+import { nl } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const CreateUpAndDownEvent = () => {
   const navigate = useNavigate();
@@ -156,13 +160,32 @@ const CreateUpAndDownEvent = () => {
               {/* Date and Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="event-date">Date</Label>
-                  <Input
-                    id="event-date"
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                  />
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {eventDate
+                          ? format(parse(eventDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")
+                          : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={eventDate ? parse(eventDate, "yyyy-MM-dd", new Date()) : undefined}
+                        onSelect={(date) => {
+                          if (date) setEventDate(format(date, "yyyy-MM-dd"));
+                        }}
+                        locale={nl}
+                        weekStartsOn={1}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
                   <Label htmlFor="event-time">Start time</Label>
