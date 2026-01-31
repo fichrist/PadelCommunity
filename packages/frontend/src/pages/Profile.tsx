@@ -545,17 +545,17 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Shield className="h-5 w-5 text-primary" />
-                  <span>Privacy & Gegevensbeheer</span>
+                  <span>Privacy & Data Management</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Onder de GDPR heb je het recht om je gegevens in te zien, te downloaden of te verwijderen.
-                  Lees ons{" "}
+                  Under the GDPR you have the right to view, download or delete your data.
+                  Read our{" "}
                   <Link to="/privacy" className="text-primary hover:underline">
-                    privacybeleid
+                    privacy policy
                   </Link>{" "}
-                  voor meer informatie.
+                  for more information.
                 </p>
 
                 <Separator />
@@ -563,9 +563,9 @@ const Profile = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-medium">Download je gegevens</h4>
+                      <h4 className="text-sm font-medium">Download your data</h4>
                       <p className="text-xs text-muted-foreground">
-                        Download al je persoonlijke gegevens in JSON-formaat
+                        Download all your personal data in JSON format
                       </p>
                     </div>
                     <Button
@@ -583,9 +583,9 @@ const Profile = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-medium text-destructive">Account verwijderen</h4>
+                      <h4 className="text-sm font-medium text-destructive">Delete account</h4>
                       <p className="text-xs text-muted-foreground">
-                        Verwijder je account en al je gegevens permanent
+                        Permanently delete your account and all your data
                       </p>
                     </div>
                     <AlertDialog>
@@ -597,24 +597,24 @@ const Profile = () => {
                           disabled={deletingAccount}
                         >
                           <Trash2 className="h-4 w-4" />
-                          {deletingAccount ? "Verwijderen..." : "Verwijderen"}
+                          {deletingAccount ? "Deleting..." : "Delete"}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Account verwijderen?</AlertDialogTitle>
+                          <AlertDialogTitle>Delete account?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Dit kan niet ongedaan worden gemaakt. Al je gegevens worden permanent verwijderd,
-                            inclusief je profiel, inschrijvingen en berichten.
+                            This action cannot be undone. All your data will be permanently deleted,
+                            including your profile, registrations and messages.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleDeleteAccount}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Ja, verwijder mijn account
+                            Yes, delete my account
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

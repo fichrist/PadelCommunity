@@ -7,113 +7,113 @@ const Privacy = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card className="bg-card/80 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-2xl font-comfortaa">Privacybeleid</CardTitle>
+            <CardTitle className="text-2xl font-comfortaa">Privacy Policy</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-6">
             <p className="text-muted-foreground">
-              Laatst bijgewerkt: {new Date().toLocaleDateString('nl-BE')}
+              Last updated: {new Date().toLocaleDateString('en-GB')}
             </p>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">1. Inleiding</h2>
+              <h2 className="text-xl font-semibold mt-6 mb-3">1. Introduction</h2>
               <p>
-                Padel Community respecteert je privacy en zet zich in voor de bescherming van je persoonsgegevens.
-                Dit privacybeleid legt uit hoe wij je gegevens verzamelen, gebruiken en beschermen in overeenstemming
-                met de Algemene Verordening Gegevensbescherming (AVG/GDPR).
+                Padel Community respects your privacy and is committed to protecting your personal data.
+                This privacy policy explains how we collect, use and protect your data in accordance
+                with the General Data Protection Regulation (GDPR).
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">2. Welke gegevens verzamelen wij?</h2>
-              <p>Wij verzamelen de volgende persoonsgegevens:</p>
+              <h2 className="text-xl font-semibold mt-6 mb-3">2. What data do we collect?</h2>
+              <p>We collect the following personal data:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Accountgegevens:</strong> E-mailadres, naam, profielfoto (optioneel)</li>
-                <li><strong>Locatiegegevens:</strong> Je locatie wordt alleen gebruikt om de afstand tot events te berekenen</li>
-                <li><strong>Spelersgegevens:</strong> Padel niveau, club, speelvoorkeuren</li>
-                <li><strong>Gebruiksgegevens:</strong> Events waaraan je deelneemt, berichten binnen het platform</li>
+                <li><strong>Account data:</strong> Email address, name, profile picture (optional)</li>
+                <li><strong>Location data:</strong> Your location is only used to calculate the distance to events</li>
+                <li><strong>Player data:</strong> Padel level, club, playing preferences</li>
+                <li><strong>Usage data:</strong> Events you participate in, messages within the platform</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">3. Waarvoor gebruiken wij je gegevens?</h2>
-              <p>Je gegevens worden uitsluitend gebruikt voor:</p>
+              <h2 className="text-xl font-semibold mt-6 mb-3">3. What do we use your data for?</h2>
+              <p>Your data is used exclusively for:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Afstandsberekening:</strong> Om te tonen hoe ver events van jou verwijderd zijn</li>
-                <li><strong>Gepersonaliseerde weergave:</strong> Om events en spelers te filteren op basis van je voorkeuren</li>
-                <li><strong>Accountbeheer:</strong> Om je account te beheren en in te loggen</li>
-                <li><strong>Communicatie:</strong> Om berichten te versturen naar andere spelers binnen het platform</li>
+                <li><strong>Distance calculation:</strong> To show how far events are from your location</li>
+                <li><strong>Personalised display:</strong> To filter events and players based on your preferences</li>
+                <li><strong>Account management:</strong> To manage your account and enable login</li>
+                <li><strong>Communication:</strong> To send messages to other players within the platform</li>
               </ul>
               <p className="mt-4 font-medium">
-                Wij delen je gegevens NOOIT met derden voor commerciele doeleinden.
+                We NEVER share your data with third parties for commercial purposes.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">4. Rechtsgrondslag</h2>
-              <p>Wij verwerken je gegevens op basis van:</p>
+              <h2 className="text-xl font-semibold mt-6 mb-3">4. Legal basis</h2>
+              <p>We process your data based on:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Toestemming:</strong> Je geeft expliciete toestemming bij het aanmaken van je account</li>
-                <li><strong>Uitvoering van de overeenkomst:</strong> De verwerking is noodzakelijk om onze diensten te leveren</li>
+                <li><strong>Consent:</strong> You give explicit consent when creating your account</li>
+                <li><strong>Performance of a contract:</strong> Processing is necessary to provide our services</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">5. Je rechten</h2>
-              <p>Onder de GDPR heb je de volgende rechten:</p>
+              <h2 className="text-xl font-semibold mt-6 mb-3">5. Your rights</h2>
+              <p>Under the GDPR you have the following rights:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Recht op inzage:</strong> Je kunt opvragen welke gegevens wij van je hebben</li>
-                <li><strong>Recht op rectificatie:</strong> Je kunt je gegevens laten corrigeren</li>
-                <li><strong>Recht op verwijdering:</strong> Je kunt vragen om al je gegevens te verwijderen</li>
-                <li><strong>Recht op overdraagbaarheid:</strong> Je kunt je gegevens opvragen in een leesbaar formaat</li>
-                <li><strong>Recht om toestemming in te trekken:</strong> Je kunt je toestemming op elk moment intrekken</li>
+                <li><strong>Right of access:</strong> You can request what data we hold about you</li>
+                <li><strong>Right to rectification:</strong> You can have your data corrected</li>
+                <li><strong>Right to erasure:</strong> You can request deletion of all your data</li>
+                <li><strong>Right to data portability:</strong> You can request your data in a readable format</li>
+                <li><strong>Right to withdraw consent:</strong> You can withdraw your consent at any time</li>
               </ul>
               <p className="mt-4">
-                Je kunt deze rechten uitoefenen via je profielinstellingen of door contact met ons op te nemen.
+                You can exercise these rights through your profile settings or by contacting us.
               </p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold mt-6 mb-3">6. Cookies</h2>
-              <p>Wij gebruiken alleen functionele cookies die noodzakelijk zijn voor:</p>
+              <p>We only use functional cookies that are necessary for:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Het onthouden van je login-sessie</li>
-                <li>Het opslaan van je cookie-voorkeuren</li>
+                <li>Remembering your login session</li>
+                <li>Storing your cookie preferences</li>
               </ul>
               <p className="mt-4">
-                Wij gebruiken geen tracking cookies of cookies voor marketingdoeleinden.
+                We do not use tracking cookies or cookies for marketing purposes.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">7. Beveiliging</h2>
+              <h2 className="text-xl font-semibold mt-6 mb-3">7. Security</h2>
               <p>
-                Wij nemen passende technische en organisatorische maatregelen om je gegevens te beschermen tegen
-                ongeoorloofde toegang, verlies of misbruik. Je gegevens worden opgeslagen op beveiligde servers
-                met encryptie.
+                We take appropriate technical and organisational measures to protect your data against
+                unauthorised access, loss or misuse. Your data is stored on secure servers
+                with encryption.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">8. Bewaartermijn</h2>
+              <h2 className="text-xl font-semibold mt-6 mb-3">8. Retention period</h2>
               <p>
-                Wij bewaren je gegevens zolang je een actief account hebt. Na verwijdering van je account worden
-                al je persoonsgegevens binnen 30 dagen permanent verwijderd.
+                We retain your data as long as you have an active account. After deleting your account,
+                all your personal data will be permanently removed within 30 days.
               </p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold mt-6 mb-3">9. Contact</h2>
               <p>
-                Voor vragen over dit privacybeleid of om je rechten uit te oefenen, kun je contact opnemen via
-                de contactgegevens op onze website.
+                For questions about this privacy policy or to exercise your rights, you can contact us
+                through the contact details on our website.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mt-6 mb-3">10. Wijzigingen</h2>
+              <h2 className="text-xl font-semibold mt-6 mb-3">10. Changes</h2>
               <p>
-                Wij kunnen dit privacybeleid van tijd tot tijd aanpassen. Belangrijke wijzigingen worden
-                gecommuniceerd via de website of per e-mail.
+                We may update this privacy policy from time to time. Important changes will be
+                communicated through the website or by email.
               </p>
             </section>
           </CardContent>
