@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Privacy = () => {
   return (
-    <AppLayout showCreateDropdown={false}>
+    <AppLayout showNavBar={false}>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card className="bg-card/80 backdrop-blur-md">
           <CardHeader>

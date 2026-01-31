@@ -81,6 +81,8 @@ export async function enrollForEvent(params: {
   partnerName?: string;
   phoneNumber: string;
   totalPrice: number;
+  tpAccountIdPlayer1?: string;
+  tpAccountIdPlayer2?: string;
 }): Promise<{ success: boolean; error?: string }> {
   const client = createFreshSupabaseClient();
 
@@ -91,6 +93,8 @@ export async function enrollForEvent(params: {
     partner_name: params.partnerName || null,
     phone_number: params.phoneNumber,
     total_price: params.totalPrice,
+    tp_account_id_player1: params.tpAccountIdPlayer1 || null,
+    tp_account_id_player2: params.tpAccountIdPlayer2 || null,
   });
 
   if (error) {
@@ -99,6 +103,30 @@ export async function enrollForEvent(params: {
   }
 
   return { success: true };
+}
+
+export async function checkDuplicateTpAccounts(
+  eventId: string,
+  tpAccountId1: string,
+  tpAccountId2: string
+): Promise<string[]> {
+  const client = createFreshSupabaseClient();
+  const ids = [tpAccountId1, tpAccountId2];
+
+  const { data, error } = await client
+    .from("upanddown_enrollments")
+    .select("tp_account_id_player1, tp_account_id_player2")
+    .eq("event_id", eventId);
+
+  if (error || !data) return [];
+
+  const existingIds = new Set<string>();
+  for (const row of data) {
+    if (row.tp_account_id_player1) existingIds.add(row.tp_account_id_player1);
+    if (row.tp_account_id_player2) existingIds.add(row.tp_account_id_player2);
+  }
+
+  return ids.filter((id) => existingIds.has(id));
 }
 
 export async function createUpAndDownEvent(params: {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Calendar, Clock, Check, Loader2, Building2, Users, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import {
   fetchEnrollmentCounts,
   lookForTpPlayers,
   fetchGroupsByIds,
+  checkDuplicateTpAccounts,
   type UpAndDownEvent,
   type TpPlayer,
 } from "@/lib/upanddown";
@@ -39,6 +41,9 @@ const UpAndDown = () => {
 
   // Phone number
   const [phoneNumber, setPhoneNumber] = useState("");
+
+  // GDPR consent
+  const [gdprConsent, setGdprConsent] = useState(false);
 
   // Enrollment counts per event (number of players)
   const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
@@ -130,8 +135,14 @@ const UpAndDown = () => {
   };
 
   const handleSelectEvent = (event: UpAndDownEvent) => {
+    const currentCount = enrollmentCounts[event.id] || 0;
+    if (event.max_participants && currentCount >= event.max_participants) {
+      toast.error("This event is fully booked.");
+      return;
+    }
     setSelectedEvent(event);
     setEnrolled(false);
+    setGdprConsent(false);
     setP2FirstName("");
     setP2LastName("");
     setPlayer2Results([]);
@@ -147,10 +158,35 @@ const UpAndDown = () => {
     selectedP2 !== "" &&
     phoneNumber.trim() !== "" &&
     p1RankingOk &&
-    p2RankingOk;
+    p2RankingOk &&
+    gdprConsent;
 
   const handleEnroll = async () => {
     if (!selectedEvent || !canEnroll) return;
+
+    // Check if event is fully booked
+    const currentCount = enrollmentCounts[selectedEvent.id] || 0;
+    if (selectedEvent.max_participants && currentCount >= selectedEvent.max_participants) {
+      toast.error("This event is fully booked.");
+      return;
+    }
+
+    // Check if either player is already enrolled
+    if (selectedP1 && selectedP2) {
+      setSubmitting(true);
+      const duplicates = await checkDuplicateTpAccounts(selectedEvent.id, selectedP1, selectedP2);
+      if (duplicates.length > 0) {
+        const dupNames = duplicates.map((id) => {
+          const p1 = player1Results.find((p) => p.userId === id);
+          const p2 = player2Results.find((p) => p.userId === id);
+          return p1?.name || p2?.name || id;
+        });
+        toast.error(`${dupNames.join(" and ")} already enrolled for this event.`);
+        setSubmitting(false);
+        return;
+      }
+      setSubmitting(false);
+    }
 
     const p1Name = `${p1FirstName.trim()} ${p1LastName.trim()}`.trim();
     const p2Name = `${p2FirstName.trim()} ${p2LastName.trim()}`.trim();
@@ -166,6 +202,8 @@ const UpAndDown = () => {
       partnerName: p2Name,
       phoneNumber: phoneNumber.trim(),
       totalPrice,
+      tpAccountIdPlayer1: selectedP1 || undefined,
+      tpAccountIdPlayer2: selectedP2 || undefined,
     });
 
     setSubmitting(false);
@@ -383,6 +421,11 @@ const UpAndDown = () => {
                   </button>
                   {player1Results.length >= 1 && (
                     <Select value={selectedP1} onValueChange={(val) => {
+                      if (val === selectedP2) {
+                        toast.error("This account is already selected for Player 2.");
+                        setSelectedP1("");
+                        return;
+                      }
                       setSelectedP1(val);
                       const player = player1Results.find((p) => p.userId === val);
                       if (player) {
@@ -398,7 +441,7 @@ const UpAndDown = () => {
                         <SelectValue placeholder="Select your account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {player1Results.map((p) => (
+                        {player1Results.filter((p) => p.userId !== selectedP2).map((p) => (
                           <SelectItem key={p.userId} value={p.userId}>
                             {p.name}{p.club ? ` - ${p.club}` : ""} ({p.ranking || "No ranking"})
                           </SelectItem>
@@ -463,6 +506,11 @@ const UpAndDown = () => {
                   </button>
                   {player2Results.length >= 1 && (
                     <Select value={selectedP2} onValueChange={(val) => {
+                      if (val === selectedP1) {
+                        toast.error("This account is already selected for Player 1.");
+                        setSelectedP2("");
+                        return;
+                      }
                       setSelectedP2(val);
                       const player = player2Results.find((p) => p.userId === val);
                       if (player) {
@@ -478,7 +526,7 @@ const UpAndDown = () => {
                         <SelectValue placeholder="Select your account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {player2Results.map((p) => (
+                        {player2Results.filter((p) => p.userId !== selectedP1).map((p) => (
                           <SelectItem key={p.userId} value={p.userId}>
                             {p.name}{p.club ? ` - ${p.club}` : ""} ({p.ranking || "No ranking"})
                           </SelectItem>
@@ -520,6 +568,19 @@ const UpAndDown = () => {
                   <span className="text-lg font-bold" style={{ color: "#f0d060" }}>
                     {totalPrice.toFixed(2)} EUR
                   </span>
+                </div>
+
+                {/* GDPR Consent */}
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="gdpr-consent"
+                    checked={gdprConsent}
+                    onCheckedChange={(checked) => setGdprConsent(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="gdpr-consent" className="text-xs leading-relaxed cursor-pointer" style={{ color: "#8899b3" }}>
+                    I agree to the <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "#d4a017" }} onClick={(e) => e.stopPropagation()}>privacy policy</a> and the use of my data for this tournament.
+                  </label>
                 </div>
 
                 {/* Submit */}
