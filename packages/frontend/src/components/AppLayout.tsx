@@ -154,25 +154,23 @@ const AppLayout = ({
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen relative"
       style={{ background: 'linear-gradient(135deg, #1a2744 0%, #243656 50%, #1a2744 100%)' }}
     >
       {/* Background Overlay */}
-      <div className="min-h-screen pt-0">
+      <div className="min-h-screen pt-0 relative">
         {/* Top Navigation Bar */}
         {showNavBar && (
           <div className="backdrop-blur-md border-b sticky top-0 z-50" style={{ backgroundColor: 'rgba(26,39,68,0.9)', borderBottomColor: 'rgba(212,160,23,0.2)' }}>
-          <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center justify-between">
-              {/* Left: Logo + App Name */}
+              {/* Left: Logo + App Name - aligned to center of groups column (480px) */}
               <div
-                className="flex items-center space-x-2 cursor-pointer"
+                className="flex items-center cursor-pointer"
+                style={{ width: '480px', paddingLeft: '0px' }}
                 onClick={() => navigate('/community')}
               >
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold text-primary font-comfortaa">Padel Community</span>
+                <span className="text-xl font-extrabold text-primary uppercase tracking-widest" style={{ fontFamily: "'Montserrat', sans-serif" }}>Padel Community</span>
               </div>
               
               {/* Center: Navigation Icons */}
@@ -270,6 +268,11 @@ const AppLayout = ({
 
         {/* Page Content */}
         {children}
+      </div>
+
+      {/* Background Logo Watermark - on top of content but non-interactive */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[40]">
+        <img src="/logo.png" alt="" className="object-contain opacity-[0.035]" style={{ width: '84vw', height: '84vw', maxWidth: '980px', maxHeight: '980px' }} />
       </div>
 
       <TPMemberSetupDialog

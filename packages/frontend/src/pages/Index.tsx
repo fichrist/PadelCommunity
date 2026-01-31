@@ -23,7 +23,7 @@ const Index = () => {
       // Get user ID synchronously from localStorage (never hangs)
       const userId = getUserIdFromStorage();
       if (userId) {
-        navigate('/upanddown');
+        navigate('/community');
       }
     };
     checkAuth();
@@ -31,7 +31,7 @@ const Index = () => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        navigate('/upanddown');
+        navigate('/community');
       }
     });
 

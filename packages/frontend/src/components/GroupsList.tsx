@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Trophy, Heart, Filter, MapPin } from "lucide-react";
+import { Users, Trophy, Heart, Filter, MapPin, Calendar } from "lucide-react";
 import { supabase, getUserIdFromStorage, createFreshSupabaseClient, getFilteredGroupsFromCache, setFilteredGroupsCache } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,7 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
   const [radiusFilter, setRadiusFilter] = useState('30');
   const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([]);
   const [memberProfiles, setMemberProfiles] = useState<Array<{ id: string; allowed_groups: string[]; latitude: number | null; longitude: number | null }>>([]);
+  const [futureMatchCounts, setFutureMatchCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Load from cache immediately for instant display
@@ -180,6 +181,30 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
         });
 
         setGroups(sortedGroups);
+
+        // Fetch future match counts per group
+        const rankedGroupIds = sortedGroups
+          .filter((g: Group) => g.group_type === 'Ranked')
+          .map((g: Group) => g.id);
+        if (rankedGroupIds.length > 0) {
+          const { data: futureMatches } = await freshClient
+            .from('matches')
+            .select('group_ids')
+            .gte('match_date', new Date().toISOString());
+          if (futureMatches) {
+            const counts: Record<string, number> = {};
+            for (const m of futureMatches) {
+              if (m.group_ids && Array.isArray(m.group_ids)) {
+                for (const gid of m.group_ids) {
+                  if (rankedGroupIds.includes(gid)) {
+                    counts[gid] = (counts[gid] || 0) + 1;
+                  }
+                }
+              }
+            }
+            setFutureMatchCounts(counts);
+          }
+        }
 
         // Ensure General group is always in selected filters if profile didn't have filters set
         if (userId) {
@@ -530,15 +555,21 @@ const GroupsList = ({ onGroupSelect, selectedGroupId }: GroupsListProps) => {
                     <Trophy className="h-5 w-5 text-primary flex-shrink-0" />
                   )}
                   <h3 className="font-semibold text-base truncate">{group.name}</h3>
+                  {group.group_type !== 'Favorites' && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      ({group.member_count === 1 ? '1 member' : `${group.member_count || 0} members`})
+                    </span>
+                  )}
                 </div>
                 {group.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {group.description}
                   </p>
                 )}
-                {group.group_type !== 'Favorites' && (
-                  <p className="text-xs text-muted-foreground">
-                    {group.member_count === 1 ? '1 member' : `${group.member_count || 0} members`}
+                {group.group_type === 'Ranked' && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {futureMatchCounts[group.id] || 0} upcoming {(futureMatchCounts[group.id] || 0) === 1 ? 'match' : 'matches'}
                   </p>
                 )}
               </div>

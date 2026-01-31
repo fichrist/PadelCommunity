@@ -156,6 +156,7 @@ const Community = () => {
         () => {
           console.log('[Community] Matches change detected');
           refetchRef.current?.();
+          setMatchRefreshTrigger(prev => prev + 1);
         }
       )
       .subscribe();
@@ -584,6 +585,7 @@ const Community = () => {
                       defaultExpandThoughts={!!selectedMatchId}
                       onUpdateMatch={() => {
                         refetchMatches();
+                        setMatchRefreshTrigger(prev => prev + 1);
                       }}
                       thoughts={matchThoughts[match.id] || []}
                       onSubmitThought={handleSubmitThought}

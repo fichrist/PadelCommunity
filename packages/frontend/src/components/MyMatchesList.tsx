@@ -63,7 +63,8 @@ const MyMatchesList = ({ currentUserId, selectedMatchId, onMatchClick, refreshTr
         return;
       }
 
-      setIsLoading(true);
+      // Only show loading spinner on initial fetch, not on refetches
+      if (myMatches.length === 0) setIsLoading(true);
       try {
         // Use fresh client to avoid stuck state after inactivity
         const client = createFreshSupabaseClient();
