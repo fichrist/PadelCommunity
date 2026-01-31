@@ -233,6 +233,10 @@ async function directTokenRefresh(): Promise<boolean> {
   if (data.user) existing.user = data.user;
   localStorage.setItem(storageKey, JSON.stringify(existing));
 
+  // Update the realtime WebSocket connection with the new token
+  // so it stays authenticated and doesn't disconnect after the old token expires
+  supabase.realtime.setAuth(data.access_token);
+
   // Fire-and-forget: don't await because setSession can hang
   // localStorage is already updated, and customFetch reads from there
   supabase.auth.setSession({
