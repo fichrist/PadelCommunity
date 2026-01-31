@@ -34,6 +34,7 @@ export interface Profile {
   filtered_latitude: number | null;
   filtered_longitude: number | null;
   filtered_radius_km: number | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }
