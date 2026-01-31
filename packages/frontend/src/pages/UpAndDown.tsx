@@ -128,17 +128,14 @@ const UpAndDown = () => {
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #1a2744 0%, #243656 50%, #1a2744 100%)" }}>
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-2">
         {/* Header with logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-3">
           <img
             src="/logo.png"
             alt="Padel Community"
-            className="w-24 h-24 mx-auto mb-3 object-contain"
+            className="w-80 h-80 mx-auto object-contain"
           />
-          <h1 className="text-3xl font-bold" style={{ color: "#d4a017" }}>
-            Up & Down
-          </h1>
         </div>
 
         {/* Events List */}
@@ -235,7 +232,7 @@ const UpAndDown = () => {
                     className="inline-block mt-4 px-6 py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
                     style={{ background: "linear-gradient(135deg, #d4a017 0%, #e87c3e 100%)", color: "#1a2744" }}
                   >
-                    Pay now
+                    Pay
                   </a>
                 )}
               </div>
