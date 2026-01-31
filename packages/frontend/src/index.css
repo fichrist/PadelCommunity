@@ -155,6 +155,17 @@ All colors MUST be HSL.
   }
 }
 
+/* Override browser autofill background color and text color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.08) inset !important;
+  -webkit-text-fill-color: #e0e6f0 !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: #e0e6f0;
+}
+
 /* Google Places Autocomplete dropdown - ensure it appears above dialogs/modals */
 .pac-container {
   z-index: 10000 !important;

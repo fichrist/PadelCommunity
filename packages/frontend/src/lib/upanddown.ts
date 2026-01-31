@@ -1,5 +1,34 @@
 import { createFreshSupabaseClient } from "@/integrations/supabase/client";
 
+export interface TpPlayer {
+  name: string;
+  ranking: string | null;
+  club: string | null;
+  userId: string;
+}
+
+export async function lookForTpPlayers(
+  firstName: string,
+  lastName: string
+): Promise<TpPlayer[]> {
+  const azureFunctionUrl =
+    import.meta.env.VITE_AZURE_FUNCTION_URL || "http://localhost:7071";
+
+  const response = await fetch(`${azureFunctionUrl}/api/lookForTpPlayers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ firstName, lastName }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || "Failed to look up TP members");
+  }
+
+  return data.data.players || [];
+}
+
 export interface UpAndDownEvent {
   id: string;
   title: string;
@@ -21,9 +50,10 @@ export interface UpAndDownEnrollment {
   event_id: string;
   user_id: string | null;
   name: string;
-  email: string;
+  email: string | null;
   partner_name: string | null;
   partner_email: string | null;
+  phone_number: string | null;
   total_price: number;
   created_at: string;
 }
@@ -48,9 +78,8 @@ export async function enrollForEvent(params: {
   eventId: string;
   userId: string | null;
   name: string;
-  email: string;
   partnerName?: string;
-  partnerEmail?: string;
+  phoneNumber: string;
   totalPrice: number;
 }): Promise<{ success: boolean; error?: string }> {
   const client = createFreshSupabaseClient();
@@ -59,9 +88,8 @@ export async function enrollForEvent(params: {
     event_id: params.eventId,
     user_id: params.userId,
     name: params.name,
-    email: params.email,
     partner_name: params.partnerName || null,
-    partner_email: params.partnerEmail || null,
+    phone_number: params.phoneNumber,
     total_price: params.totalPrice,
   });
 
@@ -110,6 +138,26 @@ export async function createUpAndDownEvent(params: {
   return { success: true };
 }
 
+export async function fetchEnrollmentCounts(eventIds: string[]): Promise<Record<string, number>> {
+  if (eventIds.length === 0) return {};
+  const client = createFreshSupabaseClient();
+  const { data, error } = await client
+    .from("upanddown_enrollments")
+    .select("event_id")
+    .in("event_id", eventIds);
+
+  if (error) {
+    console.error("Error fetching enrollment counts:", error);
+    return {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    counts[row.event_id] = (counts[row.event_id] || 0) + 2; // each enrollment = 2 players
+  }
+  return counts;
+}
+
 export async function fetchGroups(): Promise<{ id: string; name: string; group_type: string }[]> {
   const client = createFreshSupabaseClient();
   const { data, error } = await client
@@ -120,6 +168,24 @@ export async function fetchGroups(): Promise<{ id: string; name: string; group_t
 
   if (error) {
     console.error("Error fetching groups:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchGroupsByIds(
+  groupIds: string[]
+): Promise<{ id: string; name: string; ranking_level: string | null }[]> {
+  if (groupIds.length === 0) return [];
+  const client = createFreshSupabaseClient();
+  const { data, error } = await client
+    .from("groups")
+    .select("id, name, ranking_level")
+    .in("id", groupIds);
+
+  if (error) {
+    console.error("Error fetching groups by IDs:", error);
     return [];
   }
 

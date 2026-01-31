@@ -1,16 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Calendar, Clock, Check, Loader2, Building2, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Calendar, Clock, Check, Loader2, Building2, Users, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchUpAndDownEvents,
   enrollForEvent,
-  fetchGroups,
+  fetchEnrollmentCounts,
+  lookForTpPlayers,
+  fetchGroupsByIds,
   type UpAndDownEvent,
+  type TpPlayer,
 } from "@/lib/upanddown";
+import { getAvailableRankingLevels } from "@/hooks/useRankingLevels";
 
 const UpAndDown = () => {
+  const enrollRef = useRef<HTMLDivElement>(null);
   const [events, setEvents] = useState<UpAndDownEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<UpAndDownEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,61 +24,136 @@ const UpAndDown = () => {
   const [enrolled, setEnrolled] = useState(false);
 
   // Player 1
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+  const [p1FirstName, setP1FirstName] = useState("");
+  const [p1LastName, setP1LastName] = useState("");
+  const [searchingPlayer1, setSearchingPlayer1] = useState(false);
+  const [player1Results, setPlayer1Results] = useState<TpPlayer[]>([]);
+  const [selectedP1, setSelectedP1] = useState<string>("");
 
   // Player 2 (partner - mandatory)
-  const [partnerName, setPartnerName] = useState("");
-  const [partnerEmail, setPartnerEmail] = useState("");
+  const [p2FirstName, setP2FirstName] = useState("");
+  const [p2LastName, setP2LastName] = useState("");
+  const [searchingPlayer2, setSearchingPlayer2] = useState(false);
+  const [player2Results, setPlayer2Results] = useState<TpPlayer[]>([]);
+  const [selectedP2, setSelectedP2] = useState<string>("");
 
-  // Groups (for resolving group_ids to names)
-  const [groupsMap, setGroupsMap] = useState<Record<string, string>>({});
+  // Phone number
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  // Enrollment counts per event (number of players)
+  const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
+
+  // Event group ranking levels (fetched when event is selected)
+  const [eventRankingLevels, setEventRankingLevels] = useState<string[]>([]);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
 
-      // Fetch groups for name resolution
-      const groupsList = await fetchGroups();
-      const gMap: Record<string, string> = {};
-      for (const g of groupsList) {
-        gMap[g.id] = g.name;
-      }
-      setGroupsMap(gMap);
-
       // Fetch events
       const eventsData = await fetchUpAndDownEvents();
       setEvents(eventsData);
+
+      // Fetch enrollment counts
+      const counts = await fetchEnrollmentCounts(eventsData.map((e) => e.id));
+      setEnrollmentCounts(counts);
+
       setLoading(false);
 
       // Auto-select if only one event
       if (eventsData.length === 1) {
         setSelectedEvent(eventsData[0]);
+        loadEventRankingLevels(eventsData[0]);
       }
     };
 
     init();
   }, []);
 
+  const loadEventRankingLevels = async (event: UpAndDownEvent) => {
+    if (event.group_ids.length === 0) {
+      setEventRankingLevels([]);
+      return;
+    }
+    const groups = await fetchGroupsByIds(event.group_ids);
+    const levels = groups
+      .map((g) => g.ranking_level)
+      .filter((l): l is string => l !== null);
+    setEventRankingLevels(levels);
+  };
+
+  const getSelectedPlayer1 = () => player1Results.find((p) => p.userId === selectedP1) || null;
+  const getSelectedPlayer2 = () => player2Results.find((p) => p.userId === selectedP2) || null;
+
+  const isPlayerRankingAllowed = (player: TpPlayer | null): boolean => {
+    if (!player || eventRankingLevels.length === 0) return true;
+    if (!player.ranking) return false;
+    const playerLevels = getAvailableRankingLevels(player.ranking);
+    return eventRankingLevels.some((level) => playerLevels.includes(level));
+  };
+
+  const p1RankingOk = isPlayerRankingAllowed(getSelectedPlayer1());
+  const p2RankingOk = isPlayerRankingAllowed(getSelectedPlayer2());
+
+  const handleLookup = async (
+    firstName: string,
+    lastName: string,
+    setSearching: (v: boolean) => void,
+    setResults: (v: TpPlayer[]) => void,
+    setSelected: (v: string) => void,
+    onAutoSelect: (player: TpPlayer) => void
+  ) => {
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("Enter first name and last name to search.");
+      return;
+    }
+
+    setSearching(true);
+    setResults([]);
+    setSelected("");
+    try {
+      const players = await lookForTpPlayers(firstName.trim(), lastName.trim());
+      if (players.length === 0) {
+        toast.error("No players found.");
+      } else {
+        setResults(players);
+        if (players.length === 1) {
+          setSelected(players[0].userId);
+          onAutoSelect(players[0]);
+        }
+      }
+    } catch {
+      toast.error("Failed to search. Try again.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const handleSelectEvent = (event: UpAndDownEvent) => {
     setSelectedEvent(event);
     setEnrolled(false);
-    setPartnerName("");
-    setPartnerEmail("");
+    setP2FirstName("");
+    setP2LastName("");
+    setPlayer2Results([]);
+    setSelectedP2("");
+    loadEventRankingLevels(event);
+    setTimeout(() => {
+      enrollRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
+  const canEnroll =
+    selectedP1 !== "" &&
+    selectedP2 !== "" &&
+    phoneNumber.trim() !== "" &&
+    p1RankingOk &&
+    p2RankingOk;
+
   const handleEnroll = async () => {
-    if (!selectedEvent) return;
+    if (!selectedEvent || !canEnroll) return;
 
-    if (!userName.trim() || !userEmail.trim()) {
-      toast.error("Player 1: name and email are required.");
-      return;
-    }
-
-    if (!partnerName.trim() || !partnerEmail.trim()) {
-      toast.error("Player 2: name and email are required.");
-      return;
-    }
+    const p1Name = `${p1FirstName.trim()} ${p1LastName.trim()}`.trim();
+    const p2Name = `${p2FirstName.trim()} ${p2LastName.trim()}`.trim();
 
     setSubmitting(true);
 
@@ -81,10 +162,9 @@ const UpAndDown = () => {
     const result = await enrollForEvent({
       eventId: selectedEvent.id,
       userId: null,
-      name: userName.trim(),
-      email: userEmail.trim(),
-      partnerName: partnerName.trim(),
-      partnerEmail: partnerEmail.trim(),
+      name: p1Name,
+      partnerName: p2Name,
+      phoneNumber: phoneNumber.trim(),
       totalPrice,
     });
 
@@ -92,7 +172,10 @@ const UpAndDown = () => {
 
     if (result.success) {
       setEnrolled(true);
-      toast.success("Successfully enrolled!");
+      setEnrollmentCounts((prev) => ({
+        ...prev,
+        [selectedEvent.id]: (prev[selectedEvent.id] || 0) + 2,
+      }));
     } else {
       toast.error(result.error || "Failed to enroll. Please try again.");
     }
@@ -117,6 +200,9 @@ const UpAndDown = () => {
   };
 
   const totalPrice = selectedEvent ? selectedEvent.price * 2 : 0;
+
+  const inputClass = "border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0";
+  const inputStyle = { backgroundColor: "rgba(255,255,255,0.08)", color: "#e0e6f0" };
 
   if (loading) {
     return (
@@ -191,16 +277,13 @@ const UpAndDown = () => {
                       </span>
                     </div>
                   )}
-                  {event.group_ids && event.group_ids.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 shrink-0" style={{ color: "#e87c3e" }} />
-                      <span>
-                        {event.group_ids
-                          .map((id) => groupsMap[id] || id)
-                          .join(", ")}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 shrink-0" style={{ color: "#e87c3e" }} />
+                    <span>
+                      {enrollmentCounts[event.id] || 0}
+                      {event.max_participants ? ` / ${event.max_participants}` : ""} players
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
@@ -210,7 +293,7 @@ const UpAndDown = () => {
         {/* Enrollment Form */}
         {selectedEvent && (
           <>
-            <div className="mb-6" style={{ borderTop: "1px solid rgba(212,160,23,0.3)" }} />
+            <div ref={enrollRef} className="mb-6" style={{ borderTop: "1px solid rgba(212,160,23,0.3)" }} />
 
             {enrolled ? (
               <div
@@ -256,29 +339,79 @@ const UpAndDown = () => {
                 {/* Player 1 */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium" style={{ color: "#d4a017" }}>Player 1</h4>
-                  <div>
-                    <Label htmlFor="name" className="text-sm" style={{ color: "#c0c8d8" }}>Name</Label>
-                    <Input
-                      id="name"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      placeholder="Full name"
-                      className="border-0"
-                      style={{ background: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="p1-first" className="text-sm" style={{ color: "#c0c8d8" }}>First name</Label>
+                      <Input
+                        id="p1-first"
+                        value={p1FirstName}
+                        onChange={(e) => { setP1FirstName(e.target.value); setPlayer1Results([]); setSelectedP1(""); }}
+                        placeholder="First name"
+                        className={inputClass}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="p1-last" className="text-sm" style={{ color: "#c0c8d8" }}>Last name</Label>
+                      <Input
+                        id="p1-last"
+                        value={p1LastName}
+                        onChange={(e) => { setP1LastName(e.target.value); setPlayer1Results([]); setSelectedP1(""); }}
+                        placeholder="Last name"
+                        className={inputClass}
+                        style={inputStyle}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="email" className="text-sm" style={{ color: "#c0c8d8" }}>Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      placeholder="email@example.com"
-                      className="border-0"
-                      style={{ background: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleLookup(
+                      p1FirstName, p1LastName,
+                      setSearchingPlayer1, setPlayer1Results, setSelectedP1,
+                      (p) => {
+                        const parts = p.name.split(/\s+/);
+                        setP1FirstName(parts[0] || "");
+                        setP1LastName(parts.slice(1).join(" ") || "");
+                      }
+                    )}
+                    disabled={searchingPlayer1 || !p1FirstName.trim() || !p1LastName.trim()}
+                    className="flex items-center gap-2 text-xs py-1.5 px-3 rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
+                    style={{ backgroundColor: "rgba(212,160,23,0.15)", color: "#d4a017" }}
+                  >
+                    {searchingPlayer1 ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                    {searchingPlayer1 ? "Searching..." : "Look for Tennis Padel Vlaanderen account"}
+                  </button>
+                  {player1Results.length >= 1 && (
+                    <Select value={selectedP1} onValueChange={(val) => {
+                      setSelectedP1(val);
+                      const player = player1Results.find((p) => p.userId === val);
+                      if (player) {
+                        const parts = player.name.split(/\s+/);
+                        setP1FirstName(parts[0] || "");
+                        setP1LastName(parts.slice(1).join(" ") || "");
+                      }
+                    }}>
+                      <SelectTrigger
+                        className="border-0 bg-transparent focus:ring-0 focus:ring-offset-0"
+                        style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
+                      >
+                        <SelectValue placeholder="Select your account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {player1Results.map((p) => (
+                          <SelectItem key={p.userId} value={p.userId}>
+                            {p.name}{p.club ? ` - ${p.club}` : ""} ({p.ranking || "No ranking"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {selectedP1 && !p1RankingOk && (
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "#e87c3e" }}>
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>This player's ranking does not match the event level. Enrollment is not allowed.</span>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ borderTop: "1px solid rgba(212,160,23,0.2)" }} />
@@ -286,29 +419,95 @@ const UpAndDown = () => {
                 {/* Player 2 (partner) */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium" style={{ color: "#d4a017" }}>Player 2</h4>
-                  <div>
-                    <Label htmlFor="partner-name" className="text-sm" style={{ color: "#c0c8d8" }}>Name</Label>
-                    <Input
-                      id="partner-name"
-                      value={partnerName}
-                      onChange={(e) => setPartnerName(e.target.value)}
-                      placeholder="Full name"
-                      className="border-0"
-                      style={{ background: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="p2-first" className="text-sm" style={{ color: "#c0c8d8" }}>First name</Label>
+                      <Input
+                        id="p2-first"
+                        value={p2FirstName}
+                        onChange={(e) => { setP2FirstName(e.target.value); setPlayer2Results([]); setSelectedP2(""); }}
+                        placeholder="First name"
+                        className={inputClass}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="p2-last" className="text-sm" style={{ color: "#c0c8d8" }}>Last name</Label>
+                      <Input
+                        id="p2-last"
+                        value={p2LastName}
+                        onChange={(e) => { setP2LastName(e.target.value); setPlayer2Results([]); setSelectedP2(""); }}
+                        placeholder="Last name"
+                        className={inputClass}
+                        style={inputStyle}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="partner-email" className="text-sm" style={{ color: "#c0c8d8" }}>Email</Label>
-                    <Input
-                      id="partner-email"
-                      type="email"
-                      value={partnerEmail}
-                      onChange={(e) => setPartnerEmail(e.target.value)}
-                      placeholder="email@example.com"
-                      className="border-0"
-                      style={{ background: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleLookup(
+                      p2FirstName, p2LastName,
+                      setSearchingPlayer2, setPlayer2Results, setSelectedP2,
+                      (p) => {
+                        const parts = p.name.split(/\s+/);
+                        setP2FirstName(parts[0] || "");
+                        setP2LastName(parts.slice(1).join(" ") || "");
+                      }
+                    )}
+                    disabled={searchingPlayer2 || !p2FirstName.trim() || !p2LastName.trim()}
+                    className="flex items-center gap-2 text-xs py-1.5 px-3 rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
+                    style={{ backgroundColor: "rgba(212,160,23,0.15)", color: "#d4a017" }}
+                  >
+                    {searchingPlayer2 ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                    {searchingPlayer2 ? "Searching..." : "Look for Tennis Padel Vlaanderen account"}
+                  </button>
+                  {player2Results.length >= 1 && (
+                    <Select value={selectedP2} onValueChange={(val) => {
+                      setSelectedP2(val);
+                      const player = player2Results.find((p) => p.userId === val);
+                      if (player) {
+                        const parts = player.name.split(/\s+/);
+                        setP2FirstName(parts[0] || "");
+                        setP2LastName(parts.slice(1).join(" ") || "");
+                      }
+                    }}>
+                      <SelectTrigger
+                        className="border-0 bg-transparent focus:ring-0 focus:ring-offset-0"
+                        style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "#e0e6f0" }}
+                      >
+                        <SelectValue placeholder="Select your account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {player2Results.map((p) => (
+                          <SelectItem key={p.userId} value={p.userId}>
+                            {p.name}{p.club ? ` - ${p.club}` : ""} ({p.ranking || "No ranking"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {selectedP2 && !p2RankingOk && (
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "#e87c3e" }}>
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>This player's ranking does not match the event level. Enrollment is not allowed.</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ borderTop: "1px solid rgba(212,160,23,0.2)" }} />
+
+                {/* Phone number */}
+                <div>
+                  <Label htmlFor="phone" className="text-sm" style={{ color: "#c0c8d8" }}>Phone number (for contact)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+32 ..."
+                    className={inputClass}
+                    style={inputStyle}
+                  />
                 </div>
 
                 <div style={{ borderTop: "1px solid rgba(212,160,23,0.2)" }} />
@@ -326,7 +525,7 @@ const UpAndDown = () => {
                 {/* Submit */}
                 <button
                   onClick={handleEnroll}
-                  disabled={submitting}
+                  disabled={submitting || !canEnroll}
                   className="w-full py-3 rounded-lg font-semibold text-base transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg, #d4a017 0%, #e87c3e 100%)", color: "#1a2744" }}
                 >

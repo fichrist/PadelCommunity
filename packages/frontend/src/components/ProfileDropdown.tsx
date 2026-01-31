@@ -25,6 +25,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
   const [userEmail, setUserEmail] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [initials, setInitials] = useState<string>("ME");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const getInitials = (firstName?: string | null, lastName?: string | null, fallbackName?: string): string => {
     if (firstName && lastName) {
@@ -63,6 +64,7 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
 
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
+        setIsAdmin(profile?.is_admin ?? false);
       }
     };
 
@@ -90,11 +92,13 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
 
         // Only set avatar URL if profile has one, otherwise leave undefined
         setAvatarUrl(profile?.avatar_url || undefined);
+        setIsAdmin(profile?.is_admin ?? false);
       } else {
         setDisplayName("My Page");
         setUserEmail("");
         setAvatarUrl(undefined);
         setInitials("ME");
+        setIsAdmin(false);
       }
     });
 
@@ -143,13 +147,15 @@ const ProfileDropdown = ({ userImage, userName }: ProfileDropdownProps) => {
           <Bell className="h-4 w-4 text-primary" />
           <span>Notification Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => navigate('/admin')}
-          className="cursor-pointer flex items-center space-x-2 py-3"
-        >
-          <Shield className="h-4 w-4 text-primary" />
-          <span>Admin</span>
-        </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem
+            onClick={() => navigate('/admin')}
+            className="cursor-pointer flex items-center space-x-2 py-3"
+          >
+            <Shield className="h-4 w-4 text-primary" />
+            <span>Admin</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}
